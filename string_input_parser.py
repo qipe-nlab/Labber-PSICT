@@ -15,7 +15,10 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         - Calculates parameters that should be based on other parameters
             (eg pulse spacing as a function of pulse width)
 
-    NB: Pulses should be referred to by their actual number (starting at 1, not 0).
+    - out_main variable names (ie output) must match the variable names on the
+        instrument as these will be passed directly to the Labber API
+        updateValue methods.
+    - Pulses should be referred to by their actual number (starting at 1, not 0).
     '''
     if verbose: print("Beginning post-processing...")
     ## output dicts
@@ -23,14 +26,14 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     out_pulse = {}
 
     ## main values
-    out_main["sr"] = in_main["sr"]             # sample rate
-    out_main["npts"] = in_main["npts"]         # number of points
-    out_main["delay"] = in_main["delay"]       # first signal delay
+    out_main["Sample rate"] = in_main["sr"]             # sample rate
+    out_main["Number of points"] = in_main["npts"]         # number of points
+    out_main["First pulse delay"] = in_main["delay"]       # first signal delay
     ## status print
     if verbose:
-        print("(main) Sample rate:", out_main["sr"])
-        print("(main) Number of points:", out_main["npts"])
-        print("(main) First pulse delay:", out_main["delay"])
+        print("(main) Sample rate:", out_main["Sample rate"])
+        print("(main) Number of points:", out_main["Number of points"])
+        print("(main) First pulse delay:", out_main["First pulse delay"])
 
     ## pulse values
     npulses = len(in_pulse)
@@ -39,14 +42,14 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         ## init sub-dict for each pulse
         out_pulse[pulse_num] = {}
 
-        out_pulse[pulse_num]["A"] = in_pulse[pulse_num]["A"]    # pulse amplitude
-        out_pulse[pulse_num]["W"] = in_pulse[pulse_num]["W"]    # pulse amplitude
-        out_pulse[pulse_num]["P"] = in_pulse[pulse_num]["P"]    # pulse amplitude
+        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["A"]    # pulse amplitude
+        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["W"]    # pulse width
+        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["P"]    # pulse plateau
         ## status print
         if verbose:
-            print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["A"])
-            print("(pulse)", pulse_num, "Width:", out_pulse[pulse_num]["W"])
-            print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["P"])
+            print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["Amplitude"])
+            print("(pulse)", pulse_num, "Width:", out_pulse[pulse_num]["Width"])
+            print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["Plateau"])
 
     ##
 
@@ -155,7 +158,7 @@ class InputStrParser:
         if verbose: print(input_values_pulse)
 
         ## post-processing based on user-defined rules
-        self.main_values, self.pulse_values = post_process_params_values(input_values_main, input_values_pulse, verbose = verbose)
+        self.main_values, self.pulse_values = post_process_params_values(input_values_main, input_values_pulse, verbose = False)
 
         if verbose:
             print("Main values stored in InputStrParser class:")
@@ -193,7 +196,58 @@ class InputStrParser:
 
         return param_values
 
+
+    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "Single-Qubit Pulse Generator"):
+        '''
+        Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "Single-Qubit Pulse Generator").
+        '''
+        self.target_MO = target_MeasurementObject
+        print("Measurement object set as:", self.target_MO)
+        self.target_name = target_instrument_name
+
+    def update_param_values(self, verbose = False):
+        '''
+        Update the parameter values of the target Labber MeasurementObject.
+        '''
+        ## verify that target MeasurementObject has been specified
+        if self.target_MO == None:
+            print("ERROR: Target MeasurementObject has not been specified! Cannot update values.")
+            return
+
+        if verbose: print("Updating MeasurementObject values...")
+
+        ## update main config values
+        if verbose: print("Updating main config values...")
+        # print(self.main_values)
+        for main_param in self.main_values:
+            print(main_param, self.main_values[main_param])
+            target_string = " - ".join([self.target_name, main_param])
+            self.target_MO.updateValue(target_string, self.main_values[main_param], 'SINGLE')
+        if verbose: print("Main config values updated.")
+
+        ## update pulse config values
+        if verbose: print("Updating pulse config values...")
+        for pulse_num in self.pulse_values:
+            if verbose: print("Updating values for pulse", str(pulse_num))
+            param_vals = self.pulse_values[pulse_num]
+            for param_name in param_vals:
+                target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
+                self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
+        if verbose: print("Pulse config values updated.")
+
+        ## exit message
+        if verbose: print("MeasurementObject values updated successfully.")
+
+
 ##
+
+class DummyMeasurementObject:
+    def __init__(self):
+        pass
+
+    def updateValue(self, target_string, value, value_spec):
+        print("Instrument parameter \"", target_string, "\" updated to ", value, sep = "")
+
 
 
 example_input_string = [
@@ -224,7 +278,12 @@ Parser.set_main_config(params_main_config)
 Parser.set_pulse_config(params_pulse_config)
 
 ## parse input values
-Parser.parse_input(example_input_string, verbose = True)
+Parser.parse_input(example_input_string, verbose = False)
+
+## Set target MeasurementObject and update values
+Parser.set_MeasurementObject(DummyMeasurementObject())
+Parser.update_param_values(verbose = True)
+
 
 
 

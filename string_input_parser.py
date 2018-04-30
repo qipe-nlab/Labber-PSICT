@@ -3,6 +3,35 @@
 ## Date modified:  2018/04/13
 
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Configs for admissible parameter input values.
+
+params_main_config = {
+        "sr":     float,  # sample rate
+        "npts":   float,  # number of points
+        "delay":  float,  # first pulse delay
+    }
+
+params_pulse_config = {
+        "A":      float,  # pulse apmlitude
+        "W":      float,  # pulse width
+        "P":      float,  # pulse plateau width
+    }
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+###############################################################################
+## Conversions for nonstandard input types
+##  eg To specify a channel name instead of the expected value (int), conversion
+##  rules must be specified here.
+
+
+
+
+###############################################################################
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## post-processing functionality
 def post_process_params_values(in_main, in_pulse, verbose = False):
@@ -249,42 +278,35 @@ class DummyMeasurementObject:
         print("Instrument parameter \"", target_string, "\" updated to ", value, sep = "")
 
 
+## "Big" function to be used in scripts
+def update_values_from_string(param_string_list, labber_measurement_object, instrument_name = None, verbose = False):
+    '''
+    Updates the values of the specified Labber MeasurementObject using the list of strings passed in.
 
-example_input_string = [
-        "sr_1E9 npts_10E3 delay_400", # overall config
-        "A_12 W_16 P_2",              # 1st pulse
-        "A_15 W_2 P_0",               # 2nd pulse
-    ]
+    The param_string_list must be of the format:
+        [<main config string>, <pulse 1 string>, <pulse 2 string>, ...].
+    The string format is
+        "<param 1 name>_<param 1 value> <param 2 name>_<param 2 value> ..."
+    and must exactly match the parameter names specified in the params_main_config and params_pulse_config.
 
-params_main_config = {
-        "sr":     float,  # sample rate
-        "npts":   float,  # number of points
-        "delay":  float,  # first pulse delay
-    }
+    If left blank, instrument_name will default to "Single-Qubit Pulse Generator".
+    '''
 
-params_pulse_config = {
-        "A":      float,  # pulse apmlitude
-        "W":      float,  # pulse width
-        "P":      float,  # pulse plateau width
-    }
+    ## init parser object
+    Parser = InputStrParser()
 
+    ## set main config dict (at beginning of this file)
+    Parser.set_main_config(params_main_config)
+    ## set pulse config dict (at beginning of this file)
+    Parser.set_pulse_config(params_pulse_config)
 
+    ## parse input values
+    Parser.parse_input(param_string_list, verbose = verbose)
 
-Parser = InputStrParser()
-
-## set main config dict
-Parser.set_main_config(params_main_config)
-## set pulse config dict
-Parser.set_pulse_config(params_pulse_config)
-
-## parse input values
-Parser.parse_input(example_input_string, verbose = False)
-
-## Set target MeasurementObject and update values
-Parser.set_MeasurementObject(DummyMeasurementObject())
-Parser.update_param_values(verbose = True)
-
-
+    ## Set target MeasurementObject and update values
+    Parser.set_MeasurementObject(labber_measurement_object)
+    Parser.update_param_values(verbose = verbose)
+##
 
 
 

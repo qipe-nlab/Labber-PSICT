@@ -3,6 +3,67 @@
 ## Date modified:  2018/04/13
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## post-processing functionality
+def post_process_params_values(in_main, in_pulse, verbose = False):
+    '''
+    Defines post-processing operations to be carried out on raw input values.
+
+    Twofold main purpose:
+        - Converts more descriptive strings (eg for output channel name)
+            into integer switch values
+        - Calculates parameters that should be based on other parameters
+            (eg pulse spacing as a function of pulse width)
+
+    NB: Pulses should be referred to by their actual number (starting at 1, not 0).
+    '''
+    if verbose: print("Beginning post-processing...")
+    ## output dicts
+    out_main = {}
+    out_pulse = {}
+
+    ## main values
+    out_main["sr"] = in_main["sr"]             # sample rate
+    out_main["npts"] = in_main["npts"]         # number of points
+    out_main["delay"] = in_main["delay"]       # first signal delay
+    ## status print
+    if verbose:
+        print("(main) Sample rate:", out_main["sr"])
+        print("(main) Number of points:", out_main["npts"])
+        print("(main) First pulse delay:", out_main["delay"])
+
+    ## pulse values
+    npulses = len(in_pulse)
+    if verbose: print("(pulse) Number of pulses:", npulses)
+    for pulse_num in range(1,npulses+1):
+        ## init sub-dict for each pulse
+        out_pulse[pulse_num] = {}
+
+        out_pulse[pulse_num]["A"] = in_pulse[pulse_num]["A"]    # pulse amplitude
+        out_pulse[pulse_num]["W"] = in_pulse[pulse_num]["W"]    # pulse amplitude
+        out_pulse[pulse_num]["P"] = in_pulse[pulse_num]["P"]    # pulse amplitude
+        ## status print
+        if verbose:
+            print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["A"])
+            print("(pulse)", pulse_num, "Width:", out_pulse[pulse_num]["W"])
+            print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["P"])
+
+    ##
+
+    ## complete debug printing
+    if verbose:
+        print("Main parameters:")
+        print(out_main)
+        print("Pulse parameters:")
+        print(out_pulse)
+
+    ## completion status message
+    if verbose: print("Post-processing completed.")
+
+    ## output
+    return out_main, out_pulse
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 class InputStrParser:
@@ -75,7 +136,7 @@ class InputStrParser:
         self.npulses = len(params_pulse_tuples)//self.pulse_config_nparams
         if verbose: print("Number of pulses:", self.npulses)
 
-        self.input_values_pulse = {}
+        input_values_pulse = {}
         ## iterate through params for each pulse, parsing values
         for pulse_ix in range(self.npulses):
             pulse_num = pulse_ix + 1  # pulse numbering begins at 1
@@ -89,10 +150,18 @@ class InputStrParser:
             if verbose: print(input_vals)
 
             ## add to dict
-            self.input_values_pulse[pulse_num] = input_vals
+            input_values_pulse[pulse_num] = input_vals
 
-        if verbose: print(self.input_values_pulse)
+        if verbose: print(input_values_pulse)
 
+        ## post-processing based on user-defined rules
+        self.main_values, self.pulse_values = post_process_params_values(input_values_main, input_values_pulse, verbose = verbose)
+
+        if verbose:
+            print("Main values stored in InputStrParser class:")
+            print(self.main_values)
+            print("Pulse values stored in InputStrParser class:")
+            print(self.pulse_values)
 
 
 
@@ -144,6 +213,8 @@ params_pulse_config = {
         "W":      float,  # pulse width
         "P":      float,  # pulse plateau width
     }
+
+
 
 Parser = InputStrParser()
 

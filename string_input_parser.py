@@ -14,6 +14,8 @@ class InputStrParser:
         self.main_config_nparams = 0
         self.pulse_config_nparams = 0
 
+        ## number of pulses
+        self.npulses = 0
 
         ##
 
@@ -30,6 +32,13 @@ class InputStrParser:
         '''
         self.pulse_config = pulse_config
         self.pulse_config_nparams = len(self.pulse_config)
+
+    def set_npulses(self, npulses):
+        '''
+        Set the total number of pulses to be sent out.
+        '''
+        self.npulses = npulses
+
 
     def parse_input(self, input_str_list, verbose = False):
         '''
@@ -56,9 +65,36 @@ class InputStrParser:
         params_pulse_tuples = param_tuples[self.main_config_nparams:]
         if verbose: print(params_main_tuples)
 
-        ## parse pulse config values
+
+        ## parse main config values
         input_values_main = self.parse_param_tuples(params_main_tuples, self.main_config)
         if verbose: print(input_values_main)
+
+
+        ## extract number of pulses from input
+        self.npulses = len(params_pulse_tuples)//self.pulse_config_nparams
+        if verbose: print("Number of pulses:", self.npulses)
+
+        self.input_values_pulse = {}
+        ## iterate through params for each pulse, parsing values
+        for pulse_ix in range(self.npulses):
+            pulse_num = pulse_ix + 1  # pulse numbering begins at 1
+
+            ## extract relevant input param tuples from all input param tuples
+            pulse_param_tuples = params_pulse_tuples[pulse_ix*self.pulse_config_nparams:(pulse_ix+1)*self.pulse_config_nparams]
+            if verbose: print(pulse_param_tuples)
+
+            ## parse input param tuples
+            input_vals = self.parse_param_tuples(pulse_param_tuples, self.pulse_config)
+            if verbose: print(input_vals)
+
+            ## add to dict
+            self.input_values_pulse[pulse_num] = input_vals
+
+        if verbose: print(self.input_values_pulse)
+
+
+
 
     def parse_param_tuples(self, input_tuples, config):
         '''
@@ -76,12 +112,12 @@ class InputStrParser:
             try:
                 param_type = config[param_name]
             except:
-                print("Could not retrieve parameter key:", param_name)
+                print("ERROR: Could not retrieve parameter key:", param_name)
             ## attempt to parse input value using specified dtype
             try:
                 param_value = param_type(param_tuple[1])
             except:
-                print("Could not convert parameter value", param_tuple[1], "to desired type", param_type)
+                print("ERROR: Could not convert parameter value", param_tuple[1], "to desired type", param_type)
 
             ## add pair to dict
             param_values[param_name] = param_value
@@ -103,13 +139,21 @@ params_main_config = {
         "delay":  float,  # first pulse delay
     }
 
+params_pulse_config = {
+        "A":      float,  # pulse apmlitude
+        "W":      float,  # pulse width
+        "P":      float,  # pulse plateau width
+    }
+
 Parser = InputStrParser()
 
 ## set main config dict
 Parser.set_main_config(params_main_config)
+## set pulse config dict
+Parser.set_pulse_config(params_pulse_config)
 
 ## parse input values
-Parser.parse_input(example_input_string)
+Parser.parse_input(example_input_string, verbose = True)
 
 
 

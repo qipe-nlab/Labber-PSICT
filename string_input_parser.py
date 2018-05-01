@@ -209,7 +209,23 @@ class InputStrParser:
 
         ## extract number of pulses from input
         self.npulses = len(params_pulse_tuples)//self.pulse_config_nparams
-        if verbose: print("Number of pulses:", self.npulses)
+        if verbose: print("Number of pulses (from input string length):", self.npulses)
+        ## Compare number of pulses specified in main input string to number of pulses
+        ##      calculated from length of input string. Also compare both to MAX_PULSES
+        if self.npulses != input_values_main["np"]:
+            print("*** WARNING: Mismatch between number of pulses specified in main config (", \
+                    str(input_values_main["np"]), ") and number of pulses calculated from input string (", \
+                    str(self.npulses), ").\nValue based on input string will take precedence, but this may cause undesired behaviour.\n***", sep = "")
+        if self.npulses > MAX_PULSES:
+            print("*** WARNING: The number of pulse config specifications in the input string (", str(self.npulses),\
+                    ") exceeds the maximum number of pulses allowed by the driver (", str(MAX_PULSES), \
+                    ").\nThe pulse config specifications will be truncated to ", str(MAX_PULSES), \
+                    ", but note that undesired behaviour may occur.\n***", sep = "")
+        if input_values_main["np"] > MAX_PULSES:
+            print("*** WARNING: The number of pulses specified in the main config string (", str(input_values_main["np"]),\
+                    ") exceeds the maximum number of pulses allowed by the driver (", str(MAX_PULSES), \
+                    ").\nThe value passed to Labber will be set to ", str(MAX_PULSES), \
+                    ", but note that undesired behaviour may occur.\n***", sep = "")
 
         input_values_pulse = {}
         ## iterate through params for each pulse, parsing values
@@ -308,7 +324,7 @@ class InputStrParser:
 
         ## update pulse config values
         if verbose: print("Updating pulse config values...")
-        for pulse_num in self.pulse_values:
+        for pulse_num in range(1,1+min(self.npulses, MAX_PULSES)):
             if verbose: print("Updating values for pulse", str(pulse_num))
             param_vals = self.pulse_values[pulse_num]
             for param_name in param_vals:

@@ -11,10 +11,20 @@ params_main_config = {
         "sr":     float,  # sample rate
         "npts":   float,  # number of points
         "delay":  float,  # first pulse delay
+        "trim":   int,    # Trim waveform to sequence (bool)
+        "nout":   int,    # number of outputs
+        "np":     int,    # number of pulses
+        "ptype":  str,    # pulse type
+        "tr":     int,    # truncation range
+        "saz":    int,    # start at zero (bool)
+        "e2e":    int,    # edge-to-edge pulses (bool)
+        "epos":   int,    # edge position
+        "SSB":    int,    # use SSB mixing (bool)
+        "DRAG":   int,    # use DRAG (bool)
     }
 
 params_pulse_config = {
-        "A":      float,  # pulse apmlitude
+        "A":      float,  # pulse amplitude
         "W":      float,  # pulse width
         "P":      float,  # pulse plateau width
     }
@@ -25,7 +35,12 @@ params_pulse_config = {
 ## Conversions for nonstandard input types
 ##  eg To specify a channel name instead of the expected value (int), conversion
 ##  rules must be specified here.
+##  NB Boolean values are converted using if ... else during post-processing
 
+## main config
+convert_nout = {1: 0, 2: 1, 3: 2, 4: 3}
+convert_ptype = {"gauss": 0, "square": 1, "ramp": 2}
+MAX_PULSES = 8         # maximum number of pulses supported by driver
 
 
 
@@ -55,9 +70,19 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     out_pulse = {}
 
     ## main values
-    out_main["Sample rate"] = in_main["sr"]             # sample rate
-    out_main["Number of points"] = in_main["npts"]         # number of points
-    out_main["First pulse delay"] = in_main["delay"]       # first signal delay
+    out_main["Sample rate"] = in_main["sr"]
+    out_main["Number of points"] = in_main["npts"]
+    out_main["First pulse delay"] = in_main["delay"]
+    out_main["Trim waveform to sequence"] = 0 if in_main["trim"] == 0 else 1
+    out_main["Number of outputs"] = convert_nout[in_main["nout"]]
+    out_main["# of pulses"] = in_main["np"] if in_main["np"] <= MAX_PULSES else MAX_PULSES
+    out_main["Pulse type"] = convert_ptype[in_main["ptype"]]
+    out_main["Truncation range"] = in_main["tr"]
+    out_main["Start at zero"] = 0 if in_main["saz"] == 0 else 1
+    out_main["Edge-to-edge pulses"] = 0 if in_main["e2e"] == 0 else 1
+    out_main["Edge position"] = in_main["epos"]
+    out_main["Use SSB mixing"] = 0 if in_main["SSB"] == 0 else 1
+    out_main["Use DRAG"] = 0 if in_main["DRAG"] == 0 else 1
     ## status print
     if verbose:
         print("(main) Sample rate:", out_main["Sample rate"])
@@ -249,7 +274,7 @@ class InputStrParser:
         if verbose: print("Updating main config values...")
         # print(self.main_values)
         for main_param in self.main_values:
-            print(main_param, self.main_values[main_param])
+            # print(main_param, self.main_values[main_param])
             target_string = " - ".join([self.target_name, main_param])
             self.target_MO.updateValue(target_string, self.main_values[main_param], 'SINGLE')
         if verbose: print("Main config values updated.")

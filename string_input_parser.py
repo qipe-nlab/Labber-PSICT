@@ -36,7 +36,7 @@ params_pulse_config = {
         "v":      float,  # Plateau
         "s":      float,  # Spacing
         "p":      float,  # Phase
-        "f":      float,  # Mod. frequency
+        "f":      float,  # Mod. frequency (offset from IF frequency)
         "o":      str,    # Output
     }
 
@@ -82,6 +82,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     ## output dicts
     out_main = {}
     out_pulse = {}
+    out_add = {}     # additional parameters not passed directly to labber
 
     ## main values
     out_main["Sample rate"] = in_main["sr"]
@@ -97,6 +98,10 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     out_main["Edge position"] = in_main["epos"]
     out_main["Use SSB mixing"] = 0 if in_main["SSB"] == 0 else 1
     out_main["Use DRAG"] = 0 if in_main["DRAG"] == 0 else 1
+    ## additional data - not passed directly
+    out_add["Control frequency"] = in_main["cf"]*1e6        # MHz
+    out_add["IF frequency"] = in_main["if"]*1e6             # MHz
+    out_add["LO frequency"] = in_main["cf"] - in_main["if"]
     ## status print
     if verbose:
         print("(main) Sample rate:", out_main["Sample rate"])
@@ -115,7 +120,16 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["v"]
         out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["s"]
         out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["p"]
-        out_pulse[pulse_num]["Mod. frequency"] = in_pulse[pulse_num]["f"]
+        ## modulation frequency calculations: potential sideband switching
+        ## same sign => same sideband
+        freq_offset = in_pulse[pulse_num]["f"]*1e6      # MHz
+        if out_add["IF frequency"]*(out_add["IF frequency"] + freq_offset) >= 0:
+            out_pulse[pulse_num]["Mod. frequency"] = abs(out_add["IF frequency"] + freq_offset)
+        ## sideband switching
+        else:
+            print("*** WARNING: Specified frequency offset induces a sideband switch for pulse ", pulse_num, "; defaulting to 0.", sep = "")
+            out_pulse[pulse_num]["Mod. frequency"] = abs(out_add["IF frequency"])
+        ##
         out_pulse[pulse_num]["Output"] = convert_out[in_pulse[pulse_num]["o"]]
         ## overall parameters applied to pulses individually
         out_pulse[pulse_num]["Ratio I/Q"] = in_main["IQ"]
@@ -126,6 +140,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
             print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["Amplitude"])
             print("(pulse)", pulse_num, "Width:", out_pulse[pulse_num]["Width"])
             print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["Plateau"])
+            print("(pulse)", pulse_num, "Mod. Frequency:", out_pulse[pulse_num]["Mod. frequency"])
 
     ##
 
@@ -158,7 +173,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     if verbose: print("Post-processing completed.")
 
     ## output
-    return out_main, out_pulse
+    return out_main, out_pulse, out_add
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -268,7 +283,7 @@ class InputStrParser:
         if verbose: print(input_values_pulse)
 
         ## post-processing based on user-defined rules
-        self.main_values, self.pulse_values = post_process_params_values(input_values_main, input_values_pulse, verbose = False)
+        self.main_values, self.pulse_values, self.add_values = post_process_params_values(input_values_main, input_values_pulse, verbose = verbose)
 
         if verbose:
             print("Main values stored in InputStrParser class:")

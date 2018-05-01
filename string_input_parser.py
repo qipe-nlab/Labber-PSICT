@@ -24,16 +24,19 @@ params_main_config = {
         ## these are 'main' parameters, but they are set per-pulse in post-processing:
         "IQ":     float,  # I/Q ratio
         "dphi":   float,  # Phase diff.
+        ## IF/Control frequency specification
+        "cf":     float,  # Control frequency
+        "if":     float,  # IF frequency (to be modulated by Mod. freq)
     }
 
 params_pulse_config = {
-        "A":      float,  # Amplitude
-        "W":      float,  # Width
-        "P":      float,  # Plateau
-        "S":      float,  # Spacing
-        "phi":    float,  # Phase
-        "mf":     float,  # Mod. frequency
-        "out":    str,    # Output
+        "a":      float,  # Amplitude
+        "w":      float,  # Width
+        "v":      float,  # Plateau
+        "s":      float,  # Spacing
+        "p":      float,  # Phase
+        "f":      float,  # Mod. frequency
+        "o":      str,    # Output
     }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -106,13 +109,13 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         ## init sub-dict for each pulse
         out_pulse[pulse_num] = {}
 
-        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["A"]
-        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["W"]
-        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["P"]
-        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["S"]
-        out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["phi"]
-        out_pulse[pulse_num]["Mod. frequency"] = in_pulse[pulse_num]["mf"]
-        out_pulse[pulse_num]["Output"] = convert_out[in_pulse[pulse_num]["out"]]
+        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["a"]
+        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["w"]
+        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["v"]
+        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["s"]
+        out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["p"]
+        out_pulse[pulse_num]["Mod. frequency"] = in_pulse[pulse_num]["f"]
+        out_pulse[pulse_num]["Output"] = convert_out[in_pulse[pulse_num]["o"]]
         ## overall parameters applied to pulses individually
         out_pulse[pulse_num]["Ratio I/Q"] = in_main["IQ"]
         out_pulse[pulse_num]["Phase diff."] = in_main["dphi"]

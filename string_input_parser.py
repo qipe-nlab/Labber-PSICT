@@ -297,6 +297,15 @@ class InputStrParser:
             self.target_MO.updateValue(target_string, self.main_values[main_param], 'SINGLE')
         if verbose: print("Main config values updated.")
 
+        ## reset pulse amplitudes to ensure no leftovers from previous experiments
+        ##  eg 4 pulses used previously, amplitudes not modified => they will still
+        ##  be nonzero!
+        if verbose: print("Resetting pulse amplitudes...")
+        for pulse_num in range(1,MAX_PULSES+1):
+            target_string = "".join([self.target_name, " - Amplitude #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+        if verbose: print("Pulse amplitude reset.")
+
         ## update pulse config values
         if verbose: print("Updating pulse config values...")
         for pulse_num in self.pulse_values:

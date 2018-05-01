@@ -21,12 +21,19 @@ params_main_config = {
         "epos":   int,    # edge position
         "SSB":    int,    # use SSB mixing (bool)
         "DRAG":   int,    # use DRAG (bool)
+        ## these are 'main' parameters, but they are set per-pulse in post-processing:
+        "IQ":     float,  # I/Q ratio
+        "dphi":   float,  # Phase diff.
     }
 
 params_pulse_config = {
-        "A":      float,  # pulse amplitude
-        "W":      float,  # pulse width
-        "P":      float,  # pulse plateau width
+        "A":      float,  # Amplitude
+        "W":      float,  # Width
+        "P":      float,  # Plateau
+        "S":      float,  # Spacing
+        "phi":    float,  # Phase
+        "mf":     float,  # Mod. frequency
+        "out":    str,    # Output
     }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -42,6 +49,9 @@ convert_nout = {1: 0, 2: 1, 3: 2, 4: 3}
 convert_ptype = {"gauss": 0, "square": 1, "ramp": 2}
 MAX_PULSES = 8         # maximum number of pulses supported by driver
 
+## pulse config
+convert_out = {"QubitControl": 0, "QubitReadout": 1, "MagnonControl": 2, "MagnonReadout": 3}
+##      ## NB pulse output names cannot contain underscores (_) or spaces
 
 
 ###############################################################################
@@ -96,9 +106,17 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         ## init sub-dict for each pulse
         out_pulse[pulse_num] = {}
 
-        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["A"]    # pulse amplitude
-        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["W"]    # pulse width
-        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["P"]    # pulse plateau
+        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["A"]
+        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["W"]
+        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["P"]
+        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["S"]
+        out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["phi"]
+        out_pulse[pulse_num]["Mod. frequency"] = in_pulse[pulse_num]["mf"]
+        out_pulse[pulse_num]["Output"] = convert_out[in_pulse[pulse_num]["out"]]
+        ## overall parameters applied to pulses individually
+        out_pulse[pulse_num]["Ratio I/Q"] = in_main["IQ"]
+        out_pulse[pulse_num]["Phase diff."] = in_main["dphi"]
+
         ## status print
         if verbose:
             print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["Amplitude"])

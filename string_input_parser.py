@@ -9,7 +9,8 @@
 
 params_main_config = {
         "sr":     float,  # sample rate
-        "npts":   float,  # number of points
+        # "npts":   float,  # number of points - calculated from dead, sr, and pulse sequence
+        "dead":   float,  # Dead time (relaxation of qubit after pulse sequence)
         "delay":  float,  # first pulse delay
         "trim":   int,    # Trim waveform to sequence (bool)
         "nout":   int,    # number of outputs
@@ -84,7 +85,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
 
     ## main values
     out_main["Sample rate"] = in_main["sr"]
-    out_main["Number of points"] = in_main["npts"]
+    # out_main["Number of points"] = in_main["npts"]
     out_main["First pulse delay"] = in_main["delay"]
     out_main["Trim waveform to sequence"] = 0 if in_main["trim"] == 0 else 1
     out_main["Number of outputs"] = convert_nout[in_main["nout"]]
@@ -99,7 +100,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     ## status print
     if verbose:
         print("(main) Sample rate:", out_main["Sample rate"])
-        print("(main) Number of points:", out_main["Number of points"])
+        # print("(main) Number of points:", out_main["Number of points"])
         print("(main) First pulse delay:", out_main["First pulse delay"])
 
     ## pulse values
@@ -127,6 +128,24 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
             print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["Plateau"])
 
     ##
+
+    # # # # # # # # # # # # # # # # #
+    ## Additional calculations
+
+    ## Number of points from pulse sequence, dead time, and sample rate
+    ##   Calculation depends on whether or not pulses are e2e
+    if out_main["Edge-to-edge pulses"]:
+        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Width"] + \
+                out_pulse[xx]["Plateau"] + out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) \
+                + in_main["dead"]
+    else:
+        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) + in_main["dead"]
+    if verbose: print("Total time for pulse sequence (incl dead time):", str(total_time), "ns")
+    out_main["Number of points"] = int(out_main["Sample rate"]*total_time*1e-9)
+    if verbose: print("Calculated number of points:", str(out_main["Number of points"]))
+
+    # # # # # # # # # # # # # # # # #
+
 
     ## complete debug printing
     if verbose:

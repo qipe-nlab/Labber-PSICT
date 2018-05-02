@@ -190,6 +190,11 @@ class InputStrParser:
         ## number of pulses
         self.npulses = 0
 
+        ## set main config dict (at beginning of this file)
+        self.set_main_config(params_main_config)
+        ## set pulse config dict (at beginning of this file)
+        self.set_pulse_config(params_pulse_config)
+
         ##
 
     def set_main_config(self, main_config):
@@ -372,15 +377,57 @@ class InputStrParser:
         ## exit message
         if verbose: print("MeasurementObject values updated successfully.")
 
+    def set_iteration_params(self, iteration_input, verbose = False):
+        '''
+        Parse input for variable iteration, and set the corresponding Labber MeasurementObject values.
+
+        Note that currently long parameter names must be used, eg "Amplitude" instead of "a".
+
+        Input arg must be a list of the format:
+        [<pulse>, <param>, <start value>, <end value>, <npts>]
+        NB <pulse> should be set to 0 for main config parameters.
+        '''
+
+        ## verify that target MeasurementObject has been specified
+        if self.target_MO == None:
+            print("ERROR: Target MeasurementObject has not been specified! Cannot update values.")
+            return
+
+        if verbose: print("Parsing iteration spec input...")
+
+        pulse_num = iteration_input[0]
+        param_name = iteration_input[1]
+        start_value = iteration_input[2]
+        stop_value = iteration_input[3]
+        n_pts = iteration_input[4]
+
+        ## main parameter config
+        if pulse_num == 0:
+            target_string = "".join([self.target_name, " - ", param_name])
+        ## pulse parameter config
+        else:
+            target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
+        self.target_MO.updateValue(target_string, start_value, 'START')
+        self.target_MO.updateValue(target_string, stop_value, 'STOP')
+        self.target_MO.updateValue(target_string, n_pts, 'N_PTS')
+
+
 
 ##
 
 class DummyMeasurementObject:
-    def __init__(self):
-        pass
+    def __init__(self, silent_mode = False):
+        self.silent_mode = silent_mode
 
     def updateValue(self, target_string, value, value_spec):
-        print("Instrument parameter \"", target_string, "\" updated to ", value, sep = "")
+        if self.silent_mode:
+            return
+        else:
+            if value_spec == 'SINGLE':
+                print("Instrument parameter \"", target_string, "\" updated to ", value, sep = "")
+            else:
+                print("Instrument parameter iteration set:\n\t\t\"", target_string, "\" updated to ", value, " as ", value_spec, " variable.", sep = "")
+
 
 
 ## "Big" function to be used in scripts

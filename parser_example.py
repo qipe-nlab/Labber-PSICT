@@ -4,12 +4,20 @@
 
 import Labber
 from Labber import ScriptTools
+import os      # for os.path.join
 
 print(Labber.version)
 
+# Path of reference measurements files
+reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
+# Path for data; if folder does not exist, please manually create it before
+data_path = 'C:\\Users\\qcpi\\Labber\\Data\\test_data'
+
 ## Set up directories and open config file
-ScriptTools.setExePath("path/to/executable")
-labber_MO = ScriptTools.MeasurementObject("reference_file.hdf5", "output_file.hdf5")
+ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
+labber_MO = ScriptTools.MeasurementObject(\
+        os.path.join(reference_path, "sam_test.hdf5"),\
+        os.path.join(data_path, "output_1.hdf5"))
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())
@@ -31,7 +39,7 @@ Parser = InputStrParser()
 Parser.set_MeasurementObject(labber_MO)
 
 ## Apply input
-Parser.set_all(point_values, iter_vars)
+Parser.set_all(point_values, [])
 
 ## Run measurement
 labber_MO.performMeasurement(return_data = False)

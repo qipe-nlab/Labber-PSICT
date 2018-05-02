@@ -412,6 +412,24 @@ class InputStrParser:
         self.target_MO.updateValue(target_string, n_pts, 'N_PTS')
 
 
+    def set_all(self, point_values, iter_list):
+        '''
+        Wrapper method to set all variables for an experiment in one go.
+
+        iter_list must be a list of iteration variables to be set. Even if only one variable is being set, it should still be wrapped as a list.
+        '''
+        ## verify that target MeasurementObject has been specified
+        if self.target_MO == None:
+            print("ERROR: Target MeasurementObject has not been specified! Cannot update values.")
+            return
+
+        ## parse and set point values
+        self.parse_input(point_values)
+        self.update_param_values()
+
+        ## parse and set iteration values
+        for iter_var in iter_list:
+            self.set_iteration_params(iter_var)
 
 ##
 
@@ -430,10 +448,14 @@ class DummyMeasurementObject:
 
 
 
+
+## Kinda-deprecated functions - use InputStrParser object methods instead.
 ## "Big" function to be used in scripts
 def update_values_from_string(param_string_list, labber_measurement_object, instrument_name = None, verbose = False):
     '''
     Updates the values of the specified Labber MeasurementObject using the list of strings passed in.
+
+    NOTE: This function should NOT be used if interaction with the Parser object in the external script is desired. Instead, use the InputStrParser parsing and setting methods directly (or one of the other convenience methods provided for that purpose).
 
     The param_string_list must be of the format:
         [<main config string>, <pulse 1 string>, <pulse 2 string>, ...].

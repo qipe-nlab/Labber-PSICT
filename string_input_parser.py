@@ -40,6 +40,43 @@ params_pulse_config = {
         "o":      str,    # Output
     }
 
+## dict for shortcode conversion
+shortcodes = {
+    ## main
+    "sr":       "Sample rate",
+    "npts":     "Number of points",
+    "delay":    "First pulse delay",
+    "trim":     "Trim waveform to sequence",
+    "nout":     "Number of outputs",
+    "np":       "# of pulses",
+    "ptype":    "Pulse type",
+    "tr":       "Truncation range",
+    "saz":      "Start at zero",
+    "e2e":      "Edge-to-edge pulses",
+    "epos":     "Edge position",
+    "SSB":      "Use SSB mixing",
+    "DRAG":     "Use DRAG",
+    ## additional
+    "dead":     "Dead time",
+    "cf":       "Control frequency",
+    "if":       "IF frequency",
+    ## pulse
+    "a":        "Amplitude",
+    "w":        "Width",
+    "v":        "Plateau",
+    "s":        "Spacing",
+    "p":        "Phase",
+    "f":        "Mod. frequency",
+    "o":        "Output",
+    ## main applied to pulses
+    "IQ":       "Ratio I/Q",
+    "dphi":     "Phase diff.",
+}
+
+## lists of shortcodes for sorting tests
+add_shortcodes = ["dead", "cf", "if"]
+pulseapp_shortcodes = ["IQ", "dphi"]
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ###############################################################################
@@ -63,84 +100,120 @@ convert_out = {"QubitControl": 0, "QubitReadout": 1, "MagnonControl": 2, "Magnon
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## post-processing functionality
-def post_process_params_values(in_main, in_pulse, verbose = False):
+def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose = False):
     '''
-    Defines post-processing operations to be carried out on raw input values.
+    Defines post-processing operations to be carried out on the raw input value of the specified parameter(s); these are carried out on the specified input parameters when the function is called.
+
+    Dependencies are calculated based on stored values within the parserObj (InputStrParser instance). parserObj values are modified in-place; the function also returns the post-processed values of any parameters passed in (but _not_ their potential dependents!) such that this function can be used with iteration variables.
+
+    Currently, any dependencies must be set explicitly in the InputStrParser parserObj (and are not read from the reference file). A warning or error will be raised (don't know which just yet...), and so this may cause undefined behaviour.
 
     Twofold main purpose:
         - Converts more descriptive strings (eg for output channel name)
             into integer switch values
-        - Calculates parameters that should be based on other parameters
+        - Calculates parameters based on specified dependencies
             (eg pulse spacing as a function of pulse width)
 
     - out_main variable names (ie output) must match the variable names on the
         instrument as these will be passed directly to the Labber API
         updateValue methods.
     - Pulses should be referred to by their actual number (starting at 1, not 0).
+    - This function should be called any time parameters are updated, eg setting iteration variables after main variables have already been set.
     '''
     if verbose: print("Beginning post-processing...")
     ## output dicts
-    out_main = {}
-    out_pulse = {}
-    out_add = {}     # additional parameters not passed directly to labber
+    # out_main = {}
+    # out_pulse = {}
+    # out_add = {}     # additional parameters not passed directly to labber
 
     ## main values
-    out_main["Sample rate"] = in_main["sr"]
-    # out_main["Number of points"] = in_main["npts"]
-    out_main["First pulse delay"] = in_main["delay"]*1e-9
-    out_main["Trim waveform to sequence"] = 0 if in_main["trim"] == 0 else 1
-    out_main["Number of outputs"] = convert_nout[in_main["nout"]]
-    out_main["# of pulses"] = in_main["np"] if in_main["np"] <= MAX_PULSES else MAX_PULSES
-    out_main["Pulse type"] = convert_ptype[in_main["ptype"]]
-    out_main["Truncation range"] = in_main["tr"]
-    out_main["Start at zero"] = 0 if in_main["saz"] == 0 else 1
-    out_main["Edge-to-edge pulses"] = 0 if in_main["e2e"] == 0 else 1
-    out_main["Edge position"] = in_main["epos"]
-    out_main["Use SSB mixing"] = 0 if in_main["SSB"] == 0 else 1
-    out_main["Use DRAG"] = 0 if in_main["DRAG"] == 0 else 1
+    if "sr" in in_main:
+        parserObj.main_values_out[shortcodes["sr"]] = in_main["sr"]
+    # parserObj.main_values_out["Number of points"] = in_main["npts"]
+    if "delay" in in_main:
+        parserObj.main_values_out[shortcodes["delay"]] = in_main["delay"]*1e-9   # ns
+    if "trim" in in_main:
+        parserObj.main_values_out[shortcodes["trim"]] = 0 if in_main["trim"] == 0 else 1
+    if "nout" in in_main:
+        parserObj.main_values_out[shortcodes["nout"]] = convert_nout[in_main["nout"]]
+    if "np" in in_main:
+        parserObj.main_values_out[shortcodes["np"]] = in_main["np"] if in_main["np"] <= MAX_PULSES else MAX_PULSES
+    if "ptype" in in_main:
+        parserObj.main_values_out[shortcodes["ptype"]] = convert_ptype[in_main["ptype"]]
+    if "tr" in in_main:
+        parserObj.main_values_out[shortcodes["tr"]] = in_main["tr"]
+    if "saz" in in_main:
+        parserObj.main_values_out[shortcodes["saz"]] = 0 if in_main["saz"] == 0 else 1
+    if "e2e" in in_main:
+        parserObj.main_values_out[shortcodes["e2e"]] = 0 if in_main["e2e"] == 0 else 1
+    if "epos" in in_main:
+        parserObj.main_values_out[shortcodes["epos"]] = in_main["epos"]
+    if "SSB" in in_main:
+        parserObj.main_values_out[shortcodes["SSB"]] = 0 if in_main["SSB"] == 0 else 1
+    if "DRAG" in in_main:
+        parserObj.main_values_out[shortcodes["DRAG"]] = 0 if in_main["DRAG"] == 0 else 1
     ## additional data - not passed directly
-    out_add["Control frequency"] = in_main["cf"]*1e6        # MHz
-    out_add["IF frequency"] = in_main["if"]*1e6             # MHz
-    out_add["LO frequency"] = in_main["cf"] - in_main["if"]
+    if "dead" in in_main:
+        parserObj.add_values_out[shortcodes["dead"]] = in_main["dead"]*1e-9   # ns
+    if "cf" in in_main:
+        parserObj.add_values_out[shortcodes["cf"]] = in_main["cf"]*1e6        # MHz
+    if "if" in in_main:
+        parserObj.add_values_out[shortcodes["if"]] = in_main["if"]*1e6             # MHz
+    if "cf" in in_main and "if" in in_main:
+        parserObj.add_values_out["LO frequency"] = parserObj.add_values_out[shortcodes["cf"]] - parserObj.add_values_out[shortcodes["if"]]
     ## status print
-    if verbose:
-        print("(main) Sample rate:", out_main["Sample rate"])
-        # print("(main) Number of points:", out_main["Number of points"])
-        print("(main) First pulse delay:", out_main["First pulse delay"])
+    # if verbose:
+        # print("(main) Sample rate:", parserObj.main_values_out["Sample rate"])
+        # # print("(main) Number of points:", parserObj.main_values_out["Number of points"])
+        # print("(main) First pulse delay:", parserObj.main_values_out["First pulse delay"])
 
     ## pulse values
-    npulses = len(in_pulse)
-    if verbose: print("(pulse) Number of pulses:", npulses)
-    for pulse_num in range(1,npulses+1):
-        ## init sub-dict for each pulse
-        out_pulse[pulse_num] = {}
+    # npulses = len(in_pulse)
+    # if verbose: print("(pulse) Number of pulses:", npulses)
+    for pulse_num in in_pulses:
+        # print(pulse_num)
+        in_pulse = in_pulses[pulse_num]    # unpacks number, dict from list of lists
 
-        out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["a"]
-        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["w"]*1e-9
-        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["v"]*1e-9
-        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["s"]*1e-9
-        out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["p"]
+        # print(parserObj.pulse_values_out)
+        ## init sub-dict for each pulse if nonexistent
+        if not pulse_num in parserObj.pulse_values_out:
+            parserObj.pulse_values_out[pulse_num] = {}
+
+        if "a" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["a"]] = in_pulse["a"]
+        if "w" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["w"]] = in_pulse["w"]*1e-9  # ns
+        if "v" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["v"]] = in_pulse["v"]*1e-9  # ns
+        if "s" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["s"]] = in_pulse["s"]*1e-9  # ns
+        if "p" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["p"]] = in_pulse["p"]
         ## modulation frequency calculations: potential sideband switching
         ## same sign => same sideband
-        freq_offset = in_pulse[pulse_num]["f"]*1e6      # MHz
-        if out_add["IF frequency"]*(out_add["IF frequency"] + freq_offset) >= 0:
-            out_pulse[pulse_num]["Mod. frequency"] = abs(out_add["IF frequency"] + freq_offset)
-        ## sideband switching
-        else:
-            print("*** WARNING: Specified frequency offset induces a sideband switch for pulse ", pulse_num, "; defaulting to 0.", sep = "")
-            out_pulse[pulse_num]["Mod. frequency"] = abs(out_add["IF frequency"])
+        if "f" in in_pulse:
+            freq_offset = in_pulse["f"]*1e6      # MHz
+            if parserObj.add_values_out[shortcodes["if"]]*(parserObj.add_values_out["IF frequency"] + freq_offset) >= 0:
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"] + freq_offset)
+            ## sideband switching
+            else:
+                print("*** WARNING: Specified frequency offset induces a sideband switch for pulse ", pulse_num, "; defaulting to 0.", sep = "")
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"])
         ##
-        out_pulse[pulse_num]["Output"] = convert_out[in_pulse[pulse_num]["o"]]
+        if "o" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["o"]] = convert_out[in_pulse["o"]]
         ## overall parameters applied to pulses individually
-        out_pulse[pulse_num]["Ratio I/Q"] = in_main["IQ"]
-        out_pulse[pulse_num]["Phase diff."] = in_main["dphi"]
+        if "IQ" in in_main:
+            parserObj.pulse_values_out[pulse_num][shortcodes["IQ"]] = in_main["IQ"]
+        if "dphi" in in_main:
+            parserObj.pulse_values_out[pulse_num][shortcodes["dphi"]] = in_main["dphi"]
 
         ## status print
         if verbose:
-            print("(pulse)", pulse_num, "Amplitude:", out_pulse[pulse_num]["Amplitude"])
-            print("(pulse)", pulse_num, "Width:", out_pulse[pulse_num]["Width"])
-            print("(pulse)", pulse_num, "Plateau:", out_pulse[pulse_num]["Plateau"])
-            print("(pulse)", pulse_num, "Mod. Frequency:", out_pulse[pulse_num]["Mod. frequency"])
+            print("(pulse)", pulse_num, "Amplitude:", parserObj.pulse_values_out[pulse_num]["Amplitude"])
+            print("(pulse)", pulse_num, "Width:", parserObj.pulse_values_out[pulse_num]["Width"])
+            print("(pulse)", pulse_num, "Plateau:", parserObj.pulse_values_out[pulse_num]["Plateau"])
+            print("(pulse)", pulse_num, "Mod. Frequency:", parserObj.pulse_values_out[pulse_num]["Mod. frequency"])
 
     ##
 
@@ -149,15 +222,15 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
 
     ## Number of points from pulse sequence, dead time, and sample rate
     ##   Calculation depends on whether or not pulses are e2e
-    if out_main["Edge-to-edge pulses"]:
-        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Width"] + \
-                out_pulse[xx]["Plateau"] + out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) \
-                + in_main["dead"]*1e-9
+    if parserObj.main_values_out[shortcodes["e2e"]]:
+        total_time = parserObj.main_values_out[shortcodes["delay"]] + sum([parserObj.pulse_values_out[xx][shortcodes["w"]] + \
+                parserObj.pulse_values_out[xx][shortcodes["v"]] + parserObj.pulse_values_out[xx][shortcodes["s"]] for xx in range(1, parserObj.npulses+1)]) \
+                + parserObj.add_values_out[shortcodes["dead"]]
     else:
-        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) + in_main["dead"]*1e-9
+        total_time = parserObj.main_values_out[shortcodes["delay"]] + sum([parserObj.pulse_values_out[xx][shortcodes["s"]] for xx in range(1, parserObj.npulses+1)]) + parserObj.add_values_out[shortcodes["dead"]]
     if verbose: print("Total time for pulse sequence (incl dead time):", str(total_time), "ns")
-    out_main["Number of points"] = int(out_main["Sample rate"]*total_time)
-    if verbose: print("Calculated number of points:", str(out_main["Number of points"]))
+    parserObj.main_values_out["Number of points"] = int(parserObj.main_values_out[shortcodes["sr"]]*total_time)
+    if verbose: print("Calculated number of points:", str(parserObj.main_values_out["Number of points"]))
 
     # # # # # # # # # # # # # # # # #
 
@@ -165,15 +238,39 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     ## complete debug printing
     if verbose:
         print("Main parameters:")
-        print(out_main)
+        print(parserObj.main_values_out)
         print("Pulse parameters:")
-        print(out_pulse)
+        print(parserObj.pulse_values_out)
 
     ## completion status message
     if verbose: print("Post-processing completed.")
 
+    ## get return values corresponding to input params
+    ## main - contains add
+    out_main = {}
+    for param_code in in_main:
+        ## param is part of additional params
+        if param_code in add_shortcodes:
+            out_main[shortcodes[param_code]] = parserObj.add_values_out[shortcodes[param_code]]
+        ## param is main but set for each pulse
+        elif param_code in pulseapp_shortcodes:
+            continue
+        ## param is ordinary main param
+        else:
+            out_main[shortcodes[param_code]] = parserObj.main_values_out[shortcodes[param_code]]
+
+    ## pulse
+    out_pulse = {}
+    # print(in_pulses)
+    for pulse_num in in_pulses:
+        in_pulse_data = in_pulses[pulse_num]
+        pulse_dict = {}
+        for param_code in in_pulse_data:
+            pulse_dict[shortcodes[param_code]] = parserObj.pulse_values_out[pulse_num][shortcodes[param_code]]
+        out_pulse[pulse_num] = pulse_dict
+
     ## output
-    return out_main, out_pulse, out_add
+    return out_main, out_pulse
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -189,6 +286,13 @@ class InputStrParser:
 
         ## number of pulses
         self.npulses = 0
+
+        ## containers for parameter input and output values
+        self.main_values_in = {}
+        self.pulse_values_in = {}
+        self.main_values_out = {}
+        self.pulse_values_out = {}
+        self.add_values_out = {}    # additional parameters of interest not passed directly to Labber
 
         ## set main config dict (at beginning of this file)
         self.set_main_config(params_main_config)
@@ -245,8 +349,8 @@ class InputStrParser:
 
 
         ## parse main config values
-        input_values_main = self.parse_param_tuples(params_main_tuples, self.main_config)
-        if verbose: print(input_values_main)
+        self.main_values_in = self.parse_param_tuples(params_main_tuples, self.main_config)
+        if verbose: print("Main input value dict:\n", self.main_values_in, sep="")
 
 
         ## extract number of pulses from input
@@ -254,7 +358,7 @@ class InputStrParser:
         if verbose: print("Number of pulses (from input string length):", self.npulses)
         ## Compare number of pulses specified in main input string to number of pulses
         ##      calculated from length of input string. Also compare both to MAX_PULSES
-        if self.npulses != input_values_main["np"]:
+        if self.npulses != self.main_values_in["np"]:
             print("*** WARNING: Mismatch between number of pulses specified in main config (", \
                     str(input_values_main["np"]), ") and number of pulses calculated from input string (", \
                     str(self.npulses), ").\nValue based on input string will take precedence, but this may cause undesired behaviour.\n***", sep = "")
@@ -263,38 +367,40 @@ class InputStrParser:
                     ") exceeds the maximum number of pulses allowed by the driver (", str(MAX_PULSES), \
                     ").\nThe pulse config specifications will be truncated to ", str(MAX_PULSES), \
                     ", but note that undesired behaviour may occur.\n***", sep = "")
-        if input_values_main["np"] > MAX_PULSES:
+        if self.main_values_in["np"] > MAX_PULSES:
             print("*** WARNING: The number of pulses specified in the main config string (", str(input_values_main["np"]),\
                     ") exceeds the maximum number of pulses allowed by the driver (", str(MAX_PULSES), \
                     ").\nThe value passed to Labber will be set to ", str(MAX_PULSES), \
                     ", but note that undesired behaviour may occur.\n***", sep = "")
 
-        input_values_pulse = {}
+        # self.pulse_values_in = {}       # now created at init
         ## iterate through params for each pulse, parsing values
         for pulse_ix in range(self.npulses):
             pulse_num = pulse_ix + 1  # pulse numbering begins at 1
 
             ## extract relevant input param tuples from all input param tuples
             pulse_param_tuples = params_pulse_tuples[pulse_ix*self.pulse_config_nparams:(pulse_ix+1)*self.pulse_config_nparams]
-            if verbose: print(pulse_param_tuples)
+            # if verbose: print("Pulse ", str(pulse_num), " parameter tuples:\n", pulse_param_tuples, sep="")
 
             ## parse input param tuples
             input_vals = self.parse_param_tuples(pulse_param_tuples, self.pulse_config)
-            if verbose: print(input_vals)
+            # if verbose: print("Pulse ", str(pulse_num), " input values:\n", input_vals, sep="")
 
             ## add to dict
-            input_values_pulse[pulse_num] = input_vals
+            self.pulse_values_in[pulse_num] = input_vals
 
-        if verbose: print(input_values_pulse)
+        if verbose: print("Pulse input value dict:\n", input_values_pulse, sep="")
 
         ## post-processing based on user-defined rules
-        self.main_values, self.pulse_values, self.add_values = post_process_params_values(input_values_main, input_values_pulse, verbose = verbose)
+        # self.main_values, self.pulse_values, self.add_values = post_process_params_values(input_values_main, input_values_pulse, verbose = verbose)
+        post_process_params_values(self, self.main_values_in, self.pulse_values_in, verbose = verbose)
+
 
         if verbose:
             print("Main values stored in InputStrParser class:")
-            print(self.main_values)
+            print(self.main_values_out)
             print("Pulse values stored in InputStrParser class:")
-            print(self.pulse_values)
+            print(self.pulse_values_out)
 
 
 
@@ -349,10 +455,10 @@ class InputStrParser:
         ## update main config values
         if verbose: print("Updating main config values...")
         # print(self.main_values)
-        for main_param in self.main_values:
+        for main_param in self.main_values_out:
             # print(main_param, self.main_values[main_param])
             target_string = " - ".join([self.target_name, main_param])
-            self.target_MO.updateValue(target_string, self.main_values[main_param], 'SINGLE')
+            self.target_MO.updateValue(target_string, self.main_values_out[main_param], 'SINGLE')
         if verbose: print("Main config values updated.")
 
         ## reset pulse amplitudes to ensure no leftovers from previous experiments
@@ -368,7 +474,7 @@ class InputStrParser:
         if verbose: print("Updating pulse config values...")
         for pulse_num in range(1,1+min(self.npulses, MAX_PULSES)):
             if verbose: print("Updating values for pulse", str(pulse_num))
-            param_vals = self.pulse_values[pulse_num]
+            param_vals = self.pulse_values_out[pulse_num]
             for param_name in param_vals:
                 target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
                 self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
@@ -381,7 +487,7 @@ class InputStrParser:
         '''
         Parse input for variable iteration, and set the corresponding Labber MeasurementObject values.
 
-        Note that currently long parameter names must be used, eg "Amplitude" instead of "a".
+        Note that shortcodes should be used to specify the parameter name.
 
         Input arg must be a list of the format:
         [<pulse>, <param>, <start value>, <end value>, <npts>]
@@ -396,19 +502,43 @@ class InputStrParser:
         if verbose: print("Parsing iteration spec input...")
 
         pulse_num = iteration_input[0]
-        param_name = iteration_input[1]
-        start_value = iteration_input[2]
-        stop_value = iteration_input[3]
+        param_code = iteration_input[1]
+        start_value_in = iteration_input[2]
+        stop_value_in = iteration_input[3]
         n_pts = iteration_input[4]
 
-        ## main parameter config
+        ## do post-processing on start and stop values
+        param_name = shortcodes[param_code]
+        ## main value
+        if pulse_num == 0:
+            ## check if parameter is in additional or pulse-specific shortcodes
+            if param_code in pulseapp_shortcodes or param_code in add_shortcodes:
+                ## not sure how best to handle this right now; probably not needed
+                print("*** ERROR No implementation for pulse-applied or additional parameters.")
+                return
+            ## parameter is a valid main parameter
+            else:
+                start_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: start_value_in})
+                start_value_out = start_out[param_name]
+                stop_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: stop_value_in})
+                stop_value_out = stop_out[param_name]
+        ## pulse value
+        else:
+            main_placeholder, start_out = post_process_params_values(self, in_pulses = {pulse_num: {param_code: start_value_in}})
+            start_value_out = start_out[pulse_num][param_name]
+            main_placeholder, stop_out = post_process_params_values(self, in_pulses = {pulse_num: {param_code: stop_value_in}})
+            stop_value_out = stop_out[pulse_num][param_name]
+        ## set up target string
+        ## main
         if pulse_num == 0:
             target_string = "".join([self.target_name, " - ", param_name])
-        ## pulse parameter config
+        ## pulse
         else:
             target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
-        self.target_MO.updateValue(target_string, start_value, 'START')
-        self.target_MO.updateValue(target_string, stop_value, 'STOP')
+
+        ## update values
+        self.target_MO.updateValue(target_string, start_value_out, 'START')
+        self.target_MO.updateValue(target_string, stop_value_out, 'STOP')
         self.target_MO.updateValue(target_string, n_pts, 'N_PTS')
 
 

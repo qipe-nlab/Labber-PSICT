@@ -10,8 +10,8 @@
 params_main_config = {
         "sr":     float,  # sample rate
         # "npts":   float,  # number of points - calculated from dead, sr, and pulse sequence
-        "dead":   float,  # Dead time (relaxation of qubit after pulse sequence)
-        "delay":  float,  # first pulse delay
+        "dead":   float,  # Dead time (relaxation of qubit after pulse sequence) in ns
+        "delay":  float,  # first pulse delay in ns
         "trim":   int,    # Trim waveform to sequence (bool)
         "nout":   int,    # number of outputs
         "np":     int,    # number of pulses
@@ -26,17 +26,17 @@ params_main_config = {
         "IQ":     float,  # I/Q ratio
         "dphi":   float,  # Phase diff.
         ## IF/Control frequency specification
-        "cf":     float,  # Control frequency
-        "if":     float,  # IF frequency (to be modulated by Mod. freq)
+        "cf":     float,  # Control frequency in MHz
+        "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
     }
 
 params_pulse_config = {
         "a":      float,  # Amplitude
-        "w":      float,  # Width
-        "v":      float,  # Plateau
-        "s":      float,  # Spacing
+        "w":      float,  # Width in ns
+        "v":      float,  # Plateau in ns
+        "s":      float,  # Spacing in ns
         "p":      float,  # Phase
-        "f":      float,  # Mod. frequency (offset from IF frequency)
+        "f":      float,  # Mod. frequency (offset from IF frequency) in MHz
         "o":      str,    # Output
     }
 
@@ -87,7 +87,7 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     ## main values
     out_main["Sample rate"] = in_main["sr"]
     # out_main["Number of points"] = in_main["npts"]
-    out_main["First pulse delay"] = in_main["delay"]
+    out_main["First pulse delay"] = in_main["delay"]*1e-9
     out_main["Trim waveform to sequence"] = 0 if in_main["trim"] == 0 else 1
     out_main["Number of outputs"] = convert_nout[in_main["nout"]]
     out_main["# of pulses"] = in_main["np"] if in_main["np"] <= MAX_PULSES else MAX_PULSES
@@ -116,9 +116,9 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
         out_pulse[pulse_num] = {}
 
         out_pulse[pulse_num]["Amplitude"] = in_pulse[pulse_num]["a"]
-        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["w"]
-        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["v"]
-        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["s"]
+        out_pulse[pulse_num]["Width"] = in_pulse[pulse_num]["w"]*1e-9
+        out_pulse[pulse_num]["Plateau"] = in_pulse[pulse_num]["v"]*1e-9
+        out_pulse[pulse_num]["Spacing"] = in_pulse[pulse_num]["s"]*1e-9
         out_pulse[pulse_num]["Phase"] = in_pulse[pulse_num]["p"]
         ## modulation frequency calculations: potential sideband switching
         ## same sign => same sideband
@@ -152,11 +152,11 @@ def post_process_params_values(in_main, in_pulse, verbose = False):
     if out_main["Edge-to-edge pulses"]:
         total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Width"] + \
                 out_pulse[xx]["Plateau"] + out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) \
-                + in_main["dead"]
+                + in_main["dead"]*1e-9
     else:
-        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) + in_main["dead"]
+        total_time = out_main["First pulse delay"] + sum([out_pulse[xx]["Spacing"] for xx in range(1, npulses+1)]) + in_main["dead"]*1e-9
     if verbose: print("Total time for pulse sequence (incl dead time):", str(total_time), "ns")
-    out_main["Number of points"] = int(out_main["Sample rate"]*total_time*1e-9)
+    out_main["Number of points"] = int(out_main["Sample rate"]*total_time)
     if verbose: print("Calculated number of points:", str(out_main["Number of points"]))
 
     # # # # # # # # # # # # # # # # #

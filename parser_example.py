@@ -11,13 +11,13 @@ print(Labber.version)
 # Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 # Path for data; if folder does not exist, please manually create it before
-data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0504'
+data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0507'
 
 ## Set up directories and open config file
 ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
         os.path.join(reference_path, "unit_tests.hdf5"),\
-        os.path.join(data_path, "ut_out_016.hdf5"))
+        os.path.join(data_path, "ut_out_017.hdf5"))
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())

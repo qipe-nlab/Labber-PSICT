@@ -4,6 +4,7 @@
 
 import os      # for checking if output file exists in InputStrParser.set_MeasurementObject
 import sys     # for sys.exit
+import re      # for filename parsing for sequential incrementation
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
@@ -275,6 +276,120 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+###############################################################################
+
+## output filepath-related functions
+
+def get_valid_out_file(path_in, user_input = True, default_attempt_increment = False, verbose = False, MAX_INCREMENT_ATTEMPTS = 1000):
+    '''
+    Get a "valid" output filepath (ie a log file that does not exist) based on the input filepath path_in. Returns None if a valid filepath cannot be obtained.
+
+    If path_in does not point to an existing file, the path is valid and so is returned as-is.
+
+    If path_in points to an existing file,
+        - setting the user_input flag will allow the user to decide whether or not to attempt to increment the filename, and
+        - setting the default_attempt_increment flag will (if user_input is False) result in alwayus attempting to increment the filename.
+
+    If possible, the filename increment is carried out using increment_filename(), and this is done repeatedly (up to MAX_INCREMENT_ATTEMPTS) until the filename is valid (the specified file does not exist) or the incrementing procedure fails for some reason.
+
+    TODO: implement with proper exception handling at some stage.
+    '''
+    flag_increment = False       # set through args or input if incrementation attempt is desired
+    ## check if file already exists
+    if verbose: print("Verifying file:", path_in)
+    if not os.path.isfile(path_in):
+        ## file does not exist; set new path to input path as-is
+        path_new = path_in
+    else:
+        ## file already exists
+        if verbose: print("The file", path_in, "already exists.")
+        if user_input:
+            ## ask for user input about attempting increment
+            print("The file", path_in, "already exists; attempt to increment?")
+            user_response = input("[Y/n]")
+            if user_response == "" or user_response.lower() == "y":
+                ##
+                if verbose: print("Incrementing filename enabled...")
+                flag_increment = True
+            else:
+                ## user denied incrementation attempt; return None.
+                return None
+        else:
+            ## no user input - check for default incrementation attempt
+            if default_attempt_increment:
+                ## attempt incrementation by default
+                flag_increment = True
+            else:
+                ## do not attempt to increment; return None.
+                return None
+    ## attempt to increment the filename
+    if flag_increment:
+        if verbose: print("Attempting to increment file name...")
+        n_attempts = 0
+        path_new = path_in
+        while os.path.isfile(path_new):
+            print("File", path_new, "exists; incrementing...")   # always prints; could be removed?
+            try:
+                ## TODO implement with proper exception handling
+                path_new = increment_filename(path_new)
+            except:
+                ## could not increment path!
+                if verbose: print("Could not increment path", path_new)
+                return None
+            finally:
+                n_attempts = n_attempts + 1
+            if n_attempts > MAX_INCREMENT_ATTEMPTS:
+                ## failure by number of attempts
+                print("ERROR: number of attempts to increment is more than", MAX_INCREMENT_ATTEMPTS)
+                return None
+
+    ## return new path (can be same as old path)
+    if verbose: print("The file", path_new, "is a valid output file.")
+    return path_new
+
+
+def increment_filename(fpath):
+    '''
+    Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the full path provided initially.
+
+    TODO: Implement with proper exception handling at some stage.
+    '''
+    ## extract the file name while preserving other elements for reconstruction
+    path_split = os.path.split(os.path.normpath(fpath))   # split path into head and filename
+    path_head = path_split[0]                             # assign head for reconstruction
+    fname_split = path_split[1].split('.')                # split file name and extension
+    if len(fname_split) < 2:                              # file extension specified incorrectly - TODO exception handling...
+        print("ERROR: no extension has been provided!")
+        return                                            # return none for error
+    fname_name = fname_split[0]                           # file name
+    fname_ext = fname_split[1]                            # assign extension for reconstruction
+
+    ## split the file name into a head and sequential id
+    fname_name_split = re.split(r'(\d+$)', fname_name)    # split by int searching from back
+    if len(fname_name_split) < 2:                         # could not split properly - TODO exception handling...
+        print("ERROR: Could not split filename according to sequential id!")
+        return                                            # return none for error
+    fname_name_head = fname_name_split[0]
+    fname_name_id = fname_name_split[1]
+
+    ## increment the id
+    new_id = increment_string(fname_name_id)
+
+    ## put path back together
+    new_fname = "".join([fname_name_head, new_id, '.', fname_ext])
+    new_path = os.path.join(path_head, new_fname)
+
+    return new_path
+
+def increment_string(str_in):
+    '''
+    Increment a string, preserving leading zerosself.
+
+    eg "00567" -> "00568"
+    '''
+    return str(int(str_in)+1).zfill(len(str_in))
+
+###############################################################################
 
 class InputStrParser:
 
@@ -444,14 +559,18 @@ class InputStrParser:
         if verbose: print("Measurement object set as:", self.target_MO)
         self.target_name = target_instrument_name
 
-        ## check if output file already exists
+        ## check if output file already exists, and either get new filename or exit script
         file_MO_out = self.target_MO.sCfgFileOut
-        if verbose: print("The output path specified is\n", file_MO_out, sep = "")
-        if os.path.isfile(file_MO_out):
-            errmsg = "".join(["The output file\n\t", file_MO_out, "\nalready exists; execution halted to prevent appending data."])
-            sys.exit(errmsg)
+        new_file_MO_out = get_valid_out_file(file_MO_out, verbose = verbose)
+        ## TODO: implement with proper exception handling at some stage (probably not very urgent...)
+        if new_file_MO_out is None:
+            ## unable to get valid file name; exit script
+            sys.exit("Unable to get valid output file.")
         else:
-            if verbose: print("Output file does not already exist, continuing...")
+            ## set filename again (can be the same if original filename was valid)
+            print("Output file:", new_file_MO_out)
+            self.target_MO.setOutputFile(new_file_MO_out)
+
 
 
     def update_param_values(self, verbose = False):

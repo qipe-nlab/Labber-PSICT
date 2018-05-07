@@ -18,7 +18,7 @@ data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0507'
 ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
         os.path.join(reference_path, "unit_tests.hdf5"),\
-        os.path.join(data_path, "ut_out_021.hdf5"))
+        os.path.join(data_path, "test_inv"))
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())
@@ -33,12 +33,12 @@ point_values = [
 iter_var_1 = [1, "a", 0.0, 1.0, 6]
 iter_var_2 = [0, "delay", 200, 500, 6]
 iter_var_3 = [2, "s", 100, 400, 6]
-iter_vars = [iter_var_1, iter_var_2, iter_var_3]
+iter_vars = [iter_var_1]
 # labber_dummy = DummyMeasurementObject() # dummy MeasurementObject for debugging
 
 ## Set up InputStrParser object
 Parser = InputStrParser()
-Parser.set_MeasurementObject(labber_MO, verbose = True)
+Parser.set_MeasurementObject(labber_MO, verbose = False)
 
 ## Apply input
 Parser.set_all(point_values, iter_vars)

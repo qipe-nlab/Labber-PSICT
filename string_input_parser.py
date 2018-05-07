@@ -2,7 +2,8 @@
 ## Author:         Sam Wolski
 ## Date modified:  2018/04/13
 
-
+import os      # for checking if output file exists in InputStrParser.set_MeasurementObject
+import sys     # for sys.exit
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
@@ -433,13 +434,25 @@ class InputStrParser:
         return param_values
 
 
-    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "Single-Qubit Pulse Generator"):
+    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "Single-Qubit Pulse Generator", verbose = False):
         '''
         Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "Single-Qubit Pulse Generator").
+
+        This method checks whether or not the file path specified for output at the MeasurementObject already exists, and, if so, exits the program in order to prevent appending data to an existing log file. If the file does not already exist, execution continues.
         '''
         self.target_MO = target_MeasurementObject
-        print("Measurement object set as:", self.target_MO)
+        if verbose: print("Measurement object set as:", self.target_MO)
         self.target_name = target_instrument_name
+
+        ## check if output file already exists
+        file_MO_out = self.target_MO.sCfgFileOut
+        if verbose: print("The output path specified is\n", file_MO_out, sep = "")
+        if os.path.isfile(file_MO_out):
+            errmsg = "".join(["The output file\n\t", file_MO_out, "\nalready exists; execution halted to prevent appending data."])
+            sys.exit(errmsg)
+        else:
+            if verbose: print("Output file does not already exist, continuing...")
+
 
     def update_param_values(self, verbose = False):
         '''
@@ -564,7 +577,8 @@ class InputStrParser:
 ##
 
 class DummyMeasurementObject:
-    def __init__(self, silent_mode = False):
+    def __init__(self, sCfgFileOut = "", silent_mode = False):
+        self.sCfgFileOut = sCfgFileOut
         self.silent_mode = silent_mode
 
     def updateValue(self, target_string, value, value_spec):

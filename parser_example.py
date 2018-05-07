@@ -4,9 +4,10 @@
 
 import Labber
 from Labber import ScriptTools
-import os      # for os.path.join
+import os      # for os.path.join() and os.path.isfile()
+import sys     # for sys.exit()
 
-print(Labber.version)
+# print(Labber.version)
 
 # Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
@@ -18,6 +19,18 @@ ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
         os.path.join(reference_path, "unit_tests.hdf5"),\
         os.path.join(data_path, "ut_out_017.hdf5"))
+
+## quick implementation in main file to check functionality
+file_MO_out = labber_MO.sCfgFileOut
+print("The output path specified is\n", file_MO_out, sep = "")
+## check if output file already exists
+flag_outfile_exists = os.path.isfile(file_MO_out)
+if flag_outfile_exists:
+    errmsg = "".join(["The output file\n\t", file_MO_out, "\nalready exists; execution halted to prevent appending data."])
+    sys.exit(errmsg)
+else:
+    print("Output file does not already exist, continuing...")
+sys.exit("Exit before code is actually run.")
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())

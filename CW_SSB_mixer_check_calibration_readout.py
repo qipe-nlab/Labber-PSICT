@@ -119,3 +119,5 @@ axes.plot(IF_frequency_list, sb_suppression_list, '-o')
 axes.set_xlabel('IF frequency (MHz)')
 axes.set_ylabel('Isolation and suppresion (dB)')
 fig.savefig(data_path + '\\' + calibration_result_filename + '_result.png', bbox_inches='tight')
+
+## this is a redundant comment

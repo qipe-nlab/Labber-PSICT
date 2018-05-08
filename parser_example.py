@@ -4,9 +4,10 @@
 
 import Labber
 from Labber import ScriptTools
-import os      # for os.path.join
+import os      # for os.path.join() and os.path.isfile()
+import sys     # for sys.exit()
 
-print(Labber.version)
+# print(Labber.version)
 
 # Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
@@ -17,7 +18,7 @@ data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0507'
 ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
         os.path.join(reference_path, "unit_tests.hdf5"),\
-        os.path.join(data_path, "ut_out_017.hdf5"))
+        os.path.join(data_path, "ut_out_023.hdf5"))
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())
@@ -29,15 +30,15 @@ point_values = [
     "a_300e-3   w_400   v_0    s_11  p_0  f_-20   o_QubitControl",
     "a_600e-3   w_400   v_0    s_0   p_0  f_-300  o_QubitControl",
 ]
-iter_var_1 = [1, "a", 0.0, 1.0, 11]
-iter_var_2 = [0, "delay", 200, 500, 6]
-iter_var_3 = [2, "s", 100, 400, 11]
+iter_var_1 = [1, "a", 0.0, 0.5, 6]
+iter_var_2 = [0, "delay", 200, 500, 3]
+iter_var_3 = [2, "f", -300, 0, 11]
 iter_vars = [iter_var_1, iter_var_2, iter_var_3]
 # labber_dummy = DummyMeasurementObject() # dummy MeasurementObject for debugging
 
 ## Set up InputStrParser object
 Parser = InputStrParser()
-Parser.set_MeasurementObject(labber_MO)
+Parser.set_MeasurementObject(labber_MO, verbose = False)
 
 ## Apply input
 Parser.set_all(point_values, iter_vars)

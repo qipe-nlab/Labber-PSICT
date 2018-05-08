@@ -18,7 +18,7 @@ data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0507'
 ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
         os.path.join(reference_path, "unit_tests.hdf5"),\
-        os.path.join(data_path, "test_inv"))
+        os.path.join(data_path, "ut_out_023.hdf5"))
 
 ## Run string_input_parser.py
 exec(open("string_input_parser.py").read())

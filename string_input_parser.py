@@ -280,9 +280,11 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
 
 ## output filepath-related functions
 
-def get_valid_out_file(path_in, user_input = True, default_attempt_increment = False, verbose = False, MAX_INCREMENT_ATTEMPTS = 1000):
+def get_valid_out_file(path_in, user_input = True, default_attempt_increment = False, file_ext = "hdf5", MAX_INCREMENT_ATTEMPTS = 1000, verbose = False):
     '''
     Get a "valid" output filepath (ie a log file that does not exist) based on the input filepath path_in. Returns None if a valid filepath cannot be obtained.
+
+    First, the file extension is checked. As Labber will automatically append ".hdf5" if an otherwise-invalid extension is given, this would cause potential data appending if the input filename extension is not kosher. To rectify this, the extension file_ext (default ".hdf5") replaces the given extension if they are not already equal. (This is done before checking if the path points to an existing file)
 
     If path_in does not point to an existing file, the path is valid and so is returned as-is.
 
@@ -295,8 +297,16 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
     TODO: implement with proper exception handling at some stage.
     '''
     flag_increment = False       # set through args or input if incrementation attempt is desired
-    ## check if file already exists
     if verbose: print("Verifying file:", path_in)
+    ## check extension (resolves extension issues as Labber automatically saves with hdf5)
+    head, ext = os.path.splitext(os.path.normpath(path_in))
+    if ext == file_ext:
+        pass     # do nothing, path is correct
+    else:
+        ## change file extension to file_ext parameter
+        path_in = os.path.join(head+"."+file_ext)
+        print("The extension-corrected filepath is", path_in)
+    ## Check if file already exists
     if not os.path.isfile(path_in):
         ## file does not exist; set new path to input path as-is
         path_new = path_in
@@ -306,18 +316,20 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
         if user_input:
             ## ask for user input about attempting increment
             print("The file", path_in, "already exists; attempt to increment?")
-            user_response = input("[Y/n]")
-            if user_response == "" or user_response.lower() == "y":
+            user_response = input("[Y/n] ")
+            if user_response == "" or user_response.lower()[0] == "y":
                 ##
-                if verbose: print("Incrementing filename enabled...")
+                if verbose: print("User permitted incrementation.")
                 flag_increment = True
             else:
                 ## user denied incrementation attempt; return None.
+                print("User denied incrementation.")
                 return None
         else:
             ## no user input - check for default incrementation attempt
             if default_attempt_increment:
                 ## attempt incrementation by default
+                print("Incrementing by default.")
                 flag_increment = True
             else:
                 ## do not attempt to increment; return None.

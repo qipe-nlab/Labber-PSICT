@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+## sample script to modify hdf5 config files directly
+## provided by Dr Simon Gustavsson of Labber
+
 import os
 import h5py
 
@@ -9,8 +10,8 @@ with h5py.File(file_name, 'r+') as f:
     print('Keys available:')
     print(f['Step list'].dtype.fields.keys())
     print()
-    
-    # print settings for first step item    
+
+    # print settings for first step item
     print('Current settings of first step item')
     entry = f['Step list'][0]
     print(entry)
@@ -21,7 +22,6 @@ with h5py.File(file_name, 'r+') as f:
     entry['use_relations'] = True
     f['Step list'][0]= entry
 
-    # print settings for first step item    
+    # print settings for first step item
     print('New settings of first step item')
     print('Relations in use: ',f['Step list'][0]['use_relations'])
-    

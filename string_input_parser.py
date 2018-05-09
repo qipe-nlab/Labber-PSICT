@@ -5,6 +5,7 @@
 import os      # for checking if output file exists in InputStrParser.set_MeasurementObject
 import sys     # for sys.exit
 import re      # for filename parsing for sequential incrementation
+import h5py    # for direct editing of hdf5 files to modify iteration parameter order
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
@@ -403,6 +404,37 @@ def increment_string(str_in):
 
 ###############################################################################
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+## Iteration-ordering-related functions for hdf5 direct editing
+
+def swap_items_by_index(container, index_1, index_2):
+    '''
+    Swap two items in the container by specifying their indices.
+    '''
+    temp = container[index_1]
+    container[index_1] = container[index_2]
+    container[index_2] = temp
+
+def sort_step_entries(fconfig, param_order):
+     '''
+     This is a docstring...
+     '''
+     index_counter = 0
+     for param_name in param_order:
+         ## generate list of param names in order they currently appear
+         current_param_order = [xx[0] for xx in fconfig['Step list'].value]
+         ## get index of desired param name in current order
+         param_index = current_param_order.index(param_name)
+         ## swap current param with that at index_counter
+         swap_items_by_index(fconfig['Step list'], index_counter, param_index)
+         ## increment index counter
+         index_counter = index_counter + 1
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 class InputStrParser:
 
     def __init__(self):
@@ -448,6 +480,19 @@ class InputStrParser:
         Set the total number of pulses to be sent out.
         '''
         self.npulses = npulses
+
+    def get_full_name(self, param_code, pulse_num = 0):
+        '''
+        Return the full name of a parameter setting from the specified shortcode and pulse number.
+        '''
+        if not self.target_name:
+            print("WARNING: Attempted to fetch full name of parameter with no target instrument set; None returned.")
+            return
+        if pulse_num == 0:
+            target_string = "".join([self.target_name, " - ", shortcodes[param_code]])
+        else:
+            target_string = "".join([self.target_name, " - ", shortcodes[param_code], " #", str(pulse_num)])
+        return target_string
 
 
     def parse_input(self, input_str_list, verbose = False):
@@ -587,7 +632,7 @@ class InputStrParser:
 
     def update_param_values(self, verbose = False):
         '''
-        Update the parameter values of the target Labber MeasurementObject.
+        Update the parameter values of the target Labber MeasurementObject for single-valued (ie not iterated) parameters.
         '''
         ## verify that target MeasurementObject has been specified
         if self.target_MO == None:
@@ -685,6 +730,23 @@ class InputStrParser:
         self.target_MO.updateValue(target_string, stop_value_out, 'STOP')
         self.target_MO.updateValue(target_string, n_pts, 'N_PTS')
 
+    def order_iteration_params(self, iter_spec_list, verbose = False):
+        '''
+        This is a docstring...
+        '''
+        ## extract (ordered) full parameter names
+        param_order_list = []
+        for iter_spec in iter_spec_list:
+            param_order_list.append(self.get_full_name(iter_spec[1], iter_spec[0]))
+        if verbose: print("Desired parameter order extracted from iteration spec.")
+
+        ## open reference config file and shift order around
+        if verbose: print("Re-ordering iteration parameters in config file...")
+        index_counter = 0     # tracks index which list item must be swapped to
+        if verbose: print("Reference file:", self.target_MO.sCfgFileIn)
+        with h5py.File(self.target_MO.sCfgFileIn, 'r+') as fconfig:
+            sort_step_entries(fconfig, param_order_list)
+        if verbose: print("Re-ordering of iteration parameters completed.")
 
     def set_all(self, point_values, iter_list):
         '''
@@ -704,6 +766,9 @@ class InputStrParser:
         ## parse and set iteration values
         for iter_var in iter_list:
             self.set_iteration_params(iter_var)
+
+        ## set correct order for iteration values
+        self.order_iteration_params(iter_list)
 
 ##
 

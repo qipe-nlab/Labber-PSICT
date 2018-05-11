@@ -7,6 +7,7 @@ import sys              # for sys.exit
 import re               # for filename parsing for sequential incrementation
 import h5py             # for direct editing of hdf5 files to modify iteration parameter order
 import numpy as np      # for working directly with h5py datasets
+import shutil           # for manipulating copies of the input reference config file
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
@@ -304,9 +305,18 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
 
 ###############################################################################
 
-## output filepath-related functions
+## output filepath-related constants and functions
 
-def get_valid_out_file(path_in, user_input = True, default_attempt_increment = False, file_ext = "hdf5", MAX_INCREMENT_ATTEMPTS = 1000, verbose = False):
+REFERENCE_COPY_POSTFIX = "__copy"     # file name postfix used for denoting copy of template reference file
+CONFIG_FILE_EXTENSION = "hdf5"        # file extension used for database files
+
+def full_path(file_path, file_name, file_extension = CONFIG_FILE_EXTENSION):
+    '''
+    Generate a full path from a given file path, file name, and file extension.
+    '''
+    return os.path.join(file_path, "".join([file_name, ".", file_extension]))
+
+def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_increment = False, MAX_INCREMENT_ATTEMPTS = 1000, verbose = False):
     '''
     Get a "valid" output filepath (ie a log file that does not exist) based on the input filepath path_in. Returns None if a valid filepath cannot be obtained.
 
@@ -323,25 +333,18 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
     TODO: implement with proper exception handling at some stage.
     '''
     flag_increment = False       # set through args or input if incrementation attempt is desired
-    if verbose: print("Verifying file:", path_in)
-    ## check extension (resolves extension issues as Labber automatically saves with hdf5)
-    head, ext = os.path.splitext(os.path.normpath(path_in))
-    if ext == file_ext:
-        pass     # do nothing, path is correct
-    else:
-        ## change file extension to file_ext parameter
-        path_in = os.path.join(head+"."+file_ext)
-        print("The extension-corrected filepath is", path_in)
+    file_in = full_path(path_in, fname_in)
+    if verbose: print("Verifying file:", file_in)
     ## Check if file already exists
-    if not os.path.isfile(path_in):
-        ## file does not exist; set new path to input path as-is
-        path_new = path_in
+    if not os.path.isfile(file_in):
+        ## file does not exist; set new fname to input fname as-is
+        fname_new = fname_in
     else:
         ## file already exists
-        if verbose: print("The file", path_in, "already exists.")
+        if verbose: print("The file", file_in, "already exists.")
         if user_input:
             ## ask for user input about attempting increment
-            print("The file", path_in, "already exists; attempt to increment?")
+            print("The file", file_in, "already exists; attempt to increment?")
             user_response = input("[Y/n] ")
             if user_response == "" or user_response.lower()[0] == "y":
                 ##
@@ -364,15 +367,17 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
     if flag_increment:
         if verbose: print("Attempting to increment file name...")
         n_attempts = 0
-        path_new = path_in
-        while os.path.isfile(path_new):
-            print("File", path_new, "exists; incrementing...")   # always prints; could be removed?
+        fname_new = fname_in
+        file_new = full_path(path_in, fname_new)
+        while os.path.isfile(file_new):
+            print("File", file_new, "exists; incrementing...")   # always prints; could be removed?
             try:
                 ## TODO implement with proper exception handling
-                path_new = increment_filename(path_new)
+                fname_new = increment_filename(fname_new)
+                file_new = full_path(path_in, fname_new)
             except:
                 ## could not increment path!
-                if verbose: print("Could not increment path", path_new)
+                if verbose: print("Could not increment filename", fname_new)
                 return None
             finally:
                 n_attempts = n_attempts + 1
@@ -382,42 +387,31 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
                 return None
 
     ## return new path (can be same as old path)
-    if verbose: print("The file", path_new, "is a valid output file.")
-    return path_new
+    if verbose: print("The file", file_new, "is a valid output file.")
+    return fname_new
 
 
-def increment_filename(fpath):
+def increment_filename(fname_in):
     '''
-    Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the full path provided initially.
+    Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the new filename.
 
     TODO: Implement with proper exception handling at some stage.
     '''
-    ## extract the file name while preserving other elements for reconstruction
-    path_split = os.path.split(os.path.normpath(fpath))   # split path into head and filename
-    path_head = path_split[0]                             # assign head for reconstruction
-    fname_split = path_split[1].split('.')                # split file name and extension
-    if len(fname_split) < 2:                              # file extension specified incorrectly - TODO exception handling...
-        print("ERROR: no extension has been provided!")
-        return                                            # return none for error
-    fname_name = fname_split[0]                           # file name
-    fname_ext = fname_split[1]                            # assign extension for reconstruction
-
     ## split the file name into a head and sequential id
-    fname_name_split = re.split(r'(\d+$)', fname_name)    # split by int searching from back
-    if len(fname_name_split) < 2:                         # could not split properly - TODO exception handling...
+    fname_split = re.split(r'(\d+$)', fname_in)    # split by int searching from back
+    if len(fname_split) < 2:                         # could not split properly - TODO exception handling...
         print("ERROR: Could not split filename according to sequential id!")
         return                                            # return none for error
-    fname_name_head = fname_name_split[0]
-    fname_name_id = fname_name_split[1]
+    fname_head = fname_split[0]
+    fname_id = fname_split[1]
 
     ## increment the id
-    new_id = increment_string(fname_name_id)
+    new_id = increment_string(fname_id)
 
     ## put path back together
-    new_fname = "".join([fname_name_head, new_id, '.', fname_ext])
-    new_path = os.path.join(path_head, new_fname)
+    new_fname = "".join([fname_head, new_id])
 
-    return new_path
+    return new_fname
 
 def increment_string(str_in):
     '''
@@ -426,6 +420,64 @@ def increment_string(str_in):
     eg "00567" -> "00568"
     '''
     return str(int(str_in)+1).zfill(len(str_in))
+
+
+##################
+
+class FileManager:
+
+    def __init__(self, reference_template_dir, reference_template_fname, output_dir, output_fname):
+        ## parse input spec
+        self.template_dir = reference_template_dir
+        self.template_fname = reference_template_fname
+        self.output_dir = output_dir
+        self.output_fname = output_fname
+        ## create full file path for template reference config file
+        self.template_file = full_path(self.template_dir, self.template_fname)
+        ## get valid output file and create full path
+        self.output_fname = get_valid_out_fname(self.output_dir, self.output_fname)
+        self.output_file = full_path(self.output_dir, self.output_fname)
+        ## copy template file to reference copy (this will be used to eg set relations between parameters)
+        self.reference_dir = self.template_dir
+        self.reference_fname = None
+        self.reference_file = None
+        self.copy_reference_file()
+        ## end
+
+    def copy_reference_file(self, fname_postfix = REFERENCE_COPY_POSTFIX):
+        '''
+        Make a copy of the template file (with the addition of the file_postfix as an identifier).
+
+        FileManager attributes are modified in-place.
+        '''
+        self.reference_fname = "".join([self.template_fname, fname_postfix])
+        self.reference_file = full_path(self.reference_dir, self.reference_fname)
+        shutil.copy(self.template_file, self.reference_file)
+
+    def get_reference_file(self):
+        '''
+        Get the full filepath specification of the reference file.
+        '''
+        return self.reference_file
+
+    def get_output_file(self):
+        '''
+        Get the full filepath specification of the output file.
+        '''
+        return self.output_file
+
+    def clean(self):
+        '''
+        Clean up extraneous config files etc once all processing and measurements are complete.
+
+        TODO: proper error/exception handling.
+
+        Potential TODO: can implement this as destructor method?
+        '''
+        if os.path.isfile(self.reference_file):
+            os.remove(self.reference_file)
+        else:
+            print("*** ERROR: Could not find temporary reference file", self.reference_file, "to delete.")
 
 ###############################################################################
 
@@ -641,17 +693,18 @@ class InputStrParser:
         if verbose: print("Measurement object set as:", self.target_MO)
         self.target_name = target_instrument_name
 
-        ## check if output file already exists, and either get new filename or exit script
-        file_MO_out = self.target_MO.sCfgFileOut
-        new_file_MO_out = get_valid_out_file(file_MO_out, verbose = verbose)
-        ## TODO: implement with proper exception handling at some stage (probably not very urgent...)
-        if new_file_MO_out is None:
-            ## unable to get valid file name; exit script
-            sys.exit("Unable to get valid output file.")
-        else:
-            ## set filename again (can be the same if original filename was valid)
-            print("Output file:", new_file_MO_out)
-            self.target_MO.setOutputFile(new_file_MO_out)
+        #### this is now handled by the FileManager class
+        # ## check if output file already exists, and either get new filename or exit script
+        # file_MO_out = self.target_MO.sCfgFileOut
+        # new_file_MO_out = get_valid_out_file(file_MO_out, verbose = verbose)
+        # ## TODO: implement with proper exception handling at some stage (probably not very urgent...)
+        # if new_file_MO_out is None:
+        #     ## unable to get valid file name; exit script
+        #     sys.exit("Unable to get valid output file.")
+        # else:
+        #     ## set filename again (can be the same if original filename was valid)
+        #     print("Output file:", new_file_MO_out)
+        #     self.target_MO.setOutputFile(new_file_MO_out)
 
 
 

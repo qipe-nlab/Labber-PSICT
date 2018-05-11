@@ -9,19 +9,25 @@ import sys     # for sys.exit()
 
 # print(Labber.version)
 
-# Path of reference measurements files
+## Run string_input_parser.py
+exec(open("string_input_parser.py").read())
+
+## Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
-# Path for data; if folder does not exist, please manually create it before
-data_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0511'
+## Path for data; if folder does not exist, please manually create it before
+output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0511'
+## Config file names
+template_file_name = "hdf5_edit_04"
+output_file_name = "hdf5_out_010"
+
+FileMgr = FileManager(reference_path, template_file_name, output_path, output_file_name)
 
 ## Set up directories and open config file
 ScriptTools.setExePath("C:\Program Files (x86)\Labber\Program")
 labber_MO = ScriptTools.MeasurementObject(\
-        os.path.join(reference_path, "hdf5_edit_04.hdf5"),\
-        os.path.join(data_path, "hdf5_out_010.hdf5"))
+        FileMgr.get_reference_file(),\
+        FileMgr.get_output_file())
 
-## Run string_input_parser.py
-exec(open("string_input_parser.py").read())
 
 ## Input variables
 point_values = [
@@ -68,6 +74,9 @@ Editor.set_relation(['SQPG', 'w', 2], "w1 + v1", ["w1", "v1"])
 # sys.exit("Finished execution.")
 ## Run measurement
 labber_MO.performMeasurement(return_data = False)
+
+## clean the FileManager object
+FileMgr.clean()
 
 ## Done! (in principle)
 ##

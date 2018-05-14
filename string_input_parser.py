@@ -1,10 +1,13 @@
 ### String input parser for Labber pulse sequences
 ## Author:         Sam Wolski
-## Date modified:  2018/04/13
+## Date created:  2018/04/13
 
-import os      # for checking if output file exists in InputStrParser.set_MeasurementObject
-import sys     # for sys.exit
-import re      # for filename parsing for sequential incrementation
+import os               # for checking if output file exists in InputStrParser.set_MeasurementObject
+import sys              # for sys.exit
+import re               # for filename parsing for sequential incrementation
+import h5py             # for direct editing of hdf5 files to modify iteration parameter order
+import numpy as np      # for working directly with h5py datasets
+import shutil           # for manipulating copies of the input reference config file
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
@@ -78,6 +81,30 @@ shortcodes = {
 ## lists of shortcodes for sorting tests
 add_shortcodes = ["dead", "cf", "if"]
 pulseapp_shortcodes = ["IQ", "dphi"]
+
+## expansion of full parameter label from disparate input
+def get_full_label(instrument_name, param_name, pulse_number = 0):
+    '''
+    Expand to the full parameter name from the instrument name, parameter name, and optional pulse number (for SQPG input).
+
+    Passing the instrument name as "SQPG" or and empty string or None will default to the SQPG instrument.
+
+    If the instrument is the SQPG, the parameter shortcode can be passed instead of the name. As usual, pulse_number = 0 denotes a main config parameter.
+    '''
+    ## convert SQPG names to appropriate string
+    if instrument_name in [None, "", "SQPG"]:
+        # print("-> Instrument is SQPG.")
+        instrument_name = "Single-Qubit Pulse Generator"
+    ## expand param shortcode if instrument is SQPG
+    if (instrument_name == "Single-Qubit Pulse Generator") and (param_name in shortcodes):
+        # print("Param name", param_name, "is in shortcodes.")
+        param_name = shortcodes[param_name]
+    ## concatenate string together based on pulse number
+    if pulse_number == 0:
+        label_string = "".join([instrument_name, " - ", param_name])
+    else:
+        label_string = "".join([instrument_name, " - ", param_name, " #", str(pulse_number)])
+    return label_string
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -278,9 +305,18 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
 
 ###############################################################################
 
-## output filepath-related functions
+## output filepath-related constants and functions
 
-def get_valid_out_file(path_in, user_input = True, default_attempt_increment = False, file_ext = "hdf5", MAX_INCREMENT_ATTEMPTS = 1000, verbose = False):
+REFERENCE_COPY_POSTFIX = "__copy"     # file name postfix used for denoting copy of template reference file
+CONFIG_FILE_EXTENSION = "hdf5"        # file extension used for database files
+
+def full_path(file_path, file_name, file_extension = CONFIG_FILE_EXTENSION):
+    '''
+    Generate a full path from a given file path, file name, and file extension.
+    '''
+    return os.path.join(file_path, "".join([file_name, ".", file_extension]))
+
+def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_increment = False, MAX_INCREMENT_ATTEMPTS = 1000, verbose = False):
     '''
     Get a "valid" output filepath (ie a log file that does not exist) based on the input filepath path_in. Returns None if a valid filepath cannot be obtained.
 
@@ -297,25 +333,18 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
     TODO: implement with proper exception handling at some stage.
     '''
     flag_increment = False       # set through args or input if incrementation attempt is desired
-    if verbose: print("Verifying file:", path_in)
-    ## check extension (resolves extension issues as Labber automatically saves with hdf5)
-    head, ext = os.path.splitext(os.path.normpath(path_in))
-    if ext == file_ext:
-        pass     # do nothing, path is correct
-    else:
-        ## change file extension to file_ext parameter
-        path_in = os.path.join(head+"."+file_ext)
-        print("The extension-corrected filepath is", path_in)
+    file_in = full_path(path_in, fname_in)
+    if verbose: print("Verifying file:", file_in)
     ## Check if file already exists
-    if not os.path.isfile(path_in):
-        ## file does not exist; set new path to input path as-is
-        path_new = path_in
+    if not os.path.isfile(file_in):
+        ## file does not exist; set new fname to input fname as-is
+        fname_new = fname_in
     else:
         ## file already exists
-        if verbose: print("The file", path_in, "already exists.")
+        if verbose: print("The file", file_in, "already exists.")
         if user_input:
             ## ask for user input about attempting increment
-            print("The file", path_in, "already exists; attempt to increment?")
+            print("The file", file_in, "already exists; attempt to increment?")
             user_response = input("[Y/n] ")
             if user_response == "" or user_response.lower()[0] == "y":
                 ##
@@ -338,15 +367,17 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
     if flag_increment:
         if verbose: print("Attempting to increment file name...")
         n_attempts = 0
-        path_new = path_in
-        while os.path.isfile(path_new):
-            print("File", path_new, "exists; incrementing...")   # always prints; could be removed?
+        fname_new = fname_in
+        file_new = full_path(path_in, fname_new)
+        while os.path.isfile(file_new):
+            print("File", file_new, "exists; incrementing...")   # always prints; could be removed?
             try:
                 ## TODO implement with proper exception handling
-                path_new = increment_filename(path_new)
+                fname_new = increment_filename(fname_new)
+                file_new = full_path(path_in, fname_new)
             except:
                 ## could not increment path!
-                if verbose: print("Could not increment path", path_new)
+                if verbose: print("Could not increment filename", fname_new)
                 return None
             finally:
                 n_attempts = n_attempts + 1
@@ -356,42 +387,31 @@ def get_valid_out_file(path_in, user_input = True, default_attempt_increment = F
                 return None
 
     ## return new path (can be same as old path)
-    if verbose: print("The file", path_new, "is a valid output file.")
-    return path_new
+    if verbose: print("The file", file_new, "is a valid output file.")
+    return fname_new
 
 
-def increment_filename(fpath):
+def increment_filename(fname_in):
     '''
-    Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the full path provided initially.
+    Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the new filename.
 
     TODO: Implement with proper exception handling at some stage.
     '''
-    ## extract the file name while preserving other elements for reconstruction
-    path_split = os.path.split(os.path.normpath(fpath))   # split path into head and filename
-    path_head = path_split[0]                             # assign head for reconstruction
-    fname_split = path_split[1].split('.')                # split file name and extension
-    if len(fname_split) < 2:                              # file extension specified incorrectly - TODO exception handling...
-        print("ERROR: no extension has been provided!")
-        return                                            # return none for error
-    fname_name = fname_split[0]                           # file name
-    fname_ext = fname_split[1]                            # assign extension for reconstruction
-
     ## split the file name into a head and sequential id
-    fname_name_split = re.split(r'(\d+$)', fname_name)    # split by int searching from back
-    if len(fname_name_split) < 2:                         # could not split properly - TODO exception handling...
+    fname_split = re.split(r'(\d+$)', fname_in)    # split by int searching from back
+    if len(fname_split) < 2:                         # could not split properly - TODO exception handling...
         print("ERROR: Could not split filename according to sequential id!")
         return                                            # return none for error
-    fname_name_head = fname_name_split[0]
-    fname_name_id = fname_name_split[1]
+    fname_head = fname_split[0]
+    fname_id = fname_split[1]
 
     ## increment the id
-    new_id = increment_string(fname_name_id)
+    new_id = increment_string(fname_id)
 
     ## put path back together
-    new_fname = "".join([fname_name_head, new_id, '.', fname_ext])
-    new_path = os.path.join(path_head, new_fname)
+    new_fname = "".join([fname_head, new_id])
 
-    return new_path
+    return new_fname
 
 def increment_string(str_in):
     '''
@@ -401,7 +421,96 @@ def increment_string(str_in):
     '''
     return str(int(str_in)+1).zfill(len(str_in))
 
+
+##################
+
+class FileManager:
+
+    def __init__(self, reference_template_dir, reference_template_fname, output_dir, output_fname):
+        ## parse input spec
+        self.template_dir = reference_template_dir
+        self.template_fname = reference_template_fname
+        self.output_dir = output_dir
+        self.output_fname = output_fname
+        ## create full file path for template reference config file
+        self.template_file = full_path(self.template_dir, self.template_fname)
+        ## get valid output file and create full path
+        self.output_fname = get_valid_out_fname(self.output_dir, self.output_fname)
+        self.output_file = full_path(self.output_dir, self.output_fname)
+        ## copy template file to reference copy (this will be used to eg set relations between parameters)
+        self.reference_dir = self.template_dir
+        self.reference_fname = None
+        self.reference_file = None
+        self.copy_reference_file()
+        ## end
+
+    def copy_reference_file(self, fname_postfix = REFERENCE_COPY_POSTFIX):
+        '''
+        Make a copy of the template file (with the addition of the file_postfix as an identifier).
+
+        FileManager attributes are modified in-place.
+        '''
+        self.reference_fname = "".join([self.template_fname, fname_postfix])
+        self.reference_file = full_path(self.reference_dir, self.reference_fname)
+        shutil.copy(self.template_file, self.reference_file)
+
+    def get_reference_file(self):
+        '''
+        Get the full filepath specification of the reference file.
+        '''
+        return self.reference_file
+
+    def get_output_file(self):
+        '''
+        Get the full filepath specification of the output file.
+        '''
+        return self.output_file
+
+    def clean(self):
+        '''
+        Clean up extraneous config files etc once all processing and measurements are complete.
+
+        TODO: proper error/exception handling.
+
+        Potential TODO: can implement this as destructor method?
+        '''
+        if os.path.isfile(self.reference_file):
+            os.remove(self.reference_file)
+        else:
+            print("*** ERROR: Could not find temporary reference file", self.reference_file, "to delete.")
+
 ###############################################################################
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+## Iteration-ordering-related functions for hdf5 direct editing
+
+def swap_items_by_index(container, index_1, index_2):
+    '''
+    Swap two items in the container by specifying their indices.
+    '''
+    temp = container[index_1]
+    container[index_1] = container[index_2]
+    container[index_2] = temp
+
+def sort_step_entries(fconfig, param_order):
+     '''
+     This is a docstring...
+     '''
+     index_counter = 0
+     for param_name in param_order:
+         ## generate list of param names in order they currently appear
+         current_param_order = [xx[0] for xx in fconfig['Step list'].value]
+         ## get index of desired param name in current order
+         param_index = current_param_order.index(param_name)
+         ## swap current param with that at index_counter
+         swap_items_by_index(fconfig['Step list'], index_counter, param_index)
+         ## increment index counter
+         index_counter = index_counter + 1
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 class InputStrParser:
 
@@ -449,6 +558,19 @@ class InputStrParser:
         '''
         self.npulses = npulses
 
+    def get_full_name(self, param_code, pulse_num = 0):
+        '''
+        Return the full name of a parameter setting from the specified shortcode and pulse number.
+        '''
+        if not self.target_name:
+            print("WARNING: Attempted to fetch full name of parameter with no target instrument set; None returned.")
+            return
+        if pulse_num == 0:
+            target_string = "".join([self.target_name, " - ", shortcodes[param_code]])
+        else:
+            target_string = "".join([self.target_name, " - ", shortcodes[param_code], " #", str(pulse_num)])
+        return target_string
+
 
     def parse_input(self, input_str_list, verbose = False):
         '''
@@ -488,7 +610,7 @@ class InputStrParser:
         ##      calculated from length of input string. Also compare both to MAX_PULSES
         if self.npulses != self.main_values_in["np"]:
             print("*** WARNING: Mismatch between number of pulses specified in main config (", \
-                    str(input_values_main["np"]), ") and number of pulses calculated from input string (", \
+                    str(self.main_values_in["np"]), ") and number of pulses calculated from input string (", \
                     str(self.npulses), ").\nValue based on input string will take precedence, but this may cause undesired behaviour.\n***", sep = "")
         if self.npulses > MAX_PULSES:
             print("*** WARNING: The number of pulse config specifications in the input string (", str(self.npulses),\
@@ -496,7 +618,7 @@ class InputStrParser:
                     ").\nThe pulse config specifications will be truncated to ", str(MAX_PULSES), \
                     ", but note that undesired behaviour may occur.\n***", sep = "")
         if self.main_values_in["np"] > MAX_PULSES:
-            print("*** WARNING: The number of pulses specified in the main config string (", str(input_values_main["np"]),\
+            print("*** WARNING: The number of pulses specified in the main config string (", str(self.main_values_in["np"]),\
                     ") exceeds the maximum number of pulses allowed by the driver (", str(MAX_PULSES), \
                     ").\nThe value passed to Labber will be set to ", str(MAX_PULSES), \
                     ", but note that undesired behaviour may occur.\n***", sep = "")
@@ -571,23 +693,24 @@ class InputStrParser:
         if verbose: print("Measurement object set as:", self.target_MO)
         self.target_name = target_instrument_name
 
-        ## check if output file already exists, and either get new filename or exit script
-        file_MO_out = self.target_MO.sCfgFileOut
-        new_file_MO_out = get_valid_out_file(file_MO_out, verbose = verbose)
-        ## TODO: implement with proper exception handling at some stage (probably not very urgent...)
-        if new_file_MO_out is None:
-            ## unable to get valid file name; exit script
-            sys.exit("Unable to get valid output file.")
-        else:
-            ## set filename again (can be the same if original filename was valid)
-            print("Output file:", new_file_MO_out)
-            self.target_MO.setOutputFile(new_file_MO_out)
+        #### this is now handled by the FileManager class
+        # ## check if output file already exists, and either get new filename or exit script
+        # file_MO_out = self.target_MO.sCfgFileOut
+        # new_file_MO_out = get_valid_out_file(file_MO_out, verbose = verbose)
+        # ## TODO: implement with proper exception handling at some stage (probably not very urgent...)
+        # if new_file_MO_out is None:
+        #     ## unable to get valid file name; exit script
+        #     sys.exit("Unable to get valid output file.")
+        # else:
+        #     ## set filename again (can be the same if original filename was valid)
+        #     print("Output file:", new_file_MO_out)
+        #     self.target_MO.setOutputFile(new_file_MO_out)
 
 
 
     def update_param_values(self, verbose = False):
         '''
-        Update the parameter values of the target Labber MeasurementObject.
+        Update the parameter values of the target Labber MeasurementObject for single-valued (ie not iterated) parameters.
         '''
         ## verify that target MeasurementObject has been specified
         if self.target_MO == None:
@@ -685,8 +808,25 @@ class InputStrParser:
         self.target_MO.updateValue(target_string, stop_value_out, 'STOP')
         self.target_MO.updateValue(target_string, n_pts, 'N_PTS')
 
+    def order_iteration_params(self, iter_spec_list, verbose = False):
+        '''
+        This is a docstring...
+        '''
+        ## extract (ordered) full parameter names
+        param_order_list = []
+        for iter_spec in iter_spec_list:
+            param_order_list.append(self.get_full_name(iter_spec[1], iter_spec[0]))
+        if verbose: print("Desired parameter order extracted from iteration spec.")
 
-    def set_all(self, point_values, iter_list):
+        ## open reference config file and shift order around
+        if verbose: print("Re-ordering iteration parameters in config file...")
+        index_counter = 0     # tracks index which list item must be swapped to
+        if verbose: print("Reference file:", self.target_MO.sCfgFileIn)
+        with h5py.File(self.target_MO.sCfgFileIn, 'r+') as fconfig:
+            sort_step_entries(fconfig, param_order_list)
+        if verbose: print("Re-ordering of iteration parameters completed.")
+
+    def set_all(self, point_values, iter_list, verbose = False):
         '''
         Wrapper method to set all variables for an experiment in one go.
 
@@ -698,12 +838,17 @@ class InputStrParser:
             return
 
         ## parse and set point values
-        self.parse_input(point_values)
+        if verbose: print("Parsing point value input...")
+        self.parse_input(point_values, verbose = verbose)
+        if verbose: print("Point value input parsed.")
         self.update_param_values()
 
         ## parse and set iteration values
         for iter_var in iter_list:
             self.set_iteration_params(iter_var)
+
+        ## set correct order for iteration values
+        self.order_iteration_params(iter_list)
 
 ##
 
@@ -722,6 +867,140 @@ class DummyMeasurementObject:
                 print("Instrument parameter iteration set:\n\t\t\"", target_string, "\" updated to ", value, " as ", value_spec, " variable.", sep = "")
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+## extra stuff used for hdf5 editing
+
+## dtype template used for 'Step list' entries
+# sl_entry_dtype = np.dtype([('variable', 'O'), ('channel_name', 'O'), ('use_lookup', '?')])
+## doesn't work - for some reason we have to fetch the dtype from the hdf5 file first...
+
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+
+##
+
+class Hdf5Editor:
+
+    def __init__(self, labber_MO, verbose = False):
+        self.set_target_MO(labber_MO, verbose = verbose)
+        self.channel_spec = {}
+        self.sl_entry_dtype = None
+        ##
+        if verbose: print("Hdf5Editor instance initialised.")
+
+    def set_target_MO(self, labber_MO, verbose = False):
+        self.target_MO = labber_MO
+        self.config_file = self.target_MO.sCfgFileIn
+        ##
+        if verbose: print("Target MeasurementObject set.")
+
+    def add_channel_spec(self, channel_key, instrument_spec, verbose = False):
+        '''
+        Add a channel specification (to be used in channel relations) to the Hdf5Editor instance's database.
+
+        Instrument spec should be a list of the format [<instrument name>, <parameter name or shortcode>, <pulse number (optional)>]; this list will be passed directly to get_full_label().
+
+        The channel_key should be unique, and will correspond to the symbol used in the algebraic formulas expressing channel relations. DO NOT USE 'x'! -> this may cause undefined behaviour as it is the default label used as 'self' for all channels.
+        '''
+        ## convert instrument_spec into full channel name
+        channel_name = get_full_label(*instrument_spec)
+        # print("Full label is:", channel_name)
+        ## fetch step list entry dtype if not already fetched
+        if self.sl_entry_dtype is None:
+            with h5py.File(self.config_file, 'r') as fconfig:
+                for inst_key in fconfig['Step config']:
+                    self.sl_entry_dtype = np.dtype(fconfig['Step config'][inst_key]['Relation parameters'].dtype)
+                    break
+        ## add full channel spec entry
+        self.channel_spec[channel_key] = np.array([(channel_key, channel_name, False)], dtype = self.sl_entry_dtype)
+        if verbose: print("Channel spec", self.channel_spec[channel_key], "added.")
+
+    def remove_channel_spec(self, channel_key):
+        '''
+        Remove a channel specification (used for channel relations) from the Hdf5Editor instance's database.
+        '''
+        del self.channel_spec[channel_key]
+
+    def get_sl_index(self, label_string, verbose = False):
+        '''
+        Gets the index of the entry matching the label string in the config file's "Step list".
+
+        label_string should be a full spec (ie expanded by get_full_label).
+        '''
+        ## open file and extract existing step list
+        if verbose: print("Extracting step list from config file...")
+        with h5py.File(self.config_file, "r") as fconfig:
+            step_list = fconfig['Step list'].value
+        if verbose: print("Step list extracted")
+        ## get index of element with matching label string
+        step_list_labels = [xx['channel_name'] for xx in step_list]
+        index = step_list_labels.index(label_string)
+        if verbose: print("Step list index for", label_string, "is", str(index))
+        return index
+
+    def set_equation_string(self, equation_string, label_string, verbose = False):
+        '''
+        Set the equation string for a given parameter label.
+
+        Note that it is the user's responsibility to ensure that the correct channel keys are provided and referenced in the step config (with respect to the corresponding equation specified in the step list config). Thus, it is recommended to use the Hdf5Editor.set_relation method, which is a wrapper for both the set_step_config and set_equation_string methods.
+        '''
+        if verbose: print("Setting equation string", equation_string, "for", label_string)
+        ## get 'Step list' index of label string
+        step_list_index = self.get_sl_index(label_string)
+        ## modify step list entry
+        with h5py.File(self.config_file, 'r+') as fconfig:
+            new_entry = fconfig['Step list'][step_list_index]
+            new_entry['equation'] = equation_string
+            new_entry['use_relations'] = True
+            new_entry['show_advanced'] = True
+            fconfig['Step list'][step_list_index] = new_entry
+        if verbose: print("Equation string set for", label_string)
+        ##
+
+    def set_step_config(self, label_string, channel_keys, verbose = False):
+        '''
+        Set the step config for a given parameter label.
+
+        Note that it is the user's responsibility to ensure that the correct channel keys are provided and referenced in the step config (with respect to the corresponding equation specified in the step list config). Thus, it is recommended to use the Hdf5Editor.set_relation method, which is a wrapper for both the set_step_config and set_equation_string methods.
+        '''
+        if verbose:
+            print("Setting step config for", label_string)
+            print("Channel keys specified as:", channel_keys)
+        ## iterate through channel keys and build up complete step config entry
+        channel_entries = []
+        for channel_key in channel_keys:
+            channel_entries.append(self.channel_spec[channel_key])
+        new_sc_entries = np.concatenate(channel_entries)
+        if verbose: print("New step config entries:\n", new_sc_entries, sep = "")
+        ## delete old step config entry and replace with new one
+        with h5py.File(self.config_file, 'r+') as fconfig:
+            try:
+                del fconfig['Step config'][label_string]['Relation parameters']
+            except:
+                pass
+            fconfig['Step config'][label_string].create_dataset('Relation parameters', data = new_sc_entries)
+        if verbose: print("Step config entries set.")
+        ##
+
+    def set_relation(self, instrument_spec, equation_string, required_channel_keys, verbose = False):
+        '''
+        Set a new relation that determines the values of the parameter specified by <instrument_spec>.
+
+        Note that the required channel keys should have previously been added to the Hdf5Editor instance using the add_channel_spec method; a KeyError (or worse) will result if this is not the case.
+
+        <instrument_spec> should be a list of the format [<instrument name>, <parameter name>, <pulse number (optional)>]. A NoneType or blank string <instrument name> will default to the SQPG.
+        '''
+        ## convert instrument spec to label string
+        label_string = get_full_label(*instrument_spec)
+        ## set equation string (and other step list parameters)
+        self.set_equation_string(equation_string, label_string, verbose = verbose)
+        ## set step config entries
+        self.set_step_config(label_string, required_channel_keys, verbose = verbose)
+        ##
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 ## Kinda-deprecated functions - use InputStrParser object methods instead.

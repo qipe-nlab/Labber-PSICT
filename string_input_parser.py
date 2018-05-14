@@ -750,7 +750,7 @@ class InputStrParser:
         ## exit message
         if verbose: print("MeasurementObject values updated successfully.")
 
-    def set_iteration_params(self, iteration_input, verbose = False):
+    def set_iteration_params(self, iteration_input, instrument_name = "Single-Qubit Pulse Generator", verbose = False):
         '''
         Parse input for variable iteration, and set the corresponding Labber MeasurementObject values.
 
@@ -775,20 +775,28 @@ class InputStrParser:
         n_pts = iteration_input[4]
 
         ## do post-processing on start and stop values
-        param_name = shortcodes[param_code]
+        if param_code in shortcodes:
+            param_name = shortcodes[param_code]
+        else:
+            param_name = param_code
         ## main value
         if pulse_num == 0:
-            ## check if parameter is in additional or pulse-specific shortcodes
-            if param_code in pulseapp_shortcodes or param_code in add_shortcodes:
-                ## not sure how best to handle this right now; probably not needed
-                print("*** ERROR No implementation for pulse-applied or additional parameters.")
-                return
-            ## parameter is a valid main parameter
+            if instrument_name == "Single-Qubit Pulse Generator":
+                ## check if parameter is in additional or pulse-specific shortcodes
+                if param_code in pulseapp_shortcodes or param_code in add_shortcodes:
+                    ## not sure how best to handle this right now; probably not needed
+                    print("*** ERROR No implementation for pulse-applied or additional parameters.")
+                    return
+                ## parameter is a valid main parameter
+                else:
+                    start_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: start_value_in})
+                    start_value_out = start_out[param_name]
+                    stop_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: stop_value_in})
+                    stop_value_out = stop_out[param_name]
+            ## parameter is from a different instrument - passthrough unchanged
             else:
-                start_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: start_value_in})
-                start_value_out = start_out[param_name]
-                stop_out, pulse_placeholder = post_process_params_values(self, in_main = {param_code: stop_value_in})
-                stop_value_out = stop_out[param_name]
+                start_value_out = start_value_in
+                stop_value_out = stop_value_in
         ## pulse value
         else:
             main_placeholder, start_out = post_process_params_values(self, in_pulses = {pulse_num: {param_code: start_value_in}})
@@ -798,10 +806,10 @@ class InputStrParser:
         ## set up target string
         ## main
         if pulse_num == 0:
-            target_string = "".join([self.target_name, " - ", param_name])
+            target_string = "".join([instrument_name, " - ", param_name])
         ## pulse
         else:
-            target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
+            target_string = "".join([instrument_name, " - ", param_name, " #", str(pulse_num)])
 
         ## update values
         self.target_MO.updateValue(target_string, start_value_out, 'START')

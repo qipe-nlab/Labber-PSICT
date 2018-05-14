@@ -17,8 +17,8 @@ reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 ## Path for data; if folder does not exist, please manually create it before
 output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0514'
 ## Config file names
-template_file_name = "hdf5_edit_04"
-output_file_name = "hdf5_out_014"
+template_file_name = "manual_driver_01"
+output_file_name = "manual_driver_out_001"
 
 FileMgr = FileManager(reference_path, template_file_name, output_path, output_file_name)
 
@@ -49,10 +49,19 @@ Parser.set_MeasurementObject(labber_MO, verbose = False)
 ## Apply input - point and iteration values
 Parser.set_all(point_values, iter_vars)
 
+## Set iteration variables for custom instruments (Manual, Manual2)
+##      This is done to move the parameters to the RHS so they can be used in relations
+iter_manual1 = [0, 'Value 1', 20, 21, 2]
+iter_manual2 = [0, 'Value 2', 5, 9, 5]
+Parser.set_iteration_params(iter_manual1, instrument_name = "Manual2")
+Parser.set_iteration_params(iter_manual2, instrument_name = "Manual2")
+
 ## Set up Hdf5Editor object
 Editor = Hdf5Editor(labber_MO)
 
 ## Set channel spec parameters
+# Editor.add_channel_spec('man1', ["Manual2", 'Value 1', 0])
+# Editor.add_channel_spec('man2', ["Manual2", 'Value 2', 0])
 Editor.add_channel_spec('a1', ["SQPG", 'a', 1])
 Editor.add_channel_spec('w1', ["SQPG", 'w', 1])
 Editor.add_channel_spec('v1', ["SQPG", 'v', 1])
@@ -69,7 +78,7 @@ Editor.add_channel_spec('delay', ["SQPG", 'delay', 0])
 
 ## set relations
 Editor.set_relation(['SQPG', 'a', 2], "a1", ['a1'])
-Editor.set_relation(['SQPG', 'w', 2], "w1 + v1", ["w1", "v1"])
+# Editor.set_relation(['SQPG', 'w', 2], "man1 + man2", ["man1", "man2"])
 
 # sys.exit("Finished execution.")
 ## Run measurement

@@ -17,8 +17,8 @@ reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 ## Path for data; if folder does not exist, please manually create it before
 output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0514'
 ## Config file names
-template_file_name = "hdf5_edit_04"
-output_file_name = "hdf5_out_014"
+template_file_name = "manual_driver_02"
+output_file_name = "manual_driver_out_001"
 
 FileMgr = FileManager(reference_path, template_file_name, output_path, output_file_name)
 
@@ -36,7 +36,7 @@ point_values = [
     "a_150e-3   w_200   v_46    s_200   p_0  f_+20   o_QubitControl",
     "a_200e-3   w_150   v_75    s_100   p_0  f_-250  o_QubitControl",
 ]
-iter_var_1 = [1, "a", 0, 150e-3, 5]
+iter_var_1 = [4, "a", 0, 150e-3, 5]
 iter_var_2 = [1, "w", 0, 300, 3]
 iter_var_3 = [1, "v", 0, 200, 6]
 iter_vars = [iter_var_3, iter_var_2, iter_var_1]
@@ -48,6 +48,12 @@ Parser.set_MeasurementObject(labber_MO, verbose = False)
 
 ## Apply input - point and iteration values
 Parser.set_all(point_values, iter_vars)
+
+## Update values for Manual instrument using default Labber API
+labber_MO.updateValue("Manual - Value 1", 0.5, 'SINGLE')
+labber_MO.updateValue("Manual - Value 2", 0.0, 'START')
+labber_MO.updateValue("Manual - Value 2", 5.0, 'STOP')
+labber_MO.updateValue("Manual - Value 2", 11, 'N_PTS')
 
 ## Set up Hdf5Editor object
 Editor = Hdf5Editor(labber_MO)
@@ -66,10 +72,16 @@ Editor.add_channel_spec('w3', ["SQPG", 'w', 3])
 Editor.add_channel_spec('v3', ["SQPG", 'v', 3])
 Editor.add_channel_spec('s3', ["SQPG", 's', 3])
 Editor.add_channel_spec('delay', ["SQPG", 'delay', 0])
+Editor.add_channel_spec('man1', ["Manual", 'Value 1', 0])
+Editor.add_channel_spec('man2', ["Manual", 'Value 2', 0])
+Editor.add_channel_spec('man3', ["Manual", 'Value 3', 0])
+Editor.add_channel_spec('man4', ["Manual", 'Value 4', 0])
+Editor.add_channel_spec('man5', ["Manual", 'Value 5', 0])
+Editor.add_channel_spec('man6', ["Manual", 'Value 6', 0])
 
 ## set relations
 Editor.set_relation(['SQPG', 'a', 2], "a1", ['a1'])
-Editor.set_relation(['SQPG', 'w', 2], "w1 + v1", ["w1", "v1"])
+Editor.set_relation(['SQPG', 'w', 2], "man1 + man2", ["man1", "man2"])
 
 # sys.exit("Finished execution.")
 ## Run measurement

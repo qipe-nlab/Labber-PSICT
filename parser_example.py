@@ -36,9 +36,9 @@ point_values = [
     "a_150e-3   w_200   v_46    s_200   p_0  f_+20   o_QubitControl",
     "a_200e-3   w_150   v_75    s_100   p_0  f_-250  o_QubitControl",
 ]
-iter_var_1 = [4, "a", 0, 150e-3, 5]
+iter_var_1 = [4, "a", 0, 150e-3, 2]
 iter_var_2 = [1, "w", 0, 300, 3]
-iter_var_3 = [1, "v", 0, 200, 6]
+iter_var_3 = [1, "v", 0, 200, 2]
 iter_vars = [iter_var_3, iter_var_2, iter_var_1]
 # labber_dummy = DummyMeasurementObject() # dummy MeasurementObject for debugging
 
@@ -53,7 +53,7 @@ Parser.set_all(point_values, iter_vars)
 labber_MO.updateValue("Manual - Value 1", 0.5, 'SINGLE')
 labber_MO.updateValue("Manual - Value 2", 0.0, 'START')
 labber_MO.updateValue("Manual - Value 2", 5.0, 'STOP')
-labber_MO.updateValue("Manual - Value 2", 11, 'N_PTS')
+labber_MO.updateValue("Manual - Value 2", 3, 'N_PTS')
 
 ## Set up Hdf5Editor object
 Editor = Hdf5Editor(labber_MO)

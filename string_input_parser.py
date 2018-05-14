@@ -468,12 +468,17 @@ class FileManager:
 
     def clean(self):
         '''
-        Clean up extraneous config files etc once all processing and measurements are complete.
+        Clean up extraneous config files etc once all processing and measurements are complete. Also makes a copy of the script file for reference.
 
         TODO: proper error/exception handling.
 
         Potential TODO: can implement this as destructor method?
         '''
+        ## Copy running script (the actual script with all the parameters and stuff)
+        script_path = os.path.realpath(__file__)
+        script_dest = os.path.join(self.output_dir, "".join([self.output_fname, "_script.py"]))
+        shutil.copyfile(script_path, script_dest)
+        ## Delete temporary reference config file
         if os.path.isfile(self.reference_file):
             os.remove(self.reference_file)
         else:

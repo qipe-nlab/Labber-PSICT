@@ -881,18 +881,20 @@ class DummyMeasurementObject:
 
 class Hdf5Editor:
 
-    def __init__(self, labber_MO):
-        self.set_target_MO(labber_MO)
+    def __init__(self, labber_MO, verbose = False):
+        self.set_target_MO(labber_MO, verbose = verbose)
         self.channel_spec = {}
         self.sl_entry_dtype = None
-        print("Hdf5Editor instance initialised.")
+        ##
+        if verbose: print("Hdf5Editor instance initialised.")
 
-    def set_target_MO(self, labber_MO):
+    def set_target_MO(self, labber_MO, verbose = False):
         self.target_MO = labber_MO
         self.config_file = self.target_MO.sCfgFileIn
-        print("Target MeasurementObject set.")
+        ##
+        if verbose: print("Target MeasurementObject set.")
 
-    def add_channel_spec(self, channel_key, instrument_spec, verbose = True):
+    def add_channel_spec(self, channel_key, instrument_spec, verbose = False):
         '''
         Add a channel specification (to be used in channel relations) to the Hdf5Editor instance's database.
 
@@ -909,8 +911,6 @@ class Hdf5Editor:
                 for inst_key in fconfig['Step config']:
                     self.sl_entry_dtype = np.dtype(fconfig['Step config'][inst_key]['Relation parameters'].dtype)
                     break
-            print(self.sl_entry_dtype)
-        print("----> Got this far...")
         ## add full channel spec entry
         self.channel_spec[channel_key] = np.array([(channel_key, channel_name, False)], dtype = self.sl_entry_dtype)
         if verbose: print("Channel spec", self.channel_spec[channel_key], "added.")
@@ -921,7 +921,7 @@ class Hdf5Editor:
         '''
         del self.channel_spec[channel_key]
 
-    def get_sl_index(self, label_string, verbose = True):
+    def get_sl_index(self, label_string, verbose = False):
         '''
         Gets the index of the entry matching the label string in the config file's "Step list".
 
@@ -938,7 +938,7 @@ class Hdf5Editor:
         if verbose: print("Step list index for", label_string, "is", str(index))
         return index
 
-    def set_equation_string(self, equation_string, label_string, verbose = True):
+    def set_equation_string(self, equation_string, label_string, verbose = False):
         '''
         Set the equation string for a given parameter label.
 
@@ -957,7 +957,7 @@ class Hdf5Editor:
         if verbose: print("Equation string set for", label_string)
         ##
 
-    def set_step_config(self, label_string, channel_keys, verbose = True):
+    def set_step_config(self, label_string, channel_keys, verbose = False):
         '''
         Set the step config for a given parameter label.
 
@@ -982,7 +982,7 @@ class Hdf5Editor:
         if verbose: print("Step config entries set.")
         ##
 
-    def set_relation(self, instrument_spec, equation_string, required_channel_keys, verbose = True):
+    def set_relation(self, instrument_spec, equation_string, required_channel_keys, verbose = False):
         '''
         Set a new relation that determines the values of the parameter specified by <instrument_spec>.
 

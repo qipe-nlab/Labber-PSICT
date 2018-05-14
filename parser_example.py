@@ -15,10 +15,10 @@ exec(open("string_input_parser.py").read())
 ## Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 ## Path for data; if folder does not exist, please manually create it before
-output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0511'
+output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0514'
 ## Config file names
 template_file_name = "hdf5_edit_04"
-output_file_name = "hdf5_out_010"
+output_file_name = "hdf5_out_014"
 
 FileMgr = FileManager(reference_path, template_file_name, output_path, output_file_name)
 

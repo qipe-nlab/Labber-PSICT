@@ -31,8 +31,8 @@ params_main_config = {
         "IQ":     float,  # I/Q ratio
         "dphi":   float,  # Phase diff.
         ## IF/Control frequency specification
-        "cf":     float,  # Control frequency in MHz
-        "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
+        # "cf":     float,  # Control frequency in MHz
+        # "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
     }
 
 params_pulse_config = {
@@ -43,6 +43,8 @@ params_pulse_config = {
         "p":      float,  # Phase
         "f":      float,  # Mod. frequency (offset from IF frequency) in MHz
         "o":      str,    # Output
+        "cf":     float,  # Control frequency in MHz
+        "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
     }
 
 ## dict for shortcode conversion
@@ -79,7 +81,7 @@ shortcodes = {
 }
 
 ## lists of shortcodes for sorting tests
-add_shortcodes = ["dead", "cf", "if"]
+add_shortcodes = ["dead"]
 pulseapp_shortcodes = ["IQ", "dphi"]
 
 ## expansion of full parameter label from disparate input
@@ -120,7 +122,7 @@ convert_ptype = {"gauss": 0, "square": 1, "ramp": 2}
 MAX_PULSES = 8         # maximum number of pulses supported by driver
 
 ## pulse config
-convert_out = {"QubitControl": 0, "QubitReadout": 1, "MagnonControl": 2, "MagnonReadout": 3}
+convert_out = {"Readout": 0, "QubitControl": 1, "MagnonControl": 2, "Trigger": 3}
 ##      ## NB pulse output names cannot contain underscores (_) or spaces
 
 
@@ -184,12 +186,6 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
     ## additional data - not passed directly
     if "dead" in in_main:
         parserObj.add_values_out[shortcodes["dead"]] = in_main["dead"]*1e-9   # ns
-    if "cf" in in_main:
-        parserObj.add_values_out[shortcodes["cf"]] = in_main["cf"]*1e6        # MHz
-    if "if" in in_main:
-        parserObj.add_values_out[shortcodes["if"]] = in_main["if"]*1e6             # MHz
-    if "cf" in in_main and "if" in in_main:
-        parserObj.add_values_out["LO frequency"] = parserObj.add_values_out[shortcodes["cf"]] - parserObj.add_values_out[shortcodes["if"]]
     ## status print
     # if verbose:
         # print("(main) Sample rate:", parserObj.main_values_out["Sample rate"])
@@ -219,15 +215,21 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
         if "p" in in_pulse:
             parserObj.pulse_values_out[pulse_num][shortcodes["p"]] = in_pulse["p"]
         ## modulation frequency calculations: potential sideband switching
+        if "cf" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["cf"]] = in_pulse["cf"]*1e6        # MHz
+        if "if" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["if"]] = in_pulse["if"]*1e6             # MHz
+        if "cf" in in_pulse and "if" in in_pulse:
+            parserObj.pulse_values_out[pulse_num]["LO frequency"] = parserObj.pulse_values_out[pulse_num][shortcodes["cf"]] - parserObj.pulse_values_out[pulse_num][shortcodes["if"]]
         ## same sign => same sideband
         if "f" in in_pulse:
             freq_offset = in_pulse["f"]*1e6      # MHz
-            if parserObj.add_values_out[shortcodes["if"]]*(parserObj.add_values_out["IF frequency"] + freq_offset) >= 0:
-                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"] + freq_offset)
+            if parserObj.pulse_values_out[pulse_num][shortcodes["if"]]*(parserObj.pulse_values_out[pulse_num]["IF frequency"] + freq_offset) >= 0:
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.pulse_values_out[pulse_num]["IF frequency"] + freq_offset)
             ## sideband switching
             else:
                 print("*** WARNING: Specified frequency offset induces a sideband switch for pulse ", pulse_num, "; defaulting to 0.", sep = "")
-                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"])
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.pulse_values_out[pulse_num]["IF frequency"])
         ##
         if "o" in in_pulse:
             parserObj.pulse_values_out[pulse_num][shortcodes["o"]] = convert_out[in_pulse["o"]]
@@ -748,8 +750,11 @@ class InputStrParser:
             if verbose: print("Updating values for pulse", str(pulse_num))
             param_vals = self.pulse_values_out[pulse_num]
             for param_name in param_vals:
-                target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
-                self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
+                if param_name in [shortcodes["cf"], shortcodes["if"], "LO frequency"]:
+                    continue
+                else:
+                    target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
+                    self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
         if verbose: print("Pulse config values updated.")
 
         ## exit message

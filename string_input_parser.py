@@ -742,7 +742,14 @@ class InputStrParser:
         for pulse_num in range(1,MAX_PULSES+1):
             target_string = "".join([self.target_name, " - Amplitude #", str(pulse_num)])
             self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
-        if verbose: print("Pulse amplitude reset.")
+            target_string = "".join([self.target_name, " - Width #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+            target_string = "".join([self.target_name, " - Plateau #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+            target_string = "".join([self.target_name, " - Spacing #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+        if verbose: print("Pulse amplitudes, widths, plateaux, spacings reset.")
+
 
         ## update pulse config values
         if verbose: print("Updating pulse config values...")

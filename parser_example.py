@@ -10,7 +10,7 @@ import sys     # for sys.exit()
 # print(Labber.version)
 
 ## Run string_input_parser.py
-exec(open("labber-psict.py").read())
+exec(open("labber_psict.py").read())
 
 ## Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'

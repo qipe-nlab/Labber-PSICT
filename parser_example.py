@@ -10,15 +10,15 @@ import sys     # for sys.exit()
 # print(Labber.version)
 
 ## Run string_input_parser.py
-exec(open("string_input_parser.py").read())
+exec(open("labber-psict.py").read())
 
 ## Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 ## Path for data; if folder does not exist, please manually create it before
-output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0514'
+output_path = 'C:\\Users\\qcpi\\Labber\\Data\\2018\\05\\Data_0515'
 ## Config file names
-template_file_name = "manual_driver_02"
-output_file_name = "manual_driver_out_001"
+template_file_name = "alpha_01"
+output_file_name = "alpha_out_001"
 
 FileMgr = FileManager(reference_path, template_file_name, output_path, output_file_name)
 
@@ -31,10 +31,10 @@ labber_MO = ScriptTools.MeasurementObject(\
 
 ## Input variables
 point_values = [
-    "sr_1e9 dead_1000 delay_100 trim_0 nout_4 np_3 ptype_gauss tr_7 saz_0 e2e_1 epos_1 SSB_1 DRAG_0 IQ_1 dphi_90 cf_7850 if_-150",
-    "a_100e-3   w_100   v_20    s_200   p_0  f_-100  o_QubitControl",
-    "a_150e-3   w_200   v_46    s_200   p_0  f_+20   o_QubitControl",
-    "a_200e-3   w_150   v_75    s_100   p_0  f_-250  o_QubitControl",
+    "sr_1e9 dead_1000 delay_100 trim_0 nout_4 np_3 ptype_gauss tr_7 saz_0 e2e_1 epos_1 SSB_1 DRAG_0 IQ_1 dphi_90",
+    "a_100e-3   w_100   v_20    s_200   p_0  f_-100  o_QubitControl cf_1750 if_-150",
+    "a_150e-3   w_200   v_46    s_200   p_0  f_+20   o_QubitControl cf_0 if_0",
+    "a_200e-3   w_150   v_75    s_100   p_0  f_-250  o_QubitControl cf_1000 if_0",
 ]
 iter_var_1 = [4, "a", 0, 150e-3, 2]
 iter_var_2 = [1, "w", 0, 300, 3]

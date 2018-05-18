@@ -9,6 +9,13 @@ import h5py             # for direct editing of hdf5 files to modify iteration p
 import numpy as np      # for working directly with h5py datasets
 import shutil           # for manipulating copies of the input reference config file
 
+###############################################################################
+## Labber-PSICT general information
+PSICT_VERSION = "0.1.0 (alpha)"
+print("Labber-PSICT version is", PSICT_VERSION)
+
+###############################################################################
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
 

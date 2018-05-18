@@ -383,12 +383,12 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
             try:
                 ## TODO implement with proper exception handling
                 fname_new = increment_filename(fname_new)
-                file_new = full_path(path_in, fname_new)
             except:
                 ## could not increment path!
                 if verbose: print("Could not increment filename", fname_new)
                 return None
             finally:
+                file_new = full_path(path_in, fname_new)
                 n_attempts = n_attempts + 1
             if n_attempts > MAX_INCREMENT_ATTEMPTS:
                 ## failure by number of attempts
@@ -396,7 +396,7 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
                 return None
 
     ## return new path (can be same as old path)
-    if verbose: print("The file", file_new, "is a valid output file.")
+    print("Output file set as:", file_new)
     return fname_new
 
 

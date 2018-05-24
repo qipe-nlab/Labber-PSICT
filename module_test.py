@@ -2,4 +2,5 @@
 
 import PSICT_UIF
 
-print("This is a test.")
+print("PSICT_UIF appears to have imported successfully.")
+print("PSICT_UIF version is", PSICT_UIF.__version__)

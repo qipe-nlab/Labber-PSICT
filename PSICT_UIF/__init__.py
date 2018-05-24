@@ -5,7 +5,9 @@ from sys import version_info
 
 ## verify python version
 if version_info >= (3,6):
-    print("PSICT-UIF has been successfully imported.")
+    ## version info
+    from ._include36._version import version as __version__
+    ##
 
 ## PSICT_UIF does not currently support Python <= 3.5, or Python 2
 else:

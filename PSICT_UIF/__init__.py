@@ -7,7 +7,9 @@ from sys import version_info
 if version_info >= (3,6):
     ## version info
     from ._include36._version import version as __version__
-    ##
+    ## classes (only top-level required)
+    from ._include36.psictUIFInterface import psictUIFInterface
+
 
 ## PSICT_UIF does not currently support Python <= 3.5, or Python 2
 else:

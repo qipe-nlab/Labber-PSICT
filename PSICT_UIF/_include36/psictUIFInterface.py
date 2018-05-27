@@ -47,6 +47,18 @@ class psictUIFInterface:
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse sequence operations
+
+    def set_pulse_seq_params(self, *, verbose = 0):
+        '''
+        Set input parameters for the pulse sequence.
+
+        These are the human-input parameters which will later be converted to a Labber-readable pulse sequence by the PulseSeqManager object.
+        '''
+        self.pulseSeqManager.set_input_pulse_seq(verbose = verbose)
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 
     def perform_measurement(self, *, verbose = 0):
@@ -58,7 +70,10 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 2:
             print("Carrying out measurement pre-processing...")
-
+        ##### measurement pre-processing
+        ## convert stored input pulse sequence to output pulse sequence
+        self.pulseSeqManager.convert_seq(verbose = verbose)
+        ####
         ## debug message
         if verbose >= 2:
             print("Measurement pre-processing completed.")
@@ -69,6 +84,7 @@ class psictUIFInterface:
             self.MeasurementObject.performMeasurement()
         else:
             ## Error: MeasurementObject not set!
+            ## TODO Change this to an error once everything else is implemented.
             print("MeasurementObject is not set.")
         ## debug message
         if verbose >= 1:

@@ -4,3 +4,15 @@ import PSICT_UIF
 
 print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
+
+## Initialise PSICT-UIF interface object
+psictInterface = PSICT_UIF.psictUIFInterface(verbose = 4)
+
+## Manually set Labber executable path
+psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 4)
+
+## Set input pulse sequence
+psictInterface.set_pulse_seq_params(verbose = 4)
+
+## Run measurement
+psictInterface.perform_measurement(verbose = 4)

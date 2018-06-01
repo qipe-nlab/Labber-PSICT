@@ -39,10 +39,21 @@ class psictUIFInterface:
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''
-        Change the stored (system default) Labber executable path to a custom path (passed to the fileManager object).
+        Change the stored (system default) Labber executable path to a custom path (passed to the FileManager object).
         '''
         self.fileManager.set_labber_exe_path(new_labber_exe_path, verbose = verbose)
 
+    def set_template_file(self, template_dir, template_file, *, verbose = 0):
+        '''
+        Set the template hdf5 file (passed to the FileManager object).
+        '''
+        self.fileManager.set_template_file(template_dir, template_file, verbose = verbose)
+
+    def set_output_file(self, output_dir, output_file, *, verbose = 0):
+        '''
+        Set the output hdf5 file (passed to the FileManager object).
+        '''
+        self.fileManager.set_output_file(output_dir, output_file, verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence operations

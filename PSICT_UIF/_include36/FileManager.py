@@ -7,7 +7,11 @@ import os
 
 from Labber import ScriptTools
 
-from PSICT_UIF._include36._FileManager_rc import _FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT, _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT
+from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT, \
+                                                  _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT, \
+                                                  _FILEMGR_DEFAULTS_FILE_EXTENSION, \
+                                                  _FILEMGR_DEFAULTS_COPY_POSTFIX, \
+                                                 )
 
 
 class FileManager:
@@ -89,5 +93,49 @@ class FileManager:
         ## debug message
         if verbose >= 2:
             print("Labber executable path applied.")
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Database file methods
+
+    def generate_full_path(self, dir_name, file_name, file_extension = _FILEMGR_DEFAULTS_FILE_EXTENSION):
+        '''
+        Generate the full path to a file of the specified directory, file name, and extension.
+
+        The value of _FILEMGR_DEFAULTS_FILE_EXTENSION in the _FileManager_rc file is used as the default extension.
+        '''
+        return os.path.join(dir_name, "".join([file_name, ".", file_extension]))
+
+    def set_template_file(self, template_dir, template_file, *, verbose = 0):
+        '''
+        Docstring for set_template_file.
+        '''
+        ## debug message
+        if verbose >= 2:
+            print("Setting template file...")
+        ## Set attributes
+        self.template_dir = os.path.normpath(template_dir)
+        self.template_file = template_file
+        self.template_path = self.generate_full_path(self.template_dir, self.template_file)
+        ## Copy template file to create reference file
+        #### TODO
+        ## debug message
+        if verbose >= 1:
+            print("Template file set as:", self.template_path)
+
+    def set_output_file(self, output_dir, output_file, *, verbose = 0):
+        '''
+        Docstring for set_output_file.
+        '''
+        ## debug message
+        if verbose >= 2:
+            print("Setting output file...")
+        ## Set attributes
+        self.output_dir = os.path.normpath(output_dir)
+        self.output_file = output_file
+        self.output_path = self.generate_full_path(self.output_dir, self.output_file)
+        ## debug message
+        if verbose >= 1:
+            print("Output file set as:", self.output_path)
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

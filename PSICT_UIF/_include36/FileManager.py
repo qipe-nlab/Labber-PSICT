@@ -4,6 +4,7 @@
 
 import platform
 import os
+import re
 
 from Labber import ScriptTools
 
@@ -11,6 +12,9 @@ from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_D
                                                   _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT, \
                                                   _FILEMGR_DEFAULTS_FILE_EXTENSION, \
                                                   _FILEMGR_DEFAULTS_COPY_POSTFIX, \
+                                                  _FILEMGR_DEFAULTS_USER_INCREMENT, \
+                                                  _FILEMGR_DEFAULTS_AUTO_INCREMENT, \
+                                                  _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS, \
                                                  )
 
 
@@ -113,7 +117,7 @@ class FileManager:
         if verbose >= 2:
             print("Setting template file...")
         ## Set attributes
-        self.template_dir = os.path.normpath(template_dir)
+        self.template_dir = os.path.expanduser(os.path.normpath(template_dir))
         self.template_file = template_file
         self.template_path = self.generate_full_path(self.template_dir, self.template_file)
         ## Copy template file to create reference file
@@ -129,13 +133,111 @@ class FileManager:
         ## debug message
         if verbose >= 2:
             print("Setting output file...")
+        ## Set output dir (will not change)
+        self.output_dir = os.path.expanduser(os.path.normpath(output_dir))
+        ## Get valid output filename, checking for existence, incrementing if nececssary, etc
+        valid_output_file = self.get_valid_output_file(self.output_dir, output_file, verbose = verbose)
         ## Set attributes
-        self.output_dir = os.path.normpath(output_dir)
-        self.output_file = output_file
+        self.output_file = valid_output_file
         self.output_path = self.generate_full_path(self.output_dir, self.output_file)
         ## debug message
         if verbose >= 1:
             print("Output file set as:", self.output_path)
+
+
+    def get_valid_output_file(self, dir_in, file_in, *, verbose = 0):
+        '''
+        Docstring for get_valid_output_file.
+        '''
+        ## preparation
+        flag_increment = False   # set if incrementation attempt is to be attempted
+        path_in = self.generate_full_path(dir_in, file_in)
+        ## debug message
+        if verbose >= 1:
+            print("Verifying file:", path_in)
+
+        ## Check if file already exists
+        if not os.path.isfile(path_in):
+            ## File does not exist; set new file name as-is
+            if verbose >= 2:
+                print("The file", path_in, "does not already exist.")
+            file_new = file_in
+        else:
+            ## File already exists
+            if verbose >= 1:
+                print("The file", path_in, "already exists.")
+            ## Check if user permission to increment is necessary
+            if _FILEMGR_DEFAULTS_USER_INCREMENT:
+                ## Ask for user input
+                user_response = input("Attempt to increment? [Y/n] ")
+                if user_response == "" or user_response.lower()[0] == "y":
+                    ## User incrementation permitted
+                    if verbose >= 3:
+                        print("User permitted incrementation.")
+                        flag_increment = True
+                else:
+                    ## User incrementation denied; fall back on auto incrementation default
+                    if _FILEMGR_DEFAULTS_AUTO_INCREMENT:
+                        ## Automatic incrementation enabled
+                        if verbose >= 2:
+                            print("Automatic incrementation enabled.")
+                        flag_increment = True
+                    else:
+                        ## Incrementation to not be attempted; raise error as program execution cannot continue
+                        raise RuntimeError("Could not get valid output file: filename incrementation denied.")
+
+        ## Attempt to increment filename if required
+        if flag_increment:
+            if verbose >= 1:
+                print("Attempting to increment file name...")
+            n_incr_attempts = 0   # log number of attempts to prevent loop with no exit condition
+            file_new = file_in    # update trial file name
+            path_new = self.generate_full_path(dir_in, file_new)
+            while os.path.isfile(path_new):
+                if verbose >= 1:
+                    print("File", path_new, "exists; incrementing...")
+                ## increment filename
+                file_new = self.increment_filename(file_new)
+                ## update other values
+                path_new = self.generate_full_path(dir_in, file_new)
+                n_incr_attempts = n_incr_attempts + 1
+                ## check if max number of attempts exceeded
+                if n_incr_attempts > _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS:
+                    raise RuntimeError("Maximum number of incrementation attempts reached:", _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS)
+            ##
+
+        ## Return new file name (can be unchanged)
+        path_new = self.generate_full_path(dir_in, file_new)
+        if verbose >= 2:
+            print("The file", path_new, "is a valid output file.")
+        return file_new
+
+    def increment_filename(self, fname_in):
+        '''
+        Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the new filename.
+        '''
+        ## split the file name into a head and sequential id
+        fname_split = re.split(r'(\d+$)', fname_in)    # split by int searching from back
+        if len(fname_split) < 2:                         # could not split properly
+            raise RuntimeError("Could not identify sequential ID in filename:", fname_in)
+        fname_head = fname_split[0]
+        fname_id = fname_split[1]
+
+        ## increment the id
+        new_id = self.increment_string(fname_id)
+
+        ## put path back together
+        new_fname = "".join([fname_head, new_id])
+
+        return new_fname
+
+    def increment_string(self, str_in):
+        '''
+        Increment a string, preserving leading zeros.
+
+        eg "00567" -> "00568"
+        '''
+        return str(int(str_in)+1).zfill(len(str_in))
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

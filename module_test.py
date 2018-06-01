@@ -2,6 +2,7 @@
 
 import PSICT_UIF
 
+print("------------------------------------------------")
 print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
 
@@ -15,8 +16,8 @@ psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
 template_dir = "foo/foo/foo"
 template_file = "template_01"
 psictInterface.set_template_file(template_dir, template_file, verbose = 4)
-output_dir = "bar/bar/bar"
-output_file = "output_001"
+output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
+output_file = "K2018-04-21_222"
 psictInterface.set_output_file(output_dir, output_file, verbose = 4)
 
 ## Set input pulse sequence

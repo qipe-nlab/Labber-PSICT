@@ -39,9 +39,7 @@ class psictUIFInterface:
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''
-        Set the Labber executable path manually (passed to the fileManager object).
-
-        The fileManager.is_labber_exe_default flag tracks whether or not the labber exe path has been set manually through this method.
+        Change the stored (system default) Labber executable path to a custom path (passed to the fileManager object).
         '''
         self.fileManager.set_labber_exe_path(new_labber_exe_path, verbose = verbose)
 
@@ -71,6 +69,8 @@ class psictUIFInterface:
         if verbose >= 2:
             print("Carrying out measurement pre-processing...")
         ##### measurement pre-processing
+        ## set ScriptTools executable path
+        self.fileManager.apply_labber_exe_path(verbose = verbose)
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
         ####

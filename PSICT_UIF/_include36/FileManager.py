@@ -5,6 +5,7 @@
 import platform
 import os
 import re
+import shutil
 
 from Labber import ScriptTools
 
@@ -26,6 +27,8 @@ class FileManager:
     def __init__(self, *, verbose = 0):
         ## set object log level
         self.verbose = verbose
+        ## set values of attributes constant across multiple methods
+        self._REF_COPY_POSTFIX = _FILEMGR_DEFAULTS_COPY_POSTFIX
         ## set Labber exe path to system default
         self.setdef_labber_exe_path(verbose = self.verbose)
         ## debug message
@@ -33,8 +36,14 @@ class FileManager:
             print("Called FileManager constructor.")
 
     def __del__(self):
+        ## debug message
         if self.verbose >= 4:
-            print("Called FileManager destructor.")
+            print("Calling FileManager destructor.")
+        ## Delete reference file (temporary copy of template file)
+        self.clean_reference_file(verbose = self.verbose)
+        ## debug message
+        if self.verbose >= 4:
+            print("FileManager destructor finished.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
@@ -109,6 +118,8 @@ class FileManager:
         '''
         return os.path.join(dir_name, "".join([file_name, ".", file_extension]))
 
+    ## Template and reference file methods
+
     def set_template_file(self, template_dir, template_file, *, verbose = 0):
         '''
         Docstring for set_template_file.
@@ -120,11 +131,53 @@ class FileManager:
         self.template_dir = os.path.expanduser(os.path.normpath(template_dir))
         self.template_file = template_file
         self.template_path = self.generate_full_path(self.template_dir, self.template_file)
-        ## Copy template file to create reference file
-        #### TODO
         ## debug message
         if verbose >= 1:
             print("Template file set as:", self.template_path)
+        ## Copy template file to create reference file
+        self.copy_reference_file(verbose = verbose)
+
+
+    def copy_reference_file(self, *, verbose = 0):
+        '''
+        Docstring for copy_reference_file
+        '''
+        ## debug message
+        if verbose >= 3:
+            print("Copying reference file...")
+        ## Set names
+        try:
+            self.reference_dir = self.template_dir
+            self.reference_file = "".join([self.template_file, self._REF_COPY_POSTFIX])
+        except AttributeError:
+            raise RuntimeError("The template directory and/or filename have not been specified.")
+        self.reference_path = self.generate_full_path(self.reference_dir, self.reference_file)
+        ## Copy file
+        shutil.copy(self.template_path, self.reference_path)
+        ## debug message
+        if verbose >= 3:
+            print("Reference file copied successfully:", self.reference_path)
+
+
+    def clean_reference_file(self, *, verbose = 0):
+        '''
+        Docstring for clean_reference_file.
+        '''
+        ## debug message
+        if verbose >= 3:
+            print("Deleting temporary copy of reference file...")
+        ## Delete temporary copy of reference file
+        try:
+            os.remove(self.reference_path)
+        except (AttributeError, FileNotFoundError):
+            pass
+        else:
+            ## debug message
+            if verbose >= 3:
+                print("Deleted reference file", self.reference_path)
+
+
+    ## Output file methods
 
     def set_output_file(self, output_dir, output_file, *, verbose = 0):
         '''

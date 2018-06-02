@@ -9,6 +9,7 @@ import shutil
 
 from Labber import ScriptTools
 
+## TODO: check if we can't import these all at once
 from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT, \
                                                   _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT, \
                                                   _FILEMGR_DEFAULTS_FILE_EXTENSION, \
@@ -17,6 +18,8 @@ from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_D
                                                   _FILEMGR_DEFAULTS_AUTO_INCREMENT, \
                                                   _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS, \
                                                  )
+# import PSICT_UIF._include36._FileManager_rc as _rc # (???)
+## above will require specifying namespace every time, but that may be more pythonic...
 
 
 class FileManager:
@@ -48,20 +51,6 @@ class FileManager:
         if self.verbose >= 4:
             print("FileManager destructor finished.")
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## rcfile methods
-
-    def set_script_rcfile(self, new_script_rcpath, *, verbose = 0):
-        '''
-        Set the path for the script-specific resource file.
-        '''
-        ## normalize path
-        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(new_script_rcpath)))
-        ## debug message
-        if verbose >= 2:
-            print("Setting script-rcfile to", new_script_rcpath)
-        ## execute rcfile
-        exec(open(self.script_rcpath).read())
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
@@ -319,5 +308,14 @@ class FileManager:
         '''
         return str(int(str_in)+1).zfill(len(str_in))
 
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Post-measurement methods
+
+    def post_measurement_copy(self, target_dir, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        print("--- Copying the script and rcfile should be implemented here.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

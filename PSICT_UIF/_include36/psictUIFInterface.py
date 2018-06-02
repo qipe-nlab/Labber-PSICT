@@ -2,6 +2,9 @@
 ##  In the course of normal scripting, this should be the only object
 ##  the the user directly interfaces with in the external script.
 
+import os
+import importlib.util
+
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 
@@ -35,11 +38,21 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
 
-    def set_script_rcfile(self, new_script_rcfile, *, verbose = 0):
+    def load_script_rcfile(self, script_rcpath, *, verbose = 0):
         '''
-        Set the script-rc file (passed to the FileManager object).
+        Set the script-rc file, imported as a module.
         '''
-        self.fileManager.set_script_rcfile(new_script_rcfile, verbose = verbose)
+        ## normalize path
+        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(script_rcpath)))
+        ## debug message
+        if verbose >= 2:
+            print("Reading from script rcfile:", self.script_rcpath)
+        ## import script rcfile as module, and assign as FileManager attribute
+        script_rc_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
+        self._script_rc = importlib.util.module_from_spec(script_rc_spec)
+        script_rc_spec.loader.exec_module(self._script_rc)
+        if verbose >= 2:
+            print("Script rcfile imported.")
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''
@@ -104,6 +117,14 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 1:
             print("Measurement completed.")
+        if verbose >= 1:
+            print("Carrying out post-measurement operations...")
+        ## Copy script and associated files to target directory (set in script rcfile)
+        if self._script_rc.script_copy_enabled:
+            self.fileManager.post_measurement_copy(self._script_rc.script_copy_target_dir, verbose = verbose)
+        ## debug message
+        if verbose >= 1:
+            print("Post-measurement operations completed.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

@@ -9,7 +9,7 @@ print("PSICT_UIF version is", PSICT_UIF.__version__)
 ## Initialise PSICT-UIF interface object
 psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 ## Set rc files
-psictInterface.set_script_rcfile("PSICT_UIF_samples/uif_script_rc_sample.py")
+psictInterface.set_script_rcfile("uif_script_rc_sample.py")
 
 ## Manually set Labber executable path
 psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
@@ -18,7 +18,6 @@ psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
 template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
 template_file = "K2018-04-21_222"
 psictInterface.set_template_file(template_dir, template_file, verbose = 1)
-psictInterface.fileManager.copy_reference_file()
 output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
 output_file = "K2018-04-21_222"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)

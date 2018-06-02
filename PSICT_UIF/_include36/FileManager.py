@@ -21,7 +21,10 @@ from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_D
 
 class FileManager:
     '''
-    Docstring for FileManager.
+    A class to store and handle the paths and names of files associated with a PSICT-initialised Labber experiment.
+
+    Includes methods to set (either manually or through defaults in the _FileManager_rc file) the script-specific rcfile and the Labber executable path. In addition, stores and handles the paths and filenames of the template, reference, and output database files; the resource database file is a temporary copy of the template file, where the hdf5 entries are directly modified by the PSICT-UIF package, and is deleted after the script has been run.
+
     '''
 
     def __init__(self, *, verbose = 0):
@@ -50,7 +53,7 @@ class FileManager:
 
     def set_script_rcfile(self, new_script_rcpath, *, verbose = 0):
         '''
-        Docstring
+        Set the path for the script-specific resource file.
         '''
         ## normalize path
         self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(new_script_rcpath)))
@@ -137,7 +140,9 @@ class FileManager:
 
     def set_template_file(self, template_dir, template_file, *, verbose = 0):
         '''
-        Docstring for set_template_file.
+        Set the template database file.
+
+        Note that the FileManager will make a temporary copy of this, which will be the "working" reference file, to make direct hdf5 edits, and so the template file will not be modified.
         '''
         ## debug message
         if verbose >= 2:
@@ -155,7 +160,7 @@ class FileManager:
 
     def copy_reference_file(self, *, verbose = 0):
         '''
-        Docstring for copy_reference_file
+        Copies the template file into a temporary reference file, where direct hdf5 edits will be carried out.
         '''
         ## debug message
         if verbose >= 3:
@@ -176,7 +181,7 @@ class FileManager:
 
     def clean_reference_file(self, *, verbose = 0):
         '''
-        Docstring for clean_reference_file.
+        Clean up the temporary reference file (ie delete it).
         '''
         ## debug message
         if verbose >= 3:
@@ -196,7 +201,12 @@ class FileManager:
 
     def set_output_file(self, output_dir, output_file, *, verbose = 0):
         '''
-        Docstring for set_output_file.
+        Set the output file for the measurement.
+
+        A check will be carried out to ensure that the output file does not already exist. If it does, the FileManager rc parameters will determine which combination of user input and/or silent default will decide whether or not to attempt a file name incrementation.
+         - If allowed, this will attempt to increment the last valid integer string appearing in the file name, eg "myfile_034" -> "myfile_035".
+         - If disallowed, or if allowed and unable to parse a sequential integer from the file name, a RuntimeError will be raised.
+        Basically, the PSICT-UIF will never overwrite an existing output file.
         '''
         ## debug message
         if verbose >= 2:
@@ -215,7 +225,9 @@ class FileManager:
 
     def get_valid_output_file(self, dir_in, file_in, *, verbose = 0):
         '''
-        Docstring for get_valid_output_file.
+        Return the name of a valid output file (ie not existent through incrementation of the passed-in filename).
+
+        If this cannot be done, will raise a RuntimeError.
         '''
         ## preparation
         flag_increment = False   # set if incrementation attempt is to be attempted
@@ -223,7 +235,7 @@ class FileManager:
         file_new = file_in
         ## debug message
         if verbose >= 1:
-            print("Verifying file:", path_in)
+            print("Verifying output file:", path_in)
 
         ## Check if file already exists
         if not os.path.isfile(path_in):

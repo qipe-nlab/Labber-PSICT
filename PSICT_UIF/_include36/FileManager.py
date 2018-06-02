@@ -220,6 +220,7 @@ class FileManager:
         ## preparation
         flag_increment = False   # set if incrementation attempt is to be attempted
         path_in = self.generate_full_path(dir_in, file_in)
+        file_new = file_in
         ## debug message
         if verbose >= 1:
             print("Verifying file:", path_in)
@@ -229,7 +230,7 @@ class FileManager:
             ## File does not exist; set new file name as-is
             if verbose >= 2:
                 print("The file", path_in, "does not already exist.")
-            file_new = file_in
+            ## Keep going past incrementation, return as-is
         else:
             ## File already exists
             if verbose >= 1:
@@ -242,7 +243,7 @@ class FileManager:
                     ## User incrementation permitted
                     if verbose >= 3:
                         print("User permitted incrementation.")
-                        flag_increment = True
+                    flag_increment = True
                 else:
                     ## User incrementation denied; fall back on auto incrementation default
                     if _FILEMGR_DEFAULTS_AUTO_INCREMENT:
@@ -259,7 +260,6 @@ class FileManager:
             if verbose >= 1:
                 print("Attempting to increment file name...")
             n_incr_attempts = 0   # log number of attempts to prevent loop with no exit condition
-            file_new = file_in    # update trial file name
             path_new = self.generate_full_path(dir_in, file_new)
             while os.path.isfile(path_new):
                 if verbose >= 1:

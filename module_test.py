@@ -17,11 +17,11 @@ psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
 ## Set template and output hdf5 files
 template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
 template_file = "K2018-04-21_222"
-psictInterface.set_template_file(template_dir, template_file, verbose = 4)
+psictInterface.set_template_file(template_dir, template_file, verbose = 1)
 psictInterface.fileManager.copy_reference_file()
 output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
-output_file = "K2018_test_001"
-psictInterface.set_output_file(output_dir, output_file, verbose = 4)
+output_file = "K2018-04-21_222"
+psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 
 ## Set input pulse sequence
 psictInterface.set_pulse_seq_params(verbose = 1)

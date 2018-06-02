@@ -7,7 +7,9 @@ print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
 
 ## Initialise PSICT-UIF interface object
-psictInterface = PSICT_UIF.psictUIFInterface(verbose = 4)
+psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
+## Set rc files
+psictInterface.set_script_rcfile("PSICT_UIF_samples/uif_script_rc_sample.py")
 
 ## Manually set Labber executable path
 psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)

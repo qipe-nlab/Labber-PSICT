@@ -24,10 +24,8 @@ class psictUIFInterface:
         ##
 
     def __del__(self):
-        ## delete temporary files here (*before* deleting fileManager object!)
-        ##
         ## delete object attributes
-        del self.fileManager
+        del self.fileManager      # FileManager destructor deletes temp files
         del self.pulseSeqManager
         ## debug message
         if self.verbose >= 4:
@@ -36,6 +34,12 @@ class psictUIFInterface:
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
+
+    def set_script_rcfile(self, new_script_rcfile, *, verbose = 0):
+        '''
+        Set the script-rc file (passed to the FileManager object).
+        '''
+        self.fileManager.set_script_rcfile(new_script_rcfile, verbose = verbose)
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''

@@ -46,6 +46,21 @@ class FileManager:
             print("FileManager destructor finished.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## rcfile methods
+
+    def set_script_rcfile(self, new_script_rcpath, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## normalize path
+        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(new_script_rcpath)))
+        ## debug message
+        if verbose >= 2:
+            print("Setting script-rcfile to", new_script_rcpath)
+        ## execute rcfile
+        exec(open(self.script_rcpath).read())
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):

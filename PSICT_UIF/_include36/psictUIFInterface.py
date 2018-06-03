@@ -4,6 +4,7 @@
 
 import os
 import importlib.util
+from pathlib import Path
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
@@ -17,6 +18,12 @@ class psictUIFInterface:
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## set logging level
         self.verbose = verbose
+        ## change working directory to the enclosing folder of this script
+        if verbose >= 4:
+            print("Changing working directory...")
+        os.chdir(Path(__file__).parents[2]) # trim to enclosing folder of PSICT_UIF
+        if verbose >= 4:
+            print("New working directory is", os.getcwd())
         ## Add constituent objects
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
@@ -45,7 +52,7 @@ class psictUIFInterface:
         ## normalize path
         self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(script_rcpath)))
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Reading from script rcfile:", self.script_rcpath)
         ## import script rcfile as module, and assign as FileManager attribute
         script_rc_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
@@ -121,7 +128,11 @@ class psictUIFInterface:
             print("Carrying out post-measurement operations...")
         ## Copy script and associated files to target directory (set in script rcfile)
         if self._script_rc.script_copy_enabled:
-            self.fileManager.post_measurement_copy(self._script_rc.script_copy_target_dir, verbose = verbose)
+            add_paths = []
+            ## Add the script rcfile as an additional path is specified
+            if self._script_rc.script_rc_copy_enabled:
+                add_paths.append(self.script_rcpath)
+            self.fileManager.post_measurement_copy(self._script_rc.script_copy_target_dir, additional_paths = add_paths, verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Post-measurement operations completed.")

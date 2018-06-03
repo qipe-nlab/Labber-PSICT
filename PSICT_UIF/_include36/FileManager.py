@@ -6,6 +6,9 @@ import platform
 import os
 import re
 import shutil
+import sys
+import inspect
+import pathlib
 
 from Labber import ScriptTools
 
@@ -312,10 +315,24 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
-    def post_measurement_copy(self, target_dir, *, verbose = 0):
+    def post_measurement_copy(self, target_dir, additional_paths = [], *, verbose = 0):
         '''
         Docstring
         '''
-        print("--- Copying the script and rcfile should be implemented here.")
+        ## Create target dir if it does not already exist
+        pathlib.Path(target_dir).mkdir(parents = True, exist_ok = True)
+        ## Copy external script (the one which runs the whole thing)
+        script_path_original = os.path.abspath(os.path.basename(inspect.stack()[-1][1]))
+        if verbose >= 3:
+            print("The original script is at", script_path_original)
+        script_path_new = shutil.copy(script_path_original, target_dir)
+        if verbose >= 3:
+            print("The script file has been copied to", script_path_new)
+        ## Copy additional files as passed to method, eg script-rc
+        for add_path in additional_paths:
+            add_path_new = shutil.copy(add_path, target_dir)
+            if verbose >= 3:
+                print("An additional file has been copied to", add_path_new)
+        ##
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

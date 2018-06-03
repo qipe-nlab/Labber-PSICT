@@ -54,6 +54,15 @@ class FileManager:
         if self.verbose >= 4:
             print("FileManager destructor finished.")
 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## rcfile methods
+
+    def assign_script_rcmodule(self, rcmodule, rcpath):
+        '''
+        Assign the passed script rcmodule (already-imported rcfile) to the FileManager object.
+        '''
+        self._script_rc = rcmodule
+        self._script_rcpath = rcpath
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
@@ -315,24 +324,48 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
-    def post_measurement_copy(self, target_dir, additional_paths = [], *, verbose = 0):
+    def post_measurement_copy(self, *, verbose = 0):
         '''
         Docstring
         '''
-        ## Create target dir if it does not already exist
-        pathlib.Path(target_dir).mkdir(parents = True, exist_ok = True)
-        ## Copy external script (the one which runs the whole thing)
-        script_path_original = os.path.abspath(os.path.basename(inspect.stack()[-1][1]))
-        if verbose >= 3:
-            print("The original script is at", script_path_original)
-        script_path_new = shutil.copy(script_path_original, target_dir)
-        if verbose >= 3:
-            print("The script file has been copied to", script_path_new)
-        ## Copy additional files as passed to method, eg script-rc
-        for add_path in additional_paths:
-            add_path_new = shutil.copy(add_path, target_dir)
+        ## Check if script copying is enabled in script-rcfile
+        if self._script_rc.script_copy_enabled:
+            if verbose >= 1:
+                print("Copying script and additional files...")
+            ## Create target dir if it does not already exist
             if verbose >= 3:
-                print("An additional file has been copied to", add_path_new)
+                print("Creating target directory (if it does not exist)...")
+            pathlib.Path(self._script_rc.script_copy_target_dir).mkdir(parents = True, exist_ok = True)
+            script_target_path = self._script_rc.script_copy_target_dir  # will have custom filename appended if necessary
+            target_path = self._script_rc.script_copy_target_dir         # path used for additional files
+            ## Set target file names (eg renaming to match output file)
+            if verbose >= 3:
+                print("Setting new filenames...")
+            if self._script_rc.script_copy_matches_output:
+                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _FILEMGR_DEFAULTS_FILE_EXTENSION])
+                print("The target file name is", target_file)
+                ## Append name to script target path
+                script_target_path = os.path.join(script_target_path, target_file)
+            ## Add additional paths as specified in script-rcfile
+            additional_paths = []
+            if self._script_rc.script_rc_copy_enabled:
+                additional_paths.append(self._script_rcpath)
+            ## Copy external script (the one which runs the whole thing)
+            script_path_original = os.path.abspath(os.path.basename(inspect.stack()[-1][1]))
+            if verbose >= 3:
+                print("The original script is at", script_path_original)
+            script_path_new = shutil.copy(script_path_original, script_target_path)
+            if verbose >= 3:
+                print("The script file has been copied to", script_path_new)
+            ## Copy additional files as passed to method, eg script-rc
+            for add_path in additional_paths:
+                add_path_new = shutil.copy(add_path, target_path)
+                if verbose >= 3:
+                    print("An additional file has been copied to", add_path_new)
+        else:
+            ## Copying script not enabled
+            if verbose >= 1:
+                print("Script copying has been disabled in the script-rcfile.")
         ##
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

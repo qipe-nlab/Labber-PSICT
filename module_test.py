@@ -26,4 +26,4 @@ psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 psictInterface.set_pulse_seq_params(verbose = 1)
 
 ## Run measurement
-psictInterface.perform_measurement(verbose = 1)
+psictInterface.perform_measurement(verbose = 4)

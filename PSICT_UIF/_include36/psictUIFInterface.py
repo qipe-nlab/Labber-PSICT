@@ -54,12 +54,14 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 1:
             print("Reading from script rcfile:", self.script_rcpath)
-        ## import script rcfile as module, and assign as FileManager attribute
+        ## import script rcfile as module
         script_rc_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
         self._script_rc = importlib.util.module_from_spec(script_rc_spec)
         script_rc_spec.loader.exec_module(self._script_rc)
         if verbose >= 2:
             print("Script rcfile imported.")
+        ## assign script rcfile to FileManager
+        self.fileManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''
@@ -78,6 +80,14 @@ class psictUIFInterface:
         Set the output hdf5 file (passed to the FileManager object).
         '''
         self.fileManager.set_output_file(output_dir, output_file, verbose = verbose)
+
+    def post_measurement_copy(self, *, verbose = 0):
+        '''
+        Wraps the FileManager.post_measurement_copy method with some additional pre-copy admin.
+
+        This is specifically deciding on what, where, and whether or not to rename, based on the script rcfile.
+        '''
+        self.fileManager.post_measurement_copy(verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence operations
@@ -124,15 +134,11 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 1:
             print("Measurement completed.")
+        #### Post-measurement operations
         if verbose >= 1:
             print("Carrying out post-measurement operations...")
-        ## Copy script and associated files to target directory (set in script rcfile)
-        if self._script_rc.script_copy_enabled:
-            add_paths = []
-            ## Add the script rcfile as an additional path is specified
-            if self._script_rc.script_rc_copy_enabled:
-                add_paths.append(self.script_rcpath)
-            self.fileManager.post_measurement_copy(self._script_rc.script_copy_target_dir, additional_paths = add_paths, verbose = verbose)
+        ## Copy files (script, rcfile, etc) for reproducability
+        self.post_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Post-measurement operations completed.")

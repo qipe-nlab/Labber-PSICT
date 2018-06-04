@@ -11,7 +11,7 @@ import shutil           # for manipulating copies of the input reference config 
 
 ###############################################################################
 ## Labber-PSICT general information
-PSICT_VERSION = "0.1.4"
+PSICT_VERSION = "0.1.4.1"
 print("Labber-PSICT version is", PSICT_VERSION)
 
 ###############################################################################
@@ -699,9 +699,9 @@ class InputStrParser:
         return param_values
 
 
-    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "Single-Qubit Pulse Generator", verbose = False):
+    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "SQPG", verbose = False):
         '''
-        Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "Single-Qubit Pulse Generator").
+        Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "SQPG").
 
         This method checks whether or not the file path specified for output at the MeasurementObject already exists, and, if so, exits the program in order to prevent appending data to an existing log file. If the file does not already exist, execution continues.
         '''
@@ -776,7 +776,7 @@ class InputStrParser:
         ## exit message
         if verbose: print("MeasurementObject values updated successfully.")
 
-    def set_iteration_params(self, iteration_input, instrument_name = "Single-Qubit Pulse Generator", verbose = False):
+    def set_iteration_params(self, iteration_input, instrument_name = "SQPG", verbose = False):
         '''
         Parse input for variable iteration, and set the corresponding Labber MeasurementObject values.
 
@@ -807,7 +807,7 @@ class InputStrParser:
             param_name = param_code
         ## main value
         if pulse_num == 0:
-            if instrument_name == "Single-Qubit Pulse Generator":
+            if instrument_name == "SQPG":
                 ## check if parameter is in additional or pulse-specific shortcodes
                 if param_code in pulseapp_shortcodes or param_code in add_shortcodes:
                     ## not sure how best to handle this right now; probably not needed
@@ -1051,7 +1051,7 @@ def update_values_from_string(param_string_list, labber_measurement_object, inst
         "<param 1 name>_<param 1 value> <param 2 name>_<param 2 value> ..."
     and must exactly match the parameter names specified in the params_main_config and params_pulse_config.
 
-    If left blank, instrument_name will default to "Single-Qubit Pulse Generator".
+    If left blank, instrument_name will default to "SQPG" (the Single-Qubit Pulse Generator).
     '''
 
     ## init parser object

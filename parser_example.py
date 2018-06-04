@@ -12,6 +12,7 @@ import sys     # for sys.exit()
 ## Run string_input_parser.py
 exec(open("labber_psict.py").read())
 
+sys.exit()
 ## Path of reference measurements files
 reference_path = 'C:\\Users\\qcpi\\Labber\\Data\\reference_config'
 ## Path for data; if folder does not exist, please manually create it before

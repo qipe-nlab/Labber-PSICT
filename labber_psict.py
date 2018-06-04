@@ -11,7 +11,7 @@ import shutil           # for manipulating copies of the input reference config 
 
 ###############################################################################
 ## Labber-PSICT general information
-PSICT_VERSION = "0.1.1"
+PSICT_VERSION = "0.1.2"
 print("Labber-PSICT version is", PSICT_VERSION)
 
 ###############################################################################
@@ -103,9 +103,9 @@ def get_full_label(instrument_name, param_name, pulse_number = 0):
     ## convert SQPG names to appropriate string
     if instrument_name in [None, "", "SQPG"]:
         # print("-> Instrument is SQPG.")
-        instrument_name = "Single-Qubit Pulse Generator"
+        instrument_name = "SQPG"
     ## expand param shortcode if instrument is SQPG
-    if (instrument_name == "Single-Qubit Pulse Generator") and (param_name in shortcodes):
+    if (instrument_name == "SQPG") and (param_name in shortcodes):
         # print("Param name", param_name, "is in shortcodes.")
         param_name = shortcodes[param_name]
     ## concatenate string together based on pulse number

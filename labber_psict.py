@@ -11,7 +11,7 @@ import shutil           # for manipulating copies of the input reference config 
 
 ###############################################################################
 ## Labber-PSICT general information
-PSICT_VERSION = "0.1.2"
+PSICT_VERSION = "0.1.3"
 print("Labber-PSICT version is", PSICT_VERSION)
 
 ###############################################################################
@@ -343,11 +343,13 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
     '''
     flag_increment = False       # set through args or input if incrementation attempt is desired
     file_in = full_path(path_in, fname_in)
+    file_new = None
     if verbose: print("Verifying file:", file_in)
     ## Check if file already exists
     if not os.path.isfile(file_in):
         ## file does not exist; set new fname to input fname as-is
         fname_new = fname_in
+        file_new = full_path(path_in, fname_new)
     else:
         ## file already exists
         if verbose: print("The file", file_in, "already exists.")

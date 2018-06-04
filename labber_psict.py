@@ -11,7 +11,7 @@ import shutil           # for manipulating copies of the input reference config 
 
 ###############################################################################
 ## Labber-PSICT general information
-PSICT_VERSION = "0.1.3"
+PSICT_VERSION = "0.1.4"
 print("Labber-PSICT version is", PSICT_VERSION)
 
 ###############################################################################

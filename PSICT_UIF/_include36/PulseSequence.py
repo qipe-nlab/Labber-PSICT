@@ -2,12 +2,17 @@
 ##  Subclassed into distinct classes for input (ie specified by user)
 ##  and output (used to set Labber parameters).
 
+from PSICT_UIF._include36.Pulse import Pulse
+
 class PulseSeq:
     '''
     Docstring for PulseSeq.
     '''
     def __init__(self, *, verbose = 0):
+        ## set logging level
         self.verbose = verbose
+        ## initialise containers
+        self.pulse_list = []
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq constructor.")
@@ -16,6 +21,17 @@ class PulseSeq:
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq destructor.")
+
+    ###########################################################################
+    ## Pulse transactional methods
+
+    def add_pulse(self, pulse_name, pulse_attributes = {}):
+        '''
+        Docstring for add_pulse.
+        '''
+        new_pulse = Pulse(pulse_name)
+        # new_pulse.set_attributes(pulse_attributes)
+        self.pulse_list.append(new_pulse)
 
 
 ###############################################################################

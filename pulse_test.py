@@ -8,13 +8,19 @@ new_pulse = Pulse("foo")
 print(new_pulse)
 
 pseq = PulseSeq()
-print(pseq)
-print(pseq.pulse_list)
+# print(pseq)
+# print(pseq.pulse_list)
 
 pseq.add_pulse(new_pulse)
-print(pseq.pulse_list)
+# print(pseq.pulse_list)
 
 pseq.add_pulse("bar")
-print(pseq.pulse_list)
+# pseq.add_pulse("foo")
+pseq.add_pulse("quux")
 
+
+print(pseq.pulse_list)
 print(pseq.pulse_names)
+
+print(pseq["foo"])
+print(pseq[2])

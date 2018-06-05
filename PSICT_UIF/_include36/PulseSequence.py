@@ -43,23 +43,31 @@ class PulseSeq:
     def __getitem__(self, id):
         ## if id is string, attempt to get by name
         if isinstance(id, str):
-            print("Getting pulse by name")
+            id = self.pulse_names.index(id)
+        ## else pass (hopefully valid index) directly
         else:
-            print("Getting pulse by index")
+            pass
+        return self.pulse_list[id]
 
-    def add_pulse(self, new_pulse, pulse_attributes = {}):
+    def add_pulse(self, new_pulse, pulse_attributes = {}, *, verbose = 0):
         '''
         Docstring for add_pulse.
         '''
         ## if pulse is a string, create a new Pulse
         if isinstance(new_pulse, str):
-            print("Creating a new pulse with name", new_pulse)
+            if verbose >= 3:
+                print("Creating a new pulse by name:", new_pulse)
             new_pulse = Pulse(new_pulse)
         elif isinstance(new_pulse, Pulse):
-            print("New Pulse is already pulse object.")
+            if verbose >= 3:
+                print("New Pulse is already pulse object.")
+            pass
         else:
             raise ValueError(" ".join(["Cannot interpret", new_pulse, "as pulse identifier"]))
-        # new_pulse.set_attributes(pulse_attributes)
+        ## check if pulse with matching name already exists
+        if new_pulse.name in self.pulse_names:
+            raise KeyError(" ".join(["Pulse with name", new_pulse.name, "already exists."]))
+        # TODO new_pulse.set_attributes(pulse_attributes)
         self.pulse_list.append(new_pulse)
 
 

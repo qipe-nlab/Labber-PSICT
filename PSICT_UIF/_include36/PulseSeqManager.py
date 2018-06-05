@@ -69,7 +69,10 @@ class PulseSeqManager:
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
         #### do conversion
-        ##
+        ## Get list of pulses from inputPulseSeq sorted by absolute_time
+        ##  and set the outputPulseSeq to this list
+        sorted_pulses = self.inputPulseSeq.get_sorted_list()
+        self.outputPulseSeq.set_pulse_seq(sorted_pulses)
         ####
         ## set flag
         self.is_output_seq_populated = True

@@ -3,6 +3,7 @@
 ##  and output (used to set Labber parameters).
 
 from PSICT_UIF._include36.Pulse import Pulse
+import PSICT_UIF._include36._Pulse_rc as _rc
 
 class PulseSeq:
     '''
@@ -58,6 +59,7 @@ class PulseSeq:
             if verbose >= 3:
                 print("Creating a new pulse by name:", new_pulse)
             new_pulse = Pulse(new_pulse)
+            new_pulse.set_attributes(pulse_attributes, verbose = verbose)
         elif isinstance(new_pulse, Pulse):
             if verbose >= 3:
                 print("New Pulse is already pulse object.")
@@ -67,7 +69,6 @@ class PulseSeq:
         ## check if pulse with matching name already exists
         if new_pulse.name in self.pulse_names:
             raise KeyError(" ".join(["Pulse with name", new_pulse.name, "already exists."]))
-        # TODO new_pulse.set_attributes(pulse_attributes)
         self.pulse_list.append(new_pulse)
 
 
@@ -90,6 +91,26 @@ class InputPulseSeq(PulseSeq):
             print("Called InputPulseSeq destructor.")
         ## call base class destructor
         super().__del__()
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse sequence sorting
+
+    def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr, *, verbose = 0):
+        '''
+        Docstring.
+        '''
+        ## debug message
+        if verbose >= 2:
+            print("Getting sorted pulse sequence...")
+        # assert that each pulse in the sequence has the appropriate sort attribute set
+        try:
+            sort_times = [pulse[sort_attribute] for pulse in self.pulse_list]
+        except KeyError:
+            raise RuntimeError(" ".join(["There are pulses for which the", sort_attribute, "attribute has not been set."]))
+        ## return pulse list sorted by sort attribute
+        if verbose >= 4:
+            print("Sorting by attribute:", sort_attribute)
+        return sorted(self.pulse_list, key = lambda x: x[sort_attribute])
 
 
 ###############################################################################

@@ -15,3 +15,7 @@ ORD_PARAMS = [
                 "is_measurement",  # is the pulse a measurement pulse?
                 ## etc
              ]
+
+
+## Pulse sorting
+pulse_sort_attr = "absolute_time"

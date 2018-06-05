@@ -7,10 +7,19 @@ print("-----------")
 new_pulse = Pulse("foo")
 print(new_pulse)
 
-new_pulse.set_attributes({"name": "boing", "x": 14, "y": 26.5, "z": "seven"}, verbose = 4)
+new_pulse.set_attributes({
+            "name": "test1",
+            "a": 14,
+            "w": 26.5,
+            "pulse_number": 3,
+            "absolute_time": 500,
+            "is_inverted": False,
+            }, verbose = 4)
 
-print(new_pulse["x"])
+print(new_pulse["a"])
 print(new_pulse.name)
+print(new_pulse.phys_attr)
+print(new_pulse.ord_attr["absolute_time"])
 
 # pseq = PulseSeq()
 # print(pseq)

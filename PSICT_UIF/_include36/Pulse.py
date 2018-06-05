@@ -3,6 +3,8 @@
 ##  the intention is for these to be handled differently by the input-output
 ##  pulse conversion algorithm
 
+import PSICT_UIF._include36._Pulse_rc as _rc
+
 class Pulse:
     '''
     Docstring for Pulse class.
@@ -71,9 +73,15 @@ class Pulse:
                 self.name = value
                 if verbose >= 2:
                     print("Pulse name updated to:", self.name)
-            else:
+            elif key in _rc.PHYS_PARAMS:
                 ## update physical attributes
                 self.phys_attr[key] = value
                 if verbose >= 2:
                     print("Pulse physical attribute", key, "updated to", value)
-            ## TODO implement differentiation between physical and ordering attributes
+            elif key in _rc.ORD_PARAMS:
+                ## update ordering attribute
+                self.ord_attr[key] = value
+                if verbose >= 2:
+                    print("Pulse ordering attribute", key, "updated to", value)
+            else:
+                raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))

@@ -47,5 +47,33 @@ class Pulse:
     def ord_attr(self, new_dict):
         self.__ord_attr = new_dict
 
+    def __getitem__(self, key):
+        if key == "name":
+            return self.name
+        elif key in self.phys_attr:
+            return self.phys_attr[key]
+        elif key in self.ord_attr:
+            return self.ord_attr[key]
+        else:
+            raise KeyError(key)
+
 
     ###########################################################################
+    ## Attribute import and input
+
+    def set_attributes(self, input_attributes, *, verbose = 0):
+        '''
+        Set attributes from the dict input_attributes.
+        '''
+        for key, value in input_attributes.items():
+            if key == "name":
+                ## update name
+                self.name = value
+                if verbose >= 2:
+                    print("Pulse name updated to:", self.name)
+            else:
+                ## update physical attributes
+                self.phys_attr[key] = value
+                if verbose >= 2:
+                    print("Pulse physical attribute", key, "updated to", value)
+            ## TODO implement differentiation between physical and ordering attributes

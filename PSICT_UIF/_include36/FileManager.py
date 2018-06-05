@@ -20,6 +20,7 @@ from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_D
                                                   _FILEMGR_DEFAULTS_USER_INCREMENT, \
                                                   _FILEMGR_DEFAULTS_AUTO_INCREMENT, \
                                                   _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS, \
+                                                  _FILEMGR_DEFAULTS_SCRIPT_EXTENSION, \
                                                  )
 # import PSICT_UIF._include36._FileManager_rc as _rc # (???)
 ## above will require specifying namespace every time, but that may be more pythonic...
@@ -342,7 +343,7 @@ class FileManager:
             if verbose >= 3:
                 print("Setting new filenames...")
             if self._script_rc.script_copy_matches_output:
-                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _FILEMGR_DEFAULTS_FILE_EXTENSION])
+                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _FILEMGR_DEFAULTS_SCRIPT_EXTENSION])
                 print("The target file name is", target_file)
                 ## Append name to script target path
                 script_target_path = os.path.join(script_target_path, target_file)

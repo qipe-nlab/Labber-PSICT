@@ -7,6 +7,7 @@ _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT = "C:/Program Files (x86)/Labber/Program"
 ## Dataset file defaults
 _FILEMGR_DEFAULTS_FILE_EXTENSION = "hdf5"  # file extension of Labber database files
 _FILEMGR_DEFAULTS_COPY_POSTFIX = "__copy"  # postfixed to filename of temporary reference file
+_FILEMGR_DEFAULTS_SCRIPT_EXTENSION = "py"  # script file extension - should be .py
 
 ## Output filename incrementation defaults
 _FILEMGR_DEFAULTS_USER_INCREMENT = True    # prompt user before incrementing the filename (overrules _FILEMGR_DEFAULTS_AUTO_INCREMENT)

@@ -7,7 +7,7 @@ print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
 
 ## Initialise PSICT-UIF interface object
-psictInterface = PSICT_UIF.psictUIFInterface(verbose = 3)
+psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 ## Set script rcfile
 psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
 
@@ -26,4 +26,4 @@ psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 psictInterface.set_pulse_seq_params(verbose = 1)
 
 ## Run measurement
-psictInterface.perform_measurement(verbose = 4)
+psictInterface.perform_measurement(verbose = 1)

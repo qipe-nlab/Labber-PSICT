@@ -12,18 +12,7 @@ import pathlib
 
 from Labber import ScriptTools
 
-## TODO: check if we can't import these all at once
-from PSICT_UIF._include36._FileManager_rc import (_FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT, \
-                                                  _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT, \
-                                                  _FILEMGR_DEFAULTS_FILE_EXTENSION, \
-                                                  _FILEMGR_DEFAULTS_COPY_POSTFIX, \
-                                                  _FILEMGR_DEFAULTS_USER_INCREMENT, \
-                                                  _FILEMGR_DEFAULTS_AUTO_INCREMENT, \
-                                                  _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS, \
-                                                  _FILEMGR_DEFAULTS_SCRIPT_EXTENSION, \
-                                                 )
-# import PSICT_UIF._include36._FileManager_rc as _rc # (???)
-## above will require specifying namespace every time, but that may be more pythonic...
+import PSICT_UIF._include36._FileManager_rc as _rc
 
 
 class FileManager:
@@ -38,7 +27,7 @@ class FileManager:
         ## set object log level
         self.verbose = verbose
         ## set values of attributes constant across multiple methods
-        self._REF_COPY_POSTFIX = _FILEMGR_DEFAULTS_COPY_POSTFIX
+        self._REF_COPY_POSTFIX = _rc.SCRIPT_COPY_POSTFIX
         ## set Labber exe path to system default
         self.setdef_labber_exe_path(verbose = self.verbose)
         ## debug message
@@ -98,12 +87,12 @@ class FileManager:
         _SYSTEM = platform.system()
         if _SYSTEM == "Windows":
             if verbose >= 3:
-                print("System identified as Windows; default executable path is", _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT)
-            _SYSDEF_LABBER_EXE_PATH = _FILEMGR_LABBER_EXE_PATH_WIN_DEFAULT
+                print("System identified as Windows; default executable path is", _rc.EXE_PATH_WIN)
+            _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_WIN
         elif _SYSTEM == "Darwin":
             if verbose >= 3:
-                print("System identified as macOS; default executable path is", _FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT)
-            _SYSDEF_LABBER_EXE_PATH = _FILEMGR_LABBER_EXE_PATH_MAC_DEFAULT
+                print("System identified as macOS; default executable path is", _rc.EXE_PATH_MAC)
+            _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_MAC
         else:
             raise RuntimeError("System could not be identified, or is not supported.\nplatform.system() returned:", _SYSTEM)
         ## change path stored in FileManager attributes
@@ -130,11 +119,11 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Database file methods
 
-    def generate_full_path(self, dir_name, file_name, file_extension = _FILEMGR_DEFAULTS_FILE_EXTENSION):
+    def generate_full_path(self, dir_name, file_name, file_extension = _rc.FILE_DATABASE_EXT):
         '''
         Generate the full path to a file of the specified directory, file name, and extension.
 
-        The value of _FILEMGR_DEFAULTS_FILE_EXTENSION in the _FileManager_rc file is used as the default extension.
+        The value of FILE_DATABASE_EXT in the _FileManager_rc file is used as the default extension.
         '''
         return os.path.join(dir_name, "".join([file_name, ".", file_extension]))
 
@@ -250,7 +239,7 @@ class FileManager:
             if verbose >= 1:
                 print("The file", path_in, "already exists.")
             ## Check if user permission to increment is necessary
-            if _FILEMGR_DEFAULTS_USER_INCREMENT:
+            if _rc.INCREMENT_ASK_USER:
                 ## Ask for user input
                 user_response = input("Attempt to increment? [Y/n] ")
                 if user_response == "" or user_response.lower()[0] == "y":
@@ -260,7 +249,7 @@ class FileManager:
                     flag_increment = True
                 else:
                     ## User incrementation denied; fall back on auto incrementation default
-                    if _FILEMGR_DEFAULTS_AUTO_INCREMENT:
+                    if _rc.INCREMENT_AUTO:
                         ## Automatic incrementation enabled
                         if verbose >= 2:
                             print("Automatic incrementation enabled.")
@@ -284,8 +273,8 @@ class FileManager:
                 path_new = self.generate_full_path(dir_in, file_new)
                 n_incr_attempts = n_incr_attempts + 1
                 ## check if max number of attempts exceeded
-                if n_incr_attempts > _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS:
-                    raise RuntimeError("Maximum number of incrementation attempts reached:", _FILEMGR_DEFAULTS_MAX_INCREMENTATION_ATTEMPTS)
+                if n_incr_attempts > _rc.INCREMENT_MAX_ATTEMPTS:
+                    raise RuntimeError("Maximum number of incrementation attempts reached:", _rc.INCREMENT_MAX_ATTEMPTS)
             ##
 
         ## Return new file name (can be unchanged)
@@ -343,7 +332,7 @@ class FileManager:
             if verbose >= 3:
                 print("Setting new filenames...")
             if self._script_rc.script_copy_matches_output:
-                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _FILEMGR_DEFAULTS_SCRIPT_EXTENSION])
+                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
                 print("The target file name is", target_file)
                 ## Append name to script target path
                 script_target_path = os.path.join(script_target_path, target_file)

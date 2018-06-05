@@ -7,7 +7,7 @@ print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
 
 ## Initialise PSICT-UIF interface object
-psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
+psictInterface = PSICT_UIF.psictUIFInterface(verbose = 3)
 ## Set script rcfile
 psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
 

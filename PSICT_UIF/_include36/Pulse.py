@@ -12,8 +12,10 @@ class Pulse:
         self.phys_attr = {}  # physical attributes
         self.ord_attr = {}   # ordering attrbutes
 
-    def __str__(self):
-        return "".join(["Pulse name: ", self.name])
+    def __repr__(self):
+        return "".join(["<Pulse \"", self.name, "\">"])
+    # def __str__(self):
+    #     return "".join(["Pulse \"", self.name, "\""])
 
 
     ###########################################################################

@@ -23,13 +23,42 @@ class PulseSeq:
             print("Called PulseSeq destructor.")
 
     ###########################################################################
+    ## Pulse list methods
+    @property
+    def pulse_list(self):
+        return self.__pulse_list
+    @pulse_list.setter
+    def pulse_list(self, new_list):
+        self.__pulse_list = new_list
+
+    ## print list of pure pulse names when accessing pulse_names as attribute
+    @property
+    def pulse_names(self):
+        return [pulse.name for pulse in self.pulse_list]
+
+    ###########################################################################
     ## Pulse transactional methods
 
-    def add_pulse(self, pulse_name, pulse_attributes = {}):
+    ## access through subscript operator
+    def __getitem__(self, id):
+        ## if id is string, attempt to get by name
+        if isinstance(id, str):
+            print("Getting pulse by name")
+        else:
+            print("Getting pulse by index")
+
+    def add_pulse(self, new_pulse, pulse_attributes = {}):
         '''
         Docstring for add_pulse.
         '''
-        new_pulse = Pulse(pulse_name)
+        ## if pulse is a string, create a new Pulse
+        if isinstance(new_pulse, str):
+            print("Creating a new pulse with name", new_pulse)
+            new_pulse = Pulse(new_pulse)
+        elif isinstance(new_pulse, Pulse):
+            print("New Pulse is already pulse object.")
+        else:
+            raise ValueError(" ".join(["Cannot interpret", new_pulse, "as pulse identifier"]))
         # new_pulse.set_attributes(pulse_attributes)
         self.pulse_list.append(new_pulse)
 

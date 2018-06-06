@@ -14,6 +14,7 @@ class PulseSeq:
         self.verbose = verbose
         ## initialise containers
         self.pulse_list = []
+        self.main_params = {}
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq constructor.")
@@ -22,6 +23,16 @@ class PulseSeq:
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq destructor.")
+
+    ###########################################################################
+    ## Main (overall) parameter methods
+    @property
+    def main_params(self):
+        return self.__main_params
+    @main_params.setter
+    def main_params(self, new_dict):
+        self.__main_params = new_dict
+
 
     ###########################################################################
     ## Pulse list methods
@@ -94,21 +105,65 @@ class InputPulseSeq(PulseSeq):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence import
 
-    def set_seq_params(self, param_dict, *, verbose = 0):
+    def set_pulse_seq(self, params_dict, * , verbose = 0):
         '''
-        Docstring
+        Docstring.
         '''
-        for pulse_name, pulse_params in param_dict.items():
-            ## debug message
-            if verbose >= 2:
-                print("Setting parameters for pulse", pulse_name)
-            ## add pulse name to param list
-            pulse_params["name"] = pulse_name
-            ## create new pulse with given parameters
-            self.add_pulse(pulse_params)
-            ## debug message
-            if verbose >= 2:
-                print("Added pulse", pulse_name, "successfully.")
+        ## debug message
+        if verbose >= 1:
+            print("Setting input pulse sequence parameters...")
+        ## Set pulse sequence from input dict
+        for pulse_name, pulse_params in params_dict.items():
+            ## Check for main specification
+            if pulse_name == "main":
+                if verbose >= 2:
+                    print("Setting sequence main parameters...")
+                self.main_params = pulse_params
+                if verbose >= 2:
+                    print("Sequence main parameters set.")
+            else:  ## add pulses normally
+                ## debug message
+                if verbose >= 2:
+                    print("Setting parameters for pulse", pulse_name)
+                ## add pulse name to param list
+                pulse_params["name"] = pulse_name
+                ## create new pulse with given parameters
+                self.add_pulse(pulse_params)
+                ## debug message
+                if verbose >= 2:
+                    print("Added pulse", pulse_name, "successfully.")
+        ## debug message
+        if verbose >= 1:
+            print("Input pulse sequence parameters set.")
+
+    # def set_main_params(self, main_params_dict, *, verbose = 0):
+    #     '''
+    #     Docstring.
+    #     '''
+    #     ## debug message
+    #     if verbose >= 3:
+    #         print("Setting main params for InputPulseSeq...")
+    #     ##
+    #     self.main_params = main_params_dict
+    #     ## debug message
+    #     if verbose >= 3:
+    #         print("InputPulseSeq main params set.")
+    #
+    # def set_seq_params(self, param_dict, *, verbose = 0):
+    #     '''
+    #     Docstring
+    #     '''
+    #     for pulse_name, pulse_params in param_dict.items():
+    #         ## debug message
+    #         if verbose >= 2:
+    #             print("Setting parameters for pulse", pulse_name)
+    #         ## add pulse name to param list
+    #         pulse_params["name"] = pulse_name
+    #         ## create new pulse with given parameters
+    #         self.add_pulse(pulse_params)
+    #         ## debug message
+    #         if verbose >= 2:
+    #             print("Added pulse", pulse_name, "successfully.")
 
     def pulse_pre_conversion(self, *, verbose = 0):
         '''
@@ -160,7 +215,20 @@ class OutputPulseSeq(PulseSeq):
         super().__del__()
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## Pulse import methods (post-sorting)
+    ## Pulse import methods (post-conversion)
+
+    def set_main_params(self, param_dict, *, verbose = 0):
+        '''
+        Docstring.
+        '''
+        ## debug message
+        if verbose >= 3:
+            print("Importing main parameters for OutputPulseSeq...")
+        ##
+        self.main_params = param_dict
+        ## debug message
+        if verbose >= 3:
+            print("OutputPulseSeq main parameter import completed.")
 
     def set_pulse_seq(self, pulse_list, *, verbose = 0):
         '''

@@ -8,6 +8,9 @@ from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 
 my_pulse_seq = \
         {
+            "main": {
+                    "control_freq": 7850,
+                },
             "first": \
                 {
                     "a": 2, "w": 3, "absolute_time": 400,

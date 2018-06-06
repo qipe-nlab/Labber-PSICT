@@ -36,25 +36,34 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence
 
-    def set_input_pulse_seq(self, pulse_seq_param_dict, *, verbose = 0):
+    def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 0):
         '''
-        Set input parameters for the pulse sequence.
-
-        These are the human-input parameters which will later be converted to a Labber-readable pulse sequence.
-
-        Note that this method must receive *only* the SQPG pulse-sequence specifications!
+        Docstring.
         '''
-        ## debug message
-        if verbose >= 2:
-            print("Setting input pulse sequence parameters...")
-        ####
-        ## Set parameters
-        self.inputPulseSeq.set_seq_params(pulse_seq_param_dict, verbose = verbose)
+        self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
-        ## debug message
-        if verbose >= 2:
-            print("Input pulse sequence parameters set.")
+
+
+    # def set_input_pulse_seq(self, pulse_seq_param_dict, *, verbose = 0):
+    #     '''
+    #     Set input parameters for the pulse sequence.
+    #
+    #     These are the human-input parameters which will later be converted to a Labber-readable pulse sequence.
+    #
+    #     Note that this method must receive *only* the SQPG pulse-sequence specifications!
+    #     '''
+    #     ## debug message
+    #     if verbose >= 2:
+    #         print("Setting input pulse sequence parameters...")
+    #     ####
+    #     ## Set parameters
+    #     self.inputPulseSeq.set_seq_params(pulse_seq_param_dict, verbose = verbose)
+    #     ## set flag
+    #     self.is_input_seq_populated = True
+    #     ## debug message
+    #     if verbose >= 2:
+    #         print("Input pulse sequence parameters set.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

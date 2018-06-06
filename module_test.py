@@ -1,5 +1,7 @@
 ## Testing the functionality of PSICT-UIF as a module
 
+import sys
+
 import PSICT_UIF
 
 print("------------------------------------------------")
@@ -22,8 +24,33 @@ output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
 output_file = "K2018-04-21_226"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 
+#### Instrument settings
+## Point values
+point_values = {
+        "SQPG":
+            {
+            "main": {
+                    "control_freq": 7850,
+                },
+            "first_pulse": \
+                {
+                    "a": 2, "w": 3, "absolute_time": 400,
+                },
+            "second_pulse": \
+                {
+                    "a": 5, "w": 1, "absolute_time": 200,
+                },
+            "third_pulse": \
+                {
+                    "a": 5, "w": 1, "absolute_time": 300,
+                },
+            }
+    }
+
 ## Set input pulse sequence
-psictInterface.set_pulse_seq_params(verbose = 1)
+psictInterface.set_point_values(point_values, verbose = 4)
+
+sys.exit()
 
 ## Run measurement
 psictInterface.perform_measurement(verbose = 1)

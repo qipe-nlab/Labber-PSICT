@@ -103,6 +103,15 @@ class InputPulseSeq(PulseSeq):
         super().__del__()
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Input-specific main parameter methods
+
+    def export_main_params(self, *, verbose = 0):
+        '''
+        Docstring.
+        '''
+        return self.main_params
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence import
 
     def set_pulse_seq(self, params_dict, * , verbose = 0):
@@ -136,34 +145,6 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 1:
             print("Input pulse sequence parameters set.")
 
-    # def set_main_params(self, main_params_dict, *, verbose = 0):
-    #     '''
-    #     Docstring.
-    #     '''
-    #     ## debug message
-    #     if verbose >= 3:
-    #         print("Setting main params for InputPulseSeq...")
-    #     ##
-    #     self.main_params = main_params_dict
-    #     ## debug message
-    #     if verbose >= 3:
-    #         print("InputPulseSeq main params set.")
-    #
-    # def set_seq_params(self, param_dict, *, verbose = 0):
-    #     '''
-    #     Docstring
-    #     '''
-    #     for pulse_name, pulse_params in param_dict.items():
-    #         ## debug message
-    #         if verbose >= 2:
-    #             print("Setting parameters for pulse", pulse_name)
-    #         ## add pulse name to param list
-    #         pulse_params["name"] = pulse_name
-    #         ## create new pulse with given parameters
-    #         self.add_pulse(pulse_params)
-    #         ## debug message
-    #         if verbose >= 2:
-    #             print("Added pulse", pulse_name, "successfully.")
 
     def pulse_pre_conversion(self, *, verbose = 0):
         '''

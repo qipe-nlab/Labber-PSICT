@@ -45,27 +45,6 @@ class PulseSeqManager:
         self.is_input_seq_populated = True
 
 
-    # def set_input_pulse_seq(self, pulse_seq_param_dict, *, verbose = 0):
-    #     '''
-    #     Set input parameters for the pulse sequence.
-    #
-    #     These are the human-input parameters which will later be converted to a Labber-readable pulse sequence.
-    #
-    #     Note that this method must receive *only* the SQPG pulse-sequence specifications!
-    #     '''
-    #     ## debug message
-    #     if verbose >= 2:
-    #         print("Setting input pulse sequence parameters...")
-    #     ####
-    #     ## Set parameters
-    #     self.inputPulseSeq.set_seq_params(pulse_seq_param_dict, verbose = verbose)
-    #     ## set flag
-    #     self.is_input_seq_populated = True
-    #     ## debug message
-    #     if verbose >= 2:
-    #         print("Input pulse sequence parameters set.")
-
-
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## conversion methods
 
@@ -74,21 +53,25 @@ class PulseSeqManager:
         Convert the input sequence (specified by the user) into an output sequence (suitable for input into Labber).
         '''
         ## debug message
-        if verbose >= 3:
+        if verbose >= 2:
             print("Converting input sequence to output sequence...")
         ## check if input sequence is populated
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
         #### do conversion
+        ## Transfer main parameters
+        if verbose >= 3:
+            print("Transferring main parameters...")
+        self.outputPulseSeq.set_main_params(self.inputPulseSeq.export_main_params())
         ## Get list of pulses from inputPulseSeq (sorted by absolute_time)
         ##  and set the outputPulseSeq to this list
-        sorted_pulses = self.inputPulseSeq.get_sorted_list()
-        self.outputPulseSeq.set_pulse_seq(sorted_pulses)
+        sorted_pulses = self.inputPulseSeq.get_sorted_list(verbose = verbose)
+        self.outputPulseSeq.set_pulse_seq(sorted_pulses, verbose = verbose)
         ####
         ## set flag
         self.is_output_seq_populated = True
         ## debug message
-        if verbose >= 3:
+        if verbose >= 2:
             print("Conversion to output sequence completed.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

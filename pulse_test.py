@@ -35,7 +35,12 @@ print(psm.inputPulseSeq.pulse_list)
 ## convert sequence
 psm.convert_seq(verbose = 4)
 
+## verify that main parameters were transferred correctly
+print(psm.outputPulseSeq.main_params)
+## verify that pulse sequence was transferred correctly
 print(psm.outputPulseSeq.pulse_list)
 print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
+
+
 
 sys.exit()

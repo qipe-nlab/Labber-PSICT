@@ -197,7 +197,81 @@ class InputPulseSeq(PulseSeq):
         Most notably, this involves parameter value adjustment (eg converting to ns), as well as working out the timing/ordering of the entire pulse sequence.
         '''
         ## TODO Implement all the stuff mentioned in the docstring!
-        pass
+        ## debug message
+        if verbose >= 2:
+            print("Carrying out pulse sequence pre-conversion...")
+
+        ####################################
+        #### Absolute time calculations ####
+        ####################################
+        if verbose >= 3:
+            print("Carrying out absolute_time calculations...")
+
+        ## First, all pulses which have their time_reference set as "absolute" automatically have a valid absolute time if it is specified
+        if verbose >= 3:
+            print("Setting validity of absolute_time for pulses with 'absolute' time_reference...")
+        for pulse in self.pulse_list:
+            if pulse["time_reference"] == "absolute":
+                ## Verify that an absolute_time parameter is actually set (can fall back on time_offset if there is no absolute_time)
+                if "absolute_time" in pulse.attributes:
+                    pass
+                elif "time_offset" in pulse.attributes:
+                    pulse["absolute_time"] = pulse["time_offset"]
+                else:
+                    raise RuntimeError(" ".join(["Pulse", pulse.name, "has no absolute_time or time_offset specified, but time_reference is set as 'absolute'."]))
+                ## Set flag
+                pulse.valid_abs_time = True
+        if verbose >= 3:
+            print("Absolute time set for 'absolute' time_reference pulses.")
+
+        ## Then, any pulses with time_reference set to "previous", which will be set by incrementing upwards through user-specified pulse_number parameters
+        if verbose >= 3:
+            print("Setting absolute_time for pulses with 'previous' time reference...")
+        ##    First, set the value of the pulse_number attribute to None for pulses where it is not already set; this will enable checking for it without errors
+        for pulse in self.pulse_list:
+            if "pulse_number" in pulse.attributes:
+                continue
+            else:
+                pulse["pulse_number"] = -1
+        ##    Then, find the maximal user-defined pulse number to serve as an upper limit for iterating the pulse counter
+        max_pulse_number = max([pulse["pulse_number"] for pulse in self.pulse_list])
+        ##    Finally, iterate upwards through increasing pulse numbers, calculating the absolute times of all pulses with pulse numbers and time_reference = "previous"
+        pulse_counter = 0
+        previous_pulse = None
+        absolute_time = 0.0
+        while pulse_counter <= max_pulse_number:
+            current_pulse = next((pulse for pulse in self.pulse_list if pulse["pulse_number"] == pulse_counter), None)
+            if current_pulse is not None: # ensure that a pulse with this pulse number was returned above
+                if current_pulse["time_reference"] == "previous":
+                    ## Check that this is not specified for the first pulse
+                    if previous_pulse is None:
+                        raise RuntimeError("Cannot use 'previous' time reference for first numbered pulse")
+                    ## Otherwise, use time_offset added previous pulse's absolute_time to calculate absolute_time
+                    absolute_time = previous_pulse["absolute_time"] + current_pulse["time_offset"]
+                    ## Set absolute_time of current pulse
+                    current_pulse["absolute_time"] = absolute_time
+                    current_pulse.valid_abs_time = True
+                else: # the current pulse does not have 'previous' as its time_reference specification
+                    pass
+                ## If a pulse with this pulse_number exists, always update the previous_pulse reference
+                previous_pulse = current_pulse
+            else:  # no pulse with this number exists
+                pass
+            ## Update pulse counter
+            pulse_counter = pulse_counter + 1
+        ##    Clean up - remove artificially-added pulse_number specifications
+        for pulse in self.pulse_list:
+            if pulse["pulse_number"] == -1:
+                del pulse["pulse_number"]
+        ## Finish pulse_number calculations
+        if verbose >= 3:
+            print("Absolute time set for 'previous' time_reference pulses.")
+
+        ##
+        ####
+        ## debug message
+        if verbose >= 2:
+            print("Pulse sequence pre-conversion completed.")
 
     def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr, *, verbose = 0):
         '''
@@ -211,11 +285,8 @@ class InputPulseSeq(PulseSeq):
         ## Carry out pre-sort processing
         self.pulse_pre_conversion(verbose = verbose)
         ## Assert that each pulse in the sequence has the appropriate sort attribute set
-        try:
-            sort_times = [pulse[sort_attribute] for pulse in self.pulse_list]
-        except KeyError:
-            raise RuntimeError(" ".join(["There are pulses for which the", sort_attribute, "attribute has not been set."]))
-        ## return pulse list sorted by sort attribute
+        assert all([pulse.valid_abs_time for pulse in self.pulse_list]), "There are pulses which do not have a valid (set or calculated) absolute_time attribute."
+        ## debug message
         if verbose >= 4:
             print("Sorting by attribute:", sort_attribute)
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])

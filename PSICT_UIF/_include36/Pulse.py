@@ -13,6 +13,7 @@ class Pulse:
     '''
     def __init__(self, spec, *, verbose = 0):
         self.attributes = {}
+        self.valid_abs_time = False
         if isinstance(spec, dict):  # create from dict of parameters
             if verbose >= 4:
                 print("Creating Pulse object from parameter dict...")
@@ -39,6 +40,14 @@ class Pulse:
     def name(self, name):
         self.attributes["name"] = name
 
+    ## Valid absolute_time spec flag
+    @property
+    def valid_abs_time(self):
+        return self.__valid_abs_time
+    @valid_abs_time.setter
+    def valid_abs_time(self, new_value):
+        self.__valid_abs_time = bool(new_value)
+
     def __getitem__(self, key):
         return self.attributes[key]
 
@@ -47,6 +56,9 @@ class Pulse:
             self.attributes[key] = value
         else:
             raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))
+
+    def __delitem__(self, key):
+        del self.attributes[key]
 
     def print_info(self):
         '''

@@ -13,15 +13,15 @@ my_pulse_seq = \
                 },
             "first": \
                 {
-                    "a": 2, "w": 3, "absolute_time": 400,
+                    "a": 2, "w": 3, "time_offset": 400, "time_reference": "previous", "pulse_number": 2,
                 },
             "second": \
                 {
-                    "a": 5, "w": 1, "absolute_time": 200,
+                    "a": 5, "w": 1, "time_offset": 200, "time_reference": "absolute", "pulse_number": 1,
                 },
             "third": \
                 {
-                    "a": 5, "w": 1, "absolute_time": 300,
+                    "a": 5, "w": 1, "time_offset": 300, "time_reference": "previous", "pulse_number": 5,
                 },
         }
 
@@ -32,16 +32,22 @@ psm.set_input_pulse_seq(my_pulse_seq, verbose = 4)
 
 print(psm.inputPulseSeq.pulse_list)
 
+print("==============")
+psm.inputPulseSeq.pulse_pre_conversion(verbose = 4)
+psm.inputPulseSeq.print_info(pulse_params = True)
+
 ## convert sequence
 psm.convert_seq(verbose = 4)
 
-## verify that main parameters were transferred correctly
-print(psm.outputPulseSeq.main_params)
-## verify that pulse sequence was transferred correctly
-print(psm.outputPulseSeq.pulse_list)
-print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
+print([pulse.valid_abs_time for pulse in psm.inputPulseSeq.pulse_list])
 
-psm.outputPulseSeq.print_info(all = True)
+# ## verify that main parameters were transferred correctly
+# print(psm.outputPulseSeq.main_params)
+# ## verify that pulse sequence was transferred correctly
+# print(psm.outputPulseSeq.pulse_list)
+# print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
+
+psm.outputPulseSeq.print_info(pulse_params = True)
 
 
 

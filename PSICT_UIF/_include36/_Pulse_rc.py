@@ -1,6 +1,7 @@
 ## Resource file for Pulse and related classes
 
 ## Lists of ordering and physical parameters
+NAME_PARAMS = ["name"]
 PHYS_PARAMS = [
                 "a",     # amplitude
                 "w",     # width
@@ -16,6 +17,8 @@ ORD_PARAMS = [
                 ## etc
              ]
 
+## all parameter names (for checking validity etc)
+ALL_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS] for param in param_list]
 
 ## Pulse sorting
 pulse_sort_attr = "absolute_time"

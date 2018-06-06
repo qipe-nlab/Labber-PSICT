@@ -10,9 +10,8 @@ class Pulse:
     Docstring for Pulse class.
     '''
     def __init__(self, name):
+        self.attributes = {} # all attributes (including the name) will be stored in this dict
         self.name = name     # the pulse name will be used as a reference when setting relations etc
-        self.phys_attr = {}  # physical attributes
-        self.ord_attr = {}   # ordering attrbutes
 
     def __repr__(self):
         return "".join(["<Pulse \"", self.name, "\">"])
@@ -27,37 +26,14 @@ class Pulse:
     @property
     def name(self):
         # print("Executing getter")
-        return self.__name
+        return self.attributes["name"]
     @name.setter
     def name(self, name):
         # print("Executing setter.")
-        self.__name = name
-
-    ## physical attributes
-    @property
-    def phys_attr(self):
-        return self.__phys_attr
-    @phys_attr.setter
-    def phys_attr(self, new_dict):
-        self.__phys_attr = new_dict
-
-    ## ordering attributes
-    @property
-    def ord_attr(self):
-        return self.__ord_attr
-    @ord_attr.setter
-    def ord_attr(self, new_dict):
-        self.__ord_attr = new_dict
+        self.attributes["name"] = name
 
     def __getitem__(self, key):
-        if key == "name":
-            return self.name
-        elif key in self.phys_attr:
-            return self.phys_attr[key]
-        elif key in self.ord_attr:
-            return self.ord_attr[key]
-        else:
-            raise KeyError(key)
+        return self.attributes[key]
 
 
     ###########################################################################
@@ -68,20 +44,7 @@ class Pulse:
         Set attributes from the dict input_attributes.
         '''
         for key, value in input_attributes.items():
-            if key == "name":
-                ## update name
-                self.name = value
-                if verbose >= 2:
-                    print("Pulse name updated to:", self.name)
-            elif key in _rc.PHYS_PARAMS:
-                ## update physical attributes
-                self.phys_attr[key] = value
-                if verbose >= 2:
-                    print("Pulse physical attribute", key, "updated to", value)
-            elif key in _rc.ORD_PARAMS:
-                ## update ordering attribute
-                self.ord_attr[key] = value
-                if verbose >= 2:
-                    print("Pulse ordering attribute", key, "updated to", value)
+            if key in _rc.ALL_PARAMS:
+                self.attributes[key] = value
             else:
                 raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))

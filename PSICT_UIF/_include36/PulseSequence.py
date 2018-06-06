@@ -90,6 +90,35 @@ class PulseSeq:
         ## Actually add pulse to list
         self.pulse_list.append(new_pulse)
 
+    ###########################################################################
+    ## Information & verification
+
+    def print_info(self, *, all = False, main = False, pulses = True, pulse_params = False):
+        '''
+        Print information on pulse sequence for rapid verification.
+        '''
+        print("===========================")
+        print("Pulse sequence information:")
+        ## "all" option
+        if all:
+            main = True
+            pulses = True
+            pulse_params = True
+        ## Main parameter values
+        if main:
+            print("Main parameters:")
+            print(self.main_params)
+        ## Pulse list - will show names
+        if pulses:
+            print("Pulse list:")
+            print(self.pulse_list)
+        ## All pulse parameters
+        if pulse_params:
+            for pulse in self.pulse_list:
+                pulse.print_info()
+        ##
+        print("===========================")
+
 
 ###############################################################################
 

@@ -41,6 +41,8 @@ print(psm.outputPulseSeq.main_params)
 print(psm.outputPulseSeq.pulse_list)
 print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
 
+psm.outputPulseSeq.print_info(all = True)
+
 
 
 sys.exit()

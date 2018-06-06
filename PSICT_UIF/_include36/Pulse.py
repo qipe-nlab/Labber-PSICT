@@ -48,6 +48,13 @@ class Pulse:
         else:
             raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))
 
+    def print_info(self):
+        '''
+        Print all information about the pulse.
+        '''
+        print("Attributes for pulse", self.name)
+        print(self.attributes)
+
     ###########################################################################
     ## Attribute import and input
 

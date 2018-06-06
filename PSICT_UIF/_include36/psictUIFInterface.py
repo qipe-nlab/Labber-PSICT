@@ -90,16 +90,26 @@ class psictUIFInterface:
         self.fileManager.post_measurement_copy(verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## Pulse sequence operations
+    ## Instrument parameter setting methods
 
-    def set_pulse_seq_params(self, *, verbose = 0):
+    def set_point_values(self, point_values_dict, *, verbose = 0):
         '''
-        Set input parameters for the pulse sequence.
-
-        These are the human-input parameters which will later be converted to a Labber-readable pulse sequence by the PulseSeqManager object.
+        Set instrument parameters as point (single) values.
         '''
-        self.pulseSeqManager.set_input_pulse_seq(verbose = verbose)
-
+        ## debug message
+        if verbose >= 1:
+            print("Setting point values for instrument parameters...")
+        ## Extract pulse sequence for SQPG instrument
+        try:
+            pulse_seq_dict = point_values_dict["SQPG"]
+        except KeyError:
+            raise RuntimeWarning("There were no point-value specifications for the pulse sequence!")
+        else:
+            self.pulseSeqManager.set_input_pulse_seq(pulse_seq_dict, verbose = verbose)
+        ## TODO generic other instrument parameter setting here
+        ## debug message
+        if verbose >= 1:
+            print("Set instrument parameters as point values.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement

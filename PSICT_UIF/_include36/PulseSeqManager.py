@@ -6,7 +6,7 @@ from PSICT_UIF._include36.PulseSequence import InputPulseSeq, OutputPulseSeq
 
 class PulseSeqManager:
     '''
-    Docstring for PulseSeqManager.
+    A container for two pulse sequences (an InputPulseSeq and OutputPulseSeq) which provides methods for importing an input sequence from user input, converting an input sequence to an output sequence, and getting the output sequence ready for export to Labber.
     '''
 
     ## constructor
@@ -36,45 +36,46 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence
 
-    def set_input_pulse_seq(self, *, verbose = 0):
+    def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 0):
         '''
-        Set input parameters for the pulse sequence.
+        Set the input pulse sequence from a dict of user specifications.
 
-        These are the human-input parameters which will later be converted to a Labber-readable pulse sequence.
+        This is passed directly to the InputPulseSeq.
         '''
-        ## debug message
-        if verbose >= 2:
-            print("Setting input pulse sequence parameters...")
-        ####
-        ## Set parameters
-        ####
+        self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
-        ## debug message
-        if verbose >= 2:
-            print("Input pulse sequence parameters set.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## conversion methods
+    ## Conversion methods
 
     def convert_seq(self, *, verbose = 0):
         '''
         Convert the input sequence (specified by the user) into an output sequence (suitable for input into Labber).
+
+        Note that the input sequence must have already been imported using the set_input_pulse_seq method.
         '''
         ## debug message
-        if verbose >= 3:
+        if verbose >= 2:
             print("Converting input sequence to output sequence...")
-        ## check if input sequence is populated
+        ## Assert input sequence is populated
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
-        #### do conversion
-        ##
+        #### Pulse sequence conversion
+        ## Transfer main parameters
+        if verbose >= 3:
+            print("Transferring main parameters...")
+        self.outputPulseSeq.set_main_params(self.inputPulseSeq.export_main_params())
+        ## Get list of pulses from inputPulseSeq (sorted by absolute_time)
+        ##  and set the outputPulseSeq to this list
+        sorted_pulses = self.inputPulseSeq.get_sorted_list(verbose = verbose)
+        self.outputPulseSeq.set_pulse_seq(sorted_pulses, verbose = verbose)
         ####
-        ## set flag
+        ## Set flag
         self.is_output_seq_populated = True
         ## debug message
-        if verbose >= 3:
+        if verbose >= 2:
             print("Conversion to output sequence completed.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

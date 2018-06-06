@@ -7,34 +7,36 @@ import PSICT_UIF._include36._Pulse_rc as _rc
 
 class Pulse:
     '''
-    Docstring for Pulse class.
+    Abstract representation of an individual pulse in the pulse sequence.
+
+    This class should not in general be used directly, but instead managed through PulseSeq objects (which act as containers for the pulse sequence as a whole)
     '''
-    def __init__(self, spec):
+    def __init__(self, spec, *, verbose = 0):
         self.attributes = {}
-        if isinstance(spec, dict):
-            self.set_attributes(spec) # all attributes (including the name) will be stored in this dict
-        elif isinstance(spec, str):
-            self.name = name     # the pulse name will be used as a reference when setting relations etc
+        if isinstance(spec, dict):  # create from dict of parameters
+            if verbose >= 4:
+                print("Creating Pulse object from parameter dict...")
+            self.set_attributes(spec, verbose = verbose)
+        elif isinstance(spec, str): # create from string as name
+            if verbose >= 4:
+                print("Creating pulse object by name:", spec)
+            self.name = spec
         else:
             raise TypeError("Invalid specification for Pulse creation:", spec)
 
     def __repr__(self):
         return "".join(["<Pulse \"", self.name, "\">"])
-    # def __str__(self):
-    #     return "".join(["Pulse \"", self.name, "\""])
 
 
     ###########################################################################
     ## Properties and attributes
 
-    ## pulse name
+    ## Pulse name
     @property
     def name(self):
-        # print("Executing getter")
         return self.attributes["name"]
     @name.setter
     def name(self, name):
-        # print("Executing setter.")
         self.attributes["name"] = name
 
     def __getitem__(self, key):
@@ -51,7 +53,12 @@ class Pulse:
 
     def set_attributes(self, input_attributes, *, verbose = 0):
         '''
-        Set attributes from the dict input_attributes.
+        Set attributes from an input dictionary input_attributes.
         '''
         for key, value in input_attributes.items():
             self[key] = value
+            if verbose >= 3:
+                try:
+                    print("Pulse ", self.name, ": attribute ", key, " set to value ", value, sep = "")
+                except KeyError:
+                    print("<unnamed pulse>: attribute", key, "set to value", value)

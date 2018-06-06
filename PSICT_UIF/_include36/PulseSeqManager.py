@@ -6,7 +6,7 @@ from PSICT_UIF._include36.PulseSequence import InputPulseSeq, OutputPulseSeq
 
 class PulseSeqManager:
     '''
-    Docstring for PulseSeqManager.
+    A container for two pulse sequences (an InputPulseSeq and OutputPulseSeq) which provides methods for importing an input sequence from user input, converting an input sequence to an output sequence, and getting the output sequence ready for export to Labber.
     '''
 
     ## constructor
@@ -38,7 +38,9 @@ class PulseSeqManager:
 
     def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 0):
         '''
-        Docstring.
+        Set the input pulse sequence from a dict of user specifications.
+
+        This is passed directly to the InputPulseSeq.
         '''
         self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
@@ -46,19 +48,21 @@ class PulseSeqManager:
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## conversion methods
+    ## Conversion methods
 
     def convert_seq(self, *, verbose = 0):
         '''
         Convert the input sequence (specified by the user) into an output sequence (suitable for input into Labber).
+
+        Note that the input sequence must have already been imported using the set_input_pulse_seq method.
         '''
         ## debug message
         if verbose >= 2:
             print("Converting input sequence to output sequence...")
-        ## check if input sequence is populated
+        ## Assert input sequence is populated
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
-        #### do conversion
+        #### Pulse sequence conversion
         ## Transfer main parameters
         if verbose >= 3:
             print("Transferring main parameters...")
@@ -68,7 +72,7 @@ class PulseSeqManager:
         sorted_pulses = self.inputPulseSeq.get_sorted_list(verbose = verbose)
         self.outputPulseSeq.set_pulse_seq(sorted_pulses, verbose = verbose)
         ####
-        ## set flag
+        ## Set flag
         self.is_output_seq_populated = True
         ## debug message
         if verbose >= 2:

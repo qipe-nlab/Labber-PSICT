@@ -1,34 +1,28 @@
 ## Playing around with the Pulse and PulseSeq classes for development
 
+import sys
+
 from PSICT_UIF._include36.Pulse import Pulse
 from PSICT_UIF._include36.PulseSequence import PulseSeq, InputPulseSeq
+from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 
-print("-----------")
-new_pulse = Pulse("foo")
-print(new_pulse)
+my_pulse_seq = \
+        {
+            "first": \
+                {
+                    "a": 2, "w": 3, "absolute_time": 400,
+                },
+            "second": \
+                {
+                    "a": 5, "w": 1, "absolute_time": 200,
+                },
+        }
 
-new_pulse.set_attributes({
-            "name": "test1",
-            "a": 14,
-            "w": 26.5,
-            "pulse_number": 3,
-            "absolute_time": 400,
-            "is_inverted": False,
-            }, verbose = 4)
+print("***************")
 
-pseq = InputPulseSeq()
-print(pseq)
-print(pseq.pulse_list)
+psm = PulseSeqManager(verbose = 1)
+psm.set_input_pulse_seq(my_pulse_seq, verbose = 4)
 
-pseq.add_pulse(new_pulse)
-print(pseq.pulse_list)
+print(psm.inputPulseSeq.pulse_list)
 
-pseq.add_pulse("bar", {"absolute_time": 100}, verbose = 4)
-pseq.add_pulse("xyzyy", {"absolute_time": 500}, verbose = 4)
-pseq.add_pulse("quux", {"absolute_time": 50}, verbose = 4)
-
-print(pseq.pulse_list)
-print(pseq.pulse_names)
-
-sorted_list = pseq.get_sorted_list(verbose = 4)
-print(sorted_list)
+sys.exit()

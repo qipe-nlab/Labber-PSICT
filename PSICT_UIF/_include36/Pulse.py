@@ -9,9 +9,14 @@ class Pulse:
     '''
     Docstring for Pulse class.
     '''
-    def __init__(self, name):
-        self.attributes = {} # all attributes (including the name) will be stored in this dict
-        self.name = name     # the pulse name will be used as a reference when setting relations etc
+    def __init__(self, spec):
+        self.attributes = {}
+        if isinstance(spec, dict):
+            self.set_attributes(spec) # all attributes (including the name) will be stored in this dict
+        elif isinstance(spec, str):
+            self.name = name     # the pulse name will be used as a reference when setting relations etc
+        else:
+            raise TypeError("Invalid specification for Pulse creation:", spec)
 
     def __repr__(self):
         return "".join(["<Pulse \"", self.name, "\">"])

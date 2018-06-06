@@ -36,18 +36,20 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence
 
-    def set_input_pulse_seq(self, *, verbose = 0):
+    def set_input_pulse_seq(self, pulse_seq_param_dict, *, verbose = 0):
         '''
         Set input parameters for the pulse sequence.
 
         These are the human-input parameters which will later be converted to a Labber-readable pulse sequence.
+
+        Note that this method must receive *only* the SQPG pulse-sequence specifications!
         '''
         ## debug message
         if verbose >= 2:
             print("Setting input pulse sequence parameters...")
         ####
         ## Set parameters
-        ####
+        self.inputPulseSeq.set_seq_params(pulse_seq_param_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
         ## debug message
@@ -71,7 +73,9 @@ class PulseSeqManager:
         #### do conversion
         ## Get list of pulses from inputPulseSeq sorted by absolute_time
         ##  and set the outputPulseSeq to this list
+        self.inputPulseSeq.pulses_pre_sorting()
         sorted_pulses = self.inputPulseSeq.get_sorted_list()
+        self.pulses_post_sorting(sorted_pulses)
         self.outputPulseSeq.set_pulse_seq(sorted_pulses)
         ####
         ## set flag
@@ -79,5 +83,12 @@ class PulseSeqManager:
         ## debug message
         if verbose >= 3:
             print("Conversion to output sequence completed.")
+
+    def pulses_post_sorting(self, sorted_pulses, *, verbose = 0):
+        '''
+        Any operations to be carried out on the list of pulses that is sorted, but not yet given to the OutputPulseSeq.
+        '''
+        pass
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

@@ -50,20 +50,19 @@ class PulseSeq:
             pass
         return self.pulse_list[id]
 
-    def add_pulse(self, new_pulse, pulse_attributes = {}, *, verbose = 0):
+    def add_pulse(self, new_pulse, *, verbose = 0):
         '''
         Docstring for add_pulse.
         '''
-        ## if pulse is a string, create a new Pulse
-        if isinstance(new_pulse, str):
-            if verbose >= 3:
-                print("Creating a new pulse by name:", new_pulse)
-            new_pulse = Pulse(new_pulse)
-            new_pulse.set_attributes(pulse_attributes, verbose = verbose)
-        elif isinstance(new_pulse, Pulse):
+        ## handle new_pulse spec in different cases
+        if isinstance(new_pulse, Pulse):
             if verbose >= 3:
                 print("New Pulse is already pulse object.")
             pass
+        elif isinstance(new_pulse, dict):
+            if verbose >= 3:
+                print("Creating a new pulse by attribute list")
+            new_pulse = Pulse(new_pulse)
         else:
             raise ValueError(" ".join(["Cannot interpret", new_pulse, "as pulse identifier"]))
         ## check if pulse with matching name already exists
@@ -91,6 +90,26 @@ class InputPulseSeq(PulseSeq):
             print("Called InputPulseSeq destructor.")
         ## call base class destructor
         super().__del__()
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse sequence import
+
+    def set_seq_params(self, param_dict, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        for pulse_name, pulse_params in param_dict.items():
+            ## debug message
+            if verbose >= 2:
+                print("Setting parameters for pulse", pulse_name)
+            ## add pulse name to param list
+            pulse_params["name"] = pulse_name
+            ## create new pulse with given parameters
+            self.add_pulse(pulse_params)
+            ## debug message
+            if verbose >= 2:
+                print("Added pulse", pulse_name, "successfully.")
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting
@@ -132,3 +151,12 @@ class OutputPulseSeq(PulseSeq):
             print("Called OutputPulseSeq destructor.")
         ## call base class destructor
         super().__del__()
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse import methods (post-sorting)
+
+    def set_pulse_seq(self, input_pulse_seq, *, verbose = 0):
+        '''
+        Import data from a (sorted) pulse sequence
+        '''
+        pass

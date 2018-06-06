@@ -16,6 +16,10 @@ my_pulse_seq = \
                 {
                     "a": 5, "w": 1, "absolute_time": 200,
                 },
+            "third": \
+                {
+                    "a": 5, "w": 1, "absolute_time": 300,
+                },
         }
 
 print("***************")
@@ -29,5 +33,6 @@ print(psm.inputPulseSeq.pulse_list)
 psm.convert_seq(verbose = 4)
 
 print(psm.outputPulseSeq.pulse_list)
+print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
 
 sys.exit()

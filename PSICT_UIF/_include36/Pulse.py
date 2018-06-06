@@ -40,6 +40,11 @@ class Pulse:
     def __getitem__(self, key):
         return self.attributes[key]
 
+    def __setitem__(self, key, value):
+        if key in _rc.ALL_PARAMS:
+            self.attributes[key] = value
+        else:
+            raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))
 
     ###########################################################################
     ## Attribute import and input
@@ -49,7 +54,4 @@ class Pulse:
         Set attributes from the dict input_attributes.
         '''
         for key, value in input_attributes.items():
-            if key in _rc.ALL_PARAMS:
-                self.attributes[key] = value
-            else:
-                raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))
+            self[key] = value

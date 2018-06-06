@@ -110,9 +110,9 @@ class InputPulseSeq(PulseSeq):
             if verbose >= 2:
                 print("Added pulse", pulse_name, "successfully.")
 
-    def pulse_pre_sorting(self, *, verbose = 0):
+    def pulse_pre_conversion(self, *, verbose = 0):
         '''
-        Operations that need to be carried out on the pulses before they are sorted into time-order.
+        Operations that need to be carried out on the pulses before they are sorted into time-order and converted to the output sequence.
         '''
         pass
 
@@ -127,7 +127,7 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 2:
             print("Getting sorted pulse sequence...")
         ## Carry out pre-sort processing
-        self.pulse_pre_sorting(verbose = verbose)
+        self.pulse_pre_conversion(verbose = verbose)
         ## Assert that each pulse in the sequence has the appropriate sort attribute set
         try:
             sort_times = [pulse[sort_attribute] for pulse in self.pulse_list]
@@ -173,13 +173,21 @@ class OutputPulseSeq(PulseSeq):
         for pulse in pulse_list:
             self.add_pulse(pulse)
         ## Post-import processing
-        self.pulse_post_import(verbose = verbose)
+        self.pulse_post_conversion(verbose = verbose)
         ## debug message
         if verbose >= 3:
             print("OutputPulseSeq processing completed.")
 
-    def pulse_post_import(self, *, verbose = 0):
+    def pulse_post_conversion(self, *, verbose = 0):
         '''
-        Post-import pulse sequence cleanup.
+        Post-conversion pulse sequence cleanup.
         '''
-        pass
+        ## debug messsage
+        if verbose >= 3:
+            print("Carrying out post-conversion processing on output sequence...")
+        ## Assign pulse number attributes based on ordering
+        for index, pulse in enumerate(self.pulse_list):
+            pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
+        ## debug message
+        if verbose >= 3:
+            print("Post-conversion processing on output sequence completed.")

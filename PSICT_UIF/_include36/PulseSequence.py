@@ -110,6 +110,11 @@ class InputPulseSeq(PulseSeq):
             if verbose >= 2:
                 print("Added pulse", pulse_name, "successfully.")
 
+    def pulse_pre_sorting(self, *, verbose = 0):
+        '''
+        Operations that need to be carried out on the pulses before they are sorted into time-order.
+        '''
+        pass
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting
@@ -121,7 +126,9 @@ class InputPulseSeq(PulseSeq):
         ## debug message
         if verbose >= 2:
             print("Getting sorted pulse sequence...")
-        # assert that each pulse in the sequence has the appropriate sort attribute set
+        ## Carry out pre-sort processing
+        self.pulse_pre_sorting(verbose = verbose)
+        ## Assert that each pulse in the sequence has the appropriate sort attribute set
         try:
             sort_times = [pulse[sort_attribute] for pulse in self.pulse_list]
         except KeyError:
@@ -155,8 +162,24 @@ class OutputPulseSeq(PulseSeq):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse import methods (post-sorting)
 
-    def set_pulse_seq(self, input_pulse_seq, *, verbose = 0):
+    def set_pulse_seq(self, pulse_list, *, verbose = 0):
         '''
-        Import data from a (sorted) pulse sequence
+        Import data from a list of pulses (in order)
+        '''
+        ## debug message
+        if verbose >= 3:
+            print("Setting pulse sequence in OutputPulseSeq...")
+        ## Add pulses from list
+        for pulse in pulse_list:
+            self.add_pulse(pulse)
+        ## Post-import processing
+        self.pulse_post_import(verbose = verbose)
+        ## debug message
+        if verbose >= 3:
+            print("OutputPulseSeq processing completed.")
+
+    def pulse_post_import(self, *, verbose = 0):
+        '''
+        Post-import pulse sequence cleanup.
         '''
         pass

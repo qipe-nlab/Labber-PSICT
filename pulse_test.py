@@ -25,4 +25,9 @@ psm.set_input_pulse_seq(my_pulse_seq, verbose = 4)
 
 print(psm.inputPulseSeq.pulse_list)
 
+## convert sequence
+psm.convert_seq(verbose = 4)
+
+print(psm.outputPulseSeq.pulse_list)
+
 sys.exit()

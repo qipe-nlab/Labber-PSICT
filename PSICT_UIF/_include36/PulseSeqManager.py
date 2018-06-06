@@ -71,11 +71,9 @@ class PulseSeqManager:
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
         #### do conversion
-        ## Get list of pulses from inputPulseSeq sorted by absolute_time
+        ## Get list of pulses from inputPulseSeq (sorted by absolute_time)
         ##  and set the outputPulseSeq to this list
-        self.inputPulseSeq.pulses_pre_sorting()
         sorted_pulses = self.inputPulseSeq.get_sorted_list()
-        self.pulses_post_sorting(sorted_pulses)
         self.outputPulseSeq.set_pulse_seq(sorted_pulses)
         ####
         ## set flag
@@ -83,12 +81,5 @@ class PulseSeqManager:
         ## debug message
         if verbose >= 3:
             print("Conversion to output sequence completed.")
-
-    def pulses_post_sorting(self, sorted_pulses, *, verbose = 0):
-        '''
-        Any operations to be carried out on the list of pulses that is sorted, but not yet given to the OutputPulseSeq.
-        '''
-        pass
-
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

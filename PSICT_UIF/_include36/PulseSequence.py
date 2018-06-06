@@ -226,7 +226,7 @@ class InputPulseSeq(PulseSeq):
 
         ## Then, any pulses with time_reference set to "previous", which will be set by incrementing upwards through user-specified pulse_number parameters
         if verbose >= 3:
-            print("Setting absolute_time for pulses with 'previous' time reference...")
+            print("Setting absolute time for pulses with 'previous' time reference...")
         ##    First, set the value of the pulse_number attribute to None for pulses where it is not already set; this will enable checking for it without errors
         for pulse in self.pulse_list:
             if "pulse_number" in pulse.attributes:
@@ -251,7 +251,7 @@ class InputPulseSeq(PulseSeq):
                     ## Set absolute_time of current pulse
                     current_pulse["absolute_time"] = absolute_time
                     current_pulse.valid_abs_time = True
-                else: # the current pulse does not have 'previous' as its time_reference specification
+                else: # the current pulse does not have 'previous' as its time_reference specification - do nothing
                     pass
                 ## If a pulse with this pulse_number exists, always update the previous_pulse reference
                 previous_pulse = current_pulse
@@ -267,7 +267,31 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 3:
             print("Absolute time set for 'previous' time_reference pulses.")
 
+        ## Finally, any pulses which have their reference relative to a named pulse
+        if verbose >= 3:
+            print("Setting absolute time for pulses with 'relative' time reference...")
         ##
+        for pulse in self.pulse_list:
+            if pulse["time_reference"] == 'relative':
+                ## Ensure that reference pulse is specified by name
+                try:
+                    ref_pulse_name = pulse["relative_to"]
+                except KeyError:
+                    raise RuntimeError(" ".join([str(pulse), "has time_reference set as 'relative', but no reference pulse name is specified."]))
+                ## Attempt to fetch ref pulse
+                try:
+                    ref_pulse = self[ref_pulse_name]
+                except KeyError:
+                    raise RuntimeError(" ".join(["No pulse with name", re_pulse_name, "exists."]))
+                ## Assert that ref pulse already has a valid absolute time set
+                assert ref_pulse.valid_abs_time
+                ## Update absolute time
+                pulse["absolute_time"] = ref_pulse["absolute_time"] + pulse["time_offset"]
+                pulse.valid_abs_time = True
+            ##
+        if verbose >= 3:
+            print("Absolute time set for 'relative' reference pulses.")
+
         ####
         ## debug message
         if verbose >= 2:

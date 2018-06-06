@@ -13,15 +13,15 @@ my_pulse_seq = \
                 },
             "first": \
                 {
-                    "a": 2, "w": 3, "time_offset": 400, "time_reference": "previous", "pulse_number": 2,
+                    "a": 2, "w": 3, "time_offset": 5, "time_reference": "relative", "relative_to": "second",
                 },
             "second": \
                 {
-                    "a": 5, "w": 1, "time_offset": 200, "time_reference": "absolute", "pulse_number": 1,
+                    "a": 5, "w": 1, "time_offset": 200, "time_reference": "previous", "pulse_number": 2,
                 },
             "third": \
                 {
-                    "a": 5, "w": 1, "time_offset": 300, "time_reference": "previous", "pulse_number": 5,
+                    "a": 5, "w": 1, "time_offset": 10, "time_reference": "absolute", "pulse_number": 1,
                 },
         }
 

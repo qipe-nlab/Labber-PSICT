@@ -15,6 +15,7 @@ ORD_PARAMS = [
                 "time_reference",  # what the passed-in time will be relative to (eg absolute, previous, or a pulse number); note that the unused options can still be set without causing an error
                 "absolute_time",   # time relative to the start of the pulse sequence (requires time_reference to be "absolute")
                 "relative_to",     # which pulse number the time offset should be taken relative to (requires time_reference to be "relative" or "previous")
+                # "ref_pulse_name",  # name of the pulse to be used as time reference (requires time_reference to be 'relative')
                 "time_offset",     # what the time offset will be from the relative pulse (requires time_reference to be "relative" or "previous")
             ## Types
                 "is_inverted",     # is the pulse specified as an "off" signal state?
@@ -30,5 +31,5 @@ SEQ_PARAMS = [
                 "control_freq",    # microwave input control frequency
             ]
 
-## Pulse sorting
+## Pulse sorting - DO NOT CHANGE!
 pulse_sort_attr = "absolute_time"

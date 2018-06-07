@@ -223,79 +223,135 @@ class InputPulseSeq(PulseSeq):
                 pulse.valid_abs_time = True
         if verbose >= 3:
             print("Absolute time set for 'absolute' time_reference pulses.")
+        if verbose >= 4:
+            print("Current pulse state:")
+            self.print_info(pulse_params = True)
+            print("Absolute time validity:")
+            print([pulse.valid_abs_time for pulse in self.pulse_list])
 
-        ## Then, any pulses with time_reference set to "previous", which will be set by incrementing upwards through user-specified pulse_number parameters
+        ## debug message
         if verbose >= 3:
-            print("Setting absolute time for pulses with 'previous' time reference...")
-        ##    First, set the value of the pulse_number attribute to None for pulses where it is not already set; this will enable checking for it without errors
+            print("Setting absolute time for pulses with 'previous' and 'relative' time reference...")
+        ## Loop through pulses for the next two processes, as there may be odd dependencies
+        max_loop_counter = len(self.pulse_list) # at least one pulse should be set each loop
+        loop_counter = 0
+        ## First, set the value of the pulse_number attribute to None for pulses where it is not already set; this will enable checking for it without errors
         for pulse in self.pulse_list:
             if "pulse_number" in pulse.attributes:
                 continue
             else:
                 pulse["pulse_number"] = -1
-        ##    Then, find the maximal user-defined pulse number to serve as an upper limit for iterating the pulse counter
-        max_pulse_number = max([pulse["pulse_number"] for pulse in self.pulse_list])
-        ##    Finally, iterate upwards through increasing pulse numbers, calculating the absolute times of all pulses with pulse numbers and time_reference = "previous"
-        pulse_counter = 0
-        previous_pulse = None
-        absolute_time = 0.0
-        while pulse_counter <= max_pulse_number:
-            current_pulse = next((pulse for pulse in self.pulse_list if pulse["pulse_number"] == pulse_counter), None)
-            if current_pulse is not None: # ensure that a pulse with this pulse number was returned above
-                if current_pulse["time_reference"] == "previous":
-                    ## Check that this is not specified for the first pulse
-                    if previous_pulse is None:
-                        raise RuntimeError("Cannot use 'previous' time reference for first numbered pulse")
-                    ## Otherwise, use time_offset added previous pulse's absolute_time to calculate absolute_time
-                    absolute_time = previous_pulse["absolute_time"] + current_pulse["time_offset"]
-                    ## Set absolute_time of current pulse
-                    current_pulse["absolute_time"] = absolute_time
-                    current_pulse.valid_abs_time = True
-                else: # the current pulse does not have 'previous' as its time_reference specification - do nothing
+        ## Loop through pulses
+        while not all([pulse.valid_abs_time for pulse in self.pulse_list]):
+            if verbose >= 3:
+                print("Looping through pulse list, iteration", loop_counter)
+            ## check maximum loops - could indicate improper time-ordering dependencies
+            if loop_counter >= max_loop_counter:
+                raise RuntimeError("Could not calculate pulse timing; please re-check dependencies to ensure calculation is possible!")
+
+            ## Then, any pulses with time_reference set to "previous", which will be set by incrementing upwards through user-specified pulse_number parameters
+
+            ##    Find the maximal user-defined pulse number to serve as an upper limit for iterating the pulse counter
+            max_pulse_number = max([pulse["pulse_number"] for pulse in self.pulse_list])
+            ##    Finally, iterate upwards through increasing pulse numbers, calculating the absolute times of all pulses with pulse numbers and time_reference = "previous"
+            pulse_counter = 0
+            previous_pulse = None
+            absolute_time = 0.0
+            while pulse_counter <= max_pulse_number:
+                current_pulse = next((pulse for pulse in self.pulse_list if pulse["pulse_number"] == pulse_counter), None)
+                if current_pulse is not None: # ensure that a pulse with this pulse number was returned above
+                    if current_pulse["time_reference"] == "previous":
+                        ## Check that we are not attempting to specify this for the first pulse (there is no previous pulse!)
+                        if previous_pulse is None:
+                            raise RuntimeError("Cannot use 'previous' time reference for first numbered pulse")
+                        ## Otherwise, calculate absolute time
+                        if current_pulse.valid_abs_time:
+                            pass
+                        else:
+                            self.calculate_absolute_time(current_pulse, previous_pulse, verbose = verbose)
+                    else: # the current pulse does not have 'previous' as its time_reference specification - do nothing
+                        pass
+                    ## If a pulse with this pulse_number exists, always update the previous_pulse reference
+                    previous_pulse = current_pulse
+                else:  # no pulse with this number exists
                     pass
-                ## If a pulse with this pulse_number exists, always update the previous_pulse reference
-                previous_pulse = current_pulse
-            else:  # no pulse with this number exists
-                pass
-            ## Update pulse counter
-            pulse_counter = pulse_counter + 1
+                ## Update pulse counter
+                pulse_counter = pulse_counter + 1
+
+            ## Finally, any pulses which have their reference relative to a named pulse
+            for current_pulse in self.pulse_list:
+                if current_pulse["time_reference"] == 'relative':
+                    ## Ensure that reference pulse is specified by name
+                    try:
+                        ref_pulse_name = current_pulse["relative_to"]
+                    except KeyError:
+                        raise RuntimeError(" ".join([str(current_pulse), "has time_reference set as 'relative', but no reference pulse name is specified."]))
+                    ## Attempt to fetch ref pulse
+                    try:
+                        ref_pulse = self[ref_pulse_name]
+                    except KeyError:
+                        raise RuntimeError(" ".join(["No pulse with name", ref_pulse_name, "exists."]))
+                    ## Check if current pulse already has a valid absolute time set
+                    if current_pulse.valid_abs_time:
+                        if verbose >= 4:
+                            print(str(current_pulse), "already has a valid absolute time, skipping...")
+                    else:
+                        if verbose >= 4:
+                            print(str(current_pulse), "has no valid absolute time; calculating...")
+                        self.calculate_absolute_time(current_pulse, ref_pulse, verbose = verbose)
+                ##
+            ## debug message
+            if verbose >= 4:
+                print("Current pulse state:")
+                self.print_info(pulse_params = True)
+                print("Absolute time validity:")
+                print([pulse.valid_abs_time for pulse in self.pulse_list])
+            ## Increment loop counter to prevent infinite loops
+            loop_counter = loop_counter + 1
+
+        ## End looping through pulses
         ##    Clean up - remove artificially-added pulse_number specifications
         for pulse in self.pulse_list:
             if pulse["pulse_number"] == -1:
                 del pulse["pulse_number"]
-        ## Finish pulse_number calculations
+        ## debug message
         if verbose >= 3:
-            print("Absolute time set for 'previous' time_reference pulses.")
-
-        ## Finally, any pulses which have their reference relative to a named pulse
-        if verbose >= 3:
-            print("Setting absolute time for pulses with 'relative' time reference...")
-        ##
-        for pulse in self.pulse_list:
-            if pulse["time_reference"] == 'relative':
-                ## Ensure that reference pulse is specified by name
-                try:
-                    ref_pulse_name = pulse["relative_to"]
-                except KeyError:
-                    raise RuntimeError(" ".join([str(pulse), "has time_reference set as 'relative', but no reference pulse name is specified."]))
-                ## Attempt to fetch ref pulse
-                try:
-                    ref_pulse = self[ref_pulse_name]
-                except KeyError:
-                    raise RuntimeError(" ".join(["No pulse with name", re_pulse_name, "exists."]))
-                ## Assert that ref pulse already has a valid absolute time set
-                assert ref_pulse.valid_abs_time
-                ## Update absolute time
-                pulse["absolute_time"] = ref_pulse["absolute_time"] + pulse["time_offset"]
-                pulse.valid_abs_time = True
-            ##
-        if verbose >= 3:
-            print("Absolute time set for 'relative' reference pulses.")
+            print("Absolute time set for 'previous' and 'relative' reference pulses.")
 
         ####
         ## debug message
         if verbose >= 2:
             print("Pulse sequence pre-conversion completed.")
+
+    def calculate_absolute_time(self, current_pulse, reference_pulse, *, verbose = 0):
+        '''
+        Calculate the absolute time of the current_pulse relative to the relative_marker (start or end) of the reference_pulse.
+
+        Note that if the reference pulse does not have a valid absolute time, the function will return nothing; this is intended to be used when looping through the pulse list to brute-force potentially-complex dependencies.
+        '''
+        ## Assert that the reference pulse already has a valid absolute time calculated; if not, the pulse is skipped, and the loop in pulse_pre_conversion will attempt this again
+        if reference_pulse.valid_abs_time:
+            ## Check reference point - default to 'end' (as is usual for e2e spec in Labber GUI)
+            if "relative_marker" not in current_pulse.attributes:
+                current_pulse["relative_marker"] = 'end'
+            ## Assume measurement from 'start'
+            if verbose >= 4:
+                print("Current pulse is:", current_pulse.name)
+                print("Reference pulse info:")
+                reference_pulse.print_info()
+                print(reference_pulse.valid_abs_time)
+            new_absolute_time = reference_pulse["absolute_time"] + current_pulse["time_offset"]
+            ## Add reference_pulse width if from 'end'
+            if current_pulse["relative_marker"] == 'end':
+                ## Calculate new absolute time
+                new_absolute_time = new_absolute_time + reference_pulse["w"] + reference_pulse["v"]
+            ## Set time and flag
+            current_pulse["absolute_time"] = new_absolute_time
+            current_pulse.valid_abs_time = True
+        else:
+            return
+        ##
+
 
     def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr, *, verbose = 0):
         '''

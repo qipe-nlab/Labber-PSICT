@@ -52,7 +52,7 @@ class Pulse:
         return self.attributes[key]
 
     def __setitem__(self, key, value):
-        if key in _rc.ALL_PARAMS:
+        if key in _rc.PULSE_PARAMS:
             self.attributes[key] = value
         else:
             raise KeyError(" ".join(["Key", key, "is not defined as a valid pulse parameter."]))

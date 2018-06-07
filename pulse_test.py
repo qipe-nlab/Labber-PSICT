@@ -11,35 +11,36 @@ my_pulse_seq = \
             "main": {
                     "control_freq": 7850,
                 },
-            "first": \
+            "AAA": \
                 {
-                    "a": 2, "w": 3, "time_offset": 5, "time_reference": "relative", "relative_to": "second",
+                    "a": 2, "w": 20, "v": 0,
+                    "time_offset": 450, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
                 },
-            "second": \
+            "BBB": \
                 {
-                    "a": 5, "w": 1, "time_offset": 200, "time_reference": "previous", "pulse_number": 2,
+                    "a": 5, "w": 95, "v": 0,
+                    "time_offset": 650, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
                 },
-            "third": \
+            "CCC": \
                 {
-                    "a": 5, "w": 1, "time_offset": 10, "time_reference": "absolute", "pulse_number": 1,
+                    "a": 5, "w": 30, "v": 0,
+                    "time_offset": 20, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
                 },
         }
 
-print("***************")
+print("********************************")
 
 psm = PulseSeqManager(verbose = 1)
-psm.set_input_pulse_seq(my_pulse_seq, verbose = 4)
+psm.set_input_pulse_seq(my_pulse_seq, verbose = 1)
 
 print(psm.inputPulseSeq.pulse_list)
 
 print("==============")
-psm.inputPulseSeq.pulse_pre_conversion(verbose = 4)
-psm.inputPulseSeq.print_info(pulse_params = True)
+psm.inputPulseSeq.pulse_pre_conversion(verbose = 1)
+# psm.inputPulseSeq.print_info(pulse_params = True)
 
 ## convert sequence
-psm.convert_seq(verbose = 4)
-
-print([pulse.valid_abs_time for pulse in psm.inputPulseSeq.pulse_list])
+psm.convert_seq(verbose = 1)
 
 # ## verify that main parameters were transferred correctly
 # print(psm.outputPulseSeq.main_params)

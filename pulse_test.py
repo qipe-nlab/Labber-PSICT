@@ -8,40 +8,54 @@ from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 
 my_pulse_seq = \
         {
-            "main": {
-                    "control_freq": 7850,
+            "main": {       # parameters for overall pulse sequence - general SGPQ parameters
+                    "control_freq": 7850, "Truncation range": 2,
                 },
-            "first": \
-                {
-                    "a": 2, "w": 3, "absolute_time": 400,
+            "inverted": {   # physical parameters that will be applied to all inverted pulses - the inverted pulse entries should not specify these, otherwise they will be overwritten
+                    "a": 200, "w": 100,
                 },
-            "second": \
+            "AAA": \
                 {
-                    "a": 5, "w": 1, "absolute_time": 200,
+                    "a": 2, "v": 1200,
+                    "time_offset": 450, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
+                    "is_inverted": True,
                 },
-            "third": \
+            "BBB": \
                 {
-                    "a": 5, "w": 1, "absolute_time": 300,
+                    "a": 5, "w": 95,
+                    "time_offset": 650, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
+                },
+            "CCC": \
+                {
+                    "a": 5,
+                    "time_offset": 400, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
                 },
         }
 
-print("***************")
+print("********************************")
 
 psm = PulseSeqManager(verbose = 1)
-psm.set_input_pulse_seq(my_pulse_seq, verbose = 4)
+psm.set_input_pulse_seq(my_pulse_seq, verbose = 1)
 
-print(psm.inputPulseSeq.pulse_list)
+# print([pulse["is_inverted"] for pulse in psm.inputPulseSeq.pulse_list])
+
+# print(psm.inputPulseSeq.pulse_list)
+# psm.inputPulseSeq.print_info(pulse_params = True)
+
+print("==============")
+# psm.inputPulseSeq.pulse_pre_conversion(verbose = 2)
+# psm.inputPulseSeq.print_info(pulse_params = True)
 
 ## convert sequence
-psm.convert_seq(verbose = 4)
+psm.convert_seq(verbose = 2)
 
-## verify that main parameters were transferred correctly
-print(psm.outputPulseSeq.main_params)
-## verify that pulse sequence was transferred correctly
+# ## verify that main parameters were transferred correctly
+# print(psm.outputPulseSeq.main_params)
+# ## verify that pulse sequence was transferred correctly
 print(psm.outputPulseSeq.pulse_list)
-print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
+# print([pulse["pulse_number"] for pulse in psm.outputPulseSeq])
 
-psm.outputPulseSeq.print_info(all = True)
+psm.outputPulseSeq.print_info(pulse_params = True)
 
 
 

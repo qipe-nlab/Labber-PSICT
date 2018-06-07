@@ -142,6 +142,14 @@ class InputPulseSeq(PulseSeq):
         ## call base class destructor
         super().__del__()
 
+    ## Global parameters for inverted pulses
+    @property
+    def inverted_params(self):
+        return self.__inverted_params
+    @inverted_params.setter
+    def inverted_params(self, new_params):
+        self.__inverted_params = new_params
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input-specific main parameter methods
 
@@ -165,12 +173,18 @@ class InputPulseSeq(PulseSeq):
             print("Setting input pulse sequence parameters...")
         ## Set pulse sequence from input dict
         for pulse_name, pulse_params in params_dict.items():
-            if pulse_name == "main":    # check for main specification
+            if pulse_name == "main":        # check for main specification
                 if verbose >= 2:
                     print("Setting sequence main parameters...")
                 self.main_params = pulse_params
                 if verbose >= 2:
                     print("Sequence main parameters set.")
+            elif pulse_name == "inverted":  # check for global inverted pulse specification
+                if verbose >= 2:
+                    print("Setting global inverted pulse parameters...")
+                self.inverted_params = pulse_params
+                if verbose >= 2:
+                    print("Global inverted pulse parameters set.")
             else:                       # add pulses normally
                 ## debug message
                 if verbose >= 2:
@@ -197,7 +211,274 @@ class InputPulseSeq(PulseSeq):
         Most notably, this involves parameter value adjustment (eg converting to ns), as well as working out the timing/ordering of the entire pulse sequence.
         '''
         ## TODO Implement all the stuff mentioned in the docstring!
-        pass
+        ## debug message
+        if verbose >= 2:
+            print("Carrying out pulse sequence pre-conversion...")
+
+        ###########################################
+        #### Setting required pulse parameters ####
+        ###########################################
+
+        if verbose >= 3:
+            print("Setting required pulse parameter defaults...")
+        ## Set required pulse parameter defaults
+        for _default_param, _default_value in _rc.PULSE_PARAM_DEFAULTS.items():
+            for pulse in self.pulse_list:
+                if not _default_param in pulse.attributes:
+                    pulse[_default_param] = _default_value
+        if verbose >= 3:
+            print("Required pulse parameter defaults set.")
+        print("__________")
+        self.print_info(pulse_params = True)
+        print([pulse['is_inverted'] for pulse in self.pulse_list])
+        print([pulse for pulse in self.pulse_list if pulse['is_inverted']])
+        print("__________")
+
+        ##########################################
+        #### Setting special pulse parameters ####
+        ##########################################
+
+        if verbose >= 3:
+            print("Applying global inverted-pulse parameters... (pre-absolute_time calculation)")
+        ## For each pulse that is_inverted, apply the global parameters
+        for pulse in self.pulse_list:
+            if pulse["is_inverted"]:
+                pulse.set_attributes(self.inverted_params)
+        if verbose >= 3:
+            print("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
+
+        ####################################
+        #### Absolute time calculations ####
+        ####################################
+        if verbose >= 3:
+            print("Carrying out absolute_time calculations...")
+
+        ## First, all pulses which have their time_reference set as "absolute" automatically have a valid absolute time if it is specified
+        if verbose >= 3:
+            print("Setting validity of absolute_time for pulses with 'absolute' time_reference...")
+        for pulse in self.pulse_list:
+            if pulse["time_reference"] == "absolute":
+                ## Verify that an absolute_time parameter is actually set (can fall back on time_offset if there is no absolute_time)
+                if "absolute_time" in pulse.attributes:
+                    pass
+                elif "time_offset" in pulse.attributes:
+                    pulse["absolute_time"] = pulse["time_offset"]
+                else:
+                    raise RuntimeError(" ".join(["Pulse", pulse.name, "has no absolute_time or time_offset specified, but time_reference is set as 'absolute'."]))
+                ## Set flag
+                pulse.valid_abs_time = True
+        if verbose >= 3:
+            print("Absolute time set for 'absolute' time_reference pulses.")
+        if verbose >= 4:
+            print("Current pulse state:")
+            self.print_info(pulse_params = True)
+            print("Absolute time validity:")
+            print([pulse.valid_abs_time for pulse in self.pulse_list])
+
+        ## debug message
+        if verbose >= 3:
+            print("Setting absolute time for pulses with 'previous' and 'relative' time reference...")
+        ## Loop through pulses for the next two processes, as there may be odd dependencies
+        max_loop_counter = len(self.pulse_list) # at least one pulse should be set each loop
+        loop_counter = 0
+        ## First, set the value of the pulse_number attribute to None for pulses where it is not already set; this will enable checking for it without errors
+        for pulse in self.pulse_list:
+            if "pulse_number" in pulse.attributes:
+                continue
+            else:
+                pulse["pulse_number"] = -1
+        ## Loop through pulses
+        while not all([pulse.valid_abs_time for pulse in self.pulse_list]):
+            if verbose >= 3:
+                print("Looping through pulse list, iteration", loop_counter)
+            ## check maximum loops - could indicate improper time-ordering dependencies
+            if loop_counter >= max_loop_counter:
+                raise RuntimeError("Could not calculate pulse timing; please re-check dependencies to ensure calculation is possible!")
+
+            ## Then, any pulses with time_reference set to "previous", which will be set by incrementing upwards through user-specified pulse_number parameters
+
+            ##    Find the maximal user-defined pulse number to serve as an upper limit for iterating the pulse counter
+            max_pulse_number = max([pulse["pulse_number"] for pulse in self.pulse_list])
+            ##    Finally, iterate upwards through increasing pulse numbers, calculating the absolute times of all pulses with pulse numbers and time_reference = "previous"
+            pulse_counter = 0
+            previous_pulse = None
+            absolute_time = 0.0
+            while pulse_counter <= max_pulse_number:
+                current_pulse = next((pulse for pulse in self.pulse_list if pulse["pulse_number"] == pulse_counter), None)
+                if current_pulse is not None: # ensure that a pulse with this pulse number was returned above
+                    if current_pulse["time_reference"] == "previous":
+                        ## Check that we are not attempting to specify this for the first pulse (there is no previous pulse!)
+                        if previous_pulse is None:
+                            raise RuntimeError("Cannot use 'previous' time reference for first numbered pulse")
+                        ## Otherwise, calculate absolute time
+                        if current_pulse.valid_abs_time:
+                            pass
+                        else:
+                            self.calculate_absolute_time(current_pulse, previous_pulse, verbose = verbose)
+                    else: # the current pulse does not have 'previous' as its time_reference specification - do nothing
+                        pass
+                    ## If a pulse with this pulse_number exists, always update the previous_pulse reference
+                    previous_pulse = current_pulse
+                else:  # no pulse with this number exists
+                    pass
+                ## Update pulse counter
+                pulse_counter = pulse_counter + 1
+
+            ## Finally, any pulses which have their reference relative to a named pulse
+            for current_pulse in self.pulse_list:
+                if current_pulse["time_reference"] == 'relative':
+                    ## Ensure that reference pulse is specified by name
+                    try:
+                        ref_pulse_name = current_pulse["relative_to"]
+                    except KeyError:
+                        raise RuntimeError(" ".join([str(current_pulse), "has time_reference set as 'relative', but no reference pulse name is specified."]))
+                    ## Attempt to fetch ref pulse
+                    try:
+                        ref_pulse = self[ref_pulse_name]
+                    except KeyError:
+                        raise RuntimeError(" ".join(["No pulse with name", ref_pulse_name, "exists."]))
+                    ## Check if current pulse already has a valid absolute time set
+                    if current_pulse.valid_abs_time:
+                        if verbose >= 4:
+                            print(str(current_pulse), "already has a valid absolute time, skipping...")
+                    else:
+                        if verbose >= 4:
+                            print(str(current_pulse), "has no valid absolute time; calculating...")
+                        self.calculate_absolute_time(current_pulse, ref_pulse, verbose = verbose)
+                ##
+            ## debug message
+            if verbose >= 4:
+                print("Current pulse state:")
+                self.print_info(pulse_params = True)
+                print("Absolute time validity:")
+                print([pulse.valid_abs_time for pulse in self.pulse_list])
+            ## Increment loop counter to prevent infinite loops
+            loop_counter = loop_counter + 1
+
+        ## End looping through pulses
+        ##    Clean up - remove artificially-added pulse_number specifications
+        for pulse in self.pulse_list:
+            if pulse["pulse_number"] == -1:
+                del pulse["pulse_number"]
+        ## debug message
+        if verbose >= 3:
+            print("Absolute time set for 'previous' and 'relative' reference pulses.")
+        ## Absolute times calculations finished
+        if verbose >= 2:
+            print("Absolute time calculations completed.")
+
+        ###################################
+        #### Inverted pulse conversion ####
+        ###################################
+        if verbose >= 2:
+            print("Converting inverted pulses...")
+
+        ## Extract inverted pulses so we can construct new pulses separately from the master sequence
+        inverted_pulses = [pulse for pulse in self.pulse_list if pulse["is_inverted"]]
+        ## Sort this list so that we can go from beginning to end
+        inverted_pulses = sorted(inverted_pulses, key = lambda x: x["absolute_time"])
+        ## Delete the inverted pulses from the original list
+        self.pulse_list = [pulse for pulse in self.pulse_list if pulse["is_inverted"] == False]
+
+        ## Convert inverted pulses
+        ##  Go from beginning to end, add an extra pulse at the end with 0
+        ##  width which will be extended to the end of the sequence by the
+        ##  OutputPulseSeq processing.
+        ####
+        ## Get half-width and half-truncation-range so they do not have to be accessed and recalculated every time
+        inverted_hw = self.inverted_params["w"]/2
+        inverted_tr = self.main_params["Truncation range"]
+        if verbose >= 4:
+            print("Inverted pulse half-width is:", inverted_hw)
+            print("Truncation range is:", inverted_tr)
+        ## Generate list of time markers
+        if verbose >= 3:
+            print("Generating time markers for inverted pulses...")
+        inverted_time_markers = []
+        ## t0 is always adiabatic ramping up at the beginning of the pulse sequence - width set by inverted_hw
+        inverted_time_markers.append(inverted_hw*(inverted_tr - 1))
+        ## Go through the pulse start and stop times, and add those to the time marker list
+        for pulse in inverted_pulses:
+            ## Start time
+            inverted_time_markers.append(pulse.start_time)
+            ## End time
+            inverted_time_markers.append(pulse.end_time)
+        if verbose >= 3:
+            print("Generating pulses from time markers...")
+        ## Get pairs of time markers (excluding final)
+        tmarker_iter = iter(inverted_time_markers[:-1])
+        tmarker_pairs = zip(tmarker_iter, tmarker_iter)
+        tmarker_final = inverted_time_markers[-1]
+        ## Create pulses with marker pairs
+        for pulse_index, (start_time, end_time) in enumerate(tmarker_pairs):
+            ## Create new pulse
+            new_pulse_name = "".join(["Complement", str(pulse_index)])     # fixed name format for ease of identification
+            new_pulse = Pulse(new_pulse_name)                         # create the pulse
+            new_pulse["absolute_time"] = start_time                   # set new absolute time as start time
+            new_pulse.valid_abs_time = True                           # set valid absolute time flag so other processes don't complain
+            new_pulse.set_attributes(self.inverted_params)            # set all inverted pulse globals
+            new_pulse["v"] = end_time - start_time - new_pulse["w"]   # plateau length is total duration less width
+            ## Add pulse back to master pulse sequence
+            self.add_pulse(new_pulse)
+        ## Final pulse: add zero-width pulse which will be extended in the OutputPulseSeq
+        final_pulse = Pulse("ComplementFinal")
+        final_pulse["absolute_time"] = tmarker_final
+        final_pulse.valid_abs_time = True
+        final_pulse.set_attributes(self.inverted_params)
+        final_pulse["v"] = 0.0
+        ## Add final pulse to master pulse sequence
+        self.add_pulse(final_pulse)
+        ## debug message
+        if verbose >= 2:
+            print("Complement sequence of inverted pulses generated.")
+
+
+
+
+        #### TODO
+
+
+        ## Re-introduce new inverted pulses
+        ##
+
+        ## End inverted pulse conversion
+        if verbose >= 3:
+            print("Inverted pulses converted.")
+
+        ####
+        ## debug message
+        if verbose >= 2:
+            print("Pulse sequence pre-conversion completed.")
+
+    def calculate_absolute_time(self, current_pulse, reference_pulse, *, verbose = 0):
+        '''
+        Calculate the absolute time of the current_pulse relative to the relative_marker (start or end) of the reference_pulse.
+
+        Note that if the reference pulse does not have a valid absolute time, the function will return nothing; this is intended to be used when looping through the pulse list to brute-force potentially-complex dependencies.
+        '''
+        ## Assert that the reference pulse already has a valid absolute time calculated; if not, the pulse is skipped, and the loop in pulse_pre_conversion will attempt this again
+        if reference_pulse.valid_abs_time:
+            ## Check reference point - default to 'end' (as is usual for e2e spec in Labber GUI)
+            if "relative_marker" not in current_pulse.attributes:
+                current_pulse["relative_marker"] = 'end'
+            ## Assume measurement from 'start'
+            if verbose >= 4:
+                print("Current pulse is:", current_pulse.name)
+                print("Reference pulse info:")
+                reference_pulse.print_info()
+                print(reference_pulse.valid_abs_time)
+            new_absolute_time = reference_pulse["absolute_time"] + current_pulse["time_offset"]
+            ## Add reference_pulse width if from 'end'
+            if current_pulse["relative_marker"] == 'end':
+                ## Calculate new absolute time
+                new_absolute_time = new_absolute_time + reference_pulse["w"] + reference_pulse["v"]
+            ## Set time and flag
+            current_pulse["absolute_time"] = new_absolute_time
+            current_pulse.valid_abs_time = True
+        else:
+            return
+        ##
+
 
     def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr, *, verbose = 0):
         '''
@@ -211,11 +492,8 @@ class InputPulseSeq(PulseSeq):
         ## Carry out pre-sort processing
         self.pulse_pre_conversion(verbose = verbose)
         ## Assert that each pulse in the sequence has the appropriate sort attribute set
-        try:
-            sort_times = [pulse[sort_attribute] for pulse in self.pulse_list]
-        except KeyError:
-            raise RuntimeError(" ".join(["There are pulses for which the", sort_attribute, "attribute has not been set."]))
-        ## return pulse list sorted by sort attribute
+        assert all([pulse.valid_abs_time for pulse in self.pulse_list]), "There are pulses which do not have a valid (set or calculated) absolute_time attribute."
+        ## debug message
         if verbose >= 4:
             print("Sorting by attribute:", sort_attribute)
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])

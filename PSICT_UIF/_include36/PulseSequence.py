@@ -201,6 +201,16 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 2:
             print("Carrying out pulse sequence pre-conversion...")
 
+        if verbose >= 3:
+            print("Setting required pulse parameter defaults...")
+        ## Set required pulse parameter defaults
+        for _default_param, _default_value in _rc.PULSE_PARAM_DEFAULTS.items():
+            for pulse in self.pulse_list:
+                if not _default_param in pulse.attributes:
+                    pulse[_default_param] = _default_value
+        if verbose >= 3:
+            print("Required pulse parameter defaults set.")
+
         ####################################
         #### Absolute time calculations ####
         ####################################

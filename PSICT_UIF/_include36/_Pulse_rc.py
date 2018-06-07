@@ -6,6 +6,7 @@ PHYS_PARAMS = [
                 "a",     # amplitude
                 "w",     # width
                 "v",     # plateau
+                "s",     # spacing
                 ## etc
               ]
 ORD_PARAMS = [
@@ -31,6 +32,23 @@ PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS] f
 MAIN_PARAMS = [
                 "control_freq",    # microwave input control frequency
             ]
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## Fixed and always-default parameters
+
+## These parameters have defaults, as they must always be set for the script to actually work!
+PULSE_PARAM_DEFAULTS = {
+            "w": 0.0,   # 0 width
+            "v": 0.0,   # 0 plateau
+            "s": 0.0,   # 0 spacing (not currently used)
+        }
+
+## These (main) parameters are fixed and cannot be changed using Labber-PSICT; these are *always* set to the following values when using the script.
+CONST_MAIN_PARAMS = {
+                "Edge-to-edge pulses": 1,  # ON
+                "Pulse type": 2,           # Gaussian
+            }
 
 ## Pulse sorting - DO NOT CHANGE!
 pulse_sort_attr = "absolute_time"

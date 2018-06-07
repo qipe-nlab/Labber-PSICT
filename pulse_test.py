@@ -13,17 +13,17 @@ my_pulse_seq = \
                 },
             "AAA": \
                 {
-                    "a": 2, "w": 20, "v": 0,
+                    "a": 2, "v": 20,
                     "time_offset": 450, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
                 },
             "BBB": \
                 {
-                    "a": 5, "w": 95, "v": 0,
+                    "a": 5, "w": 95,
                     "time_offset": 650, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
                 },
             "CCC": \
                 {
-                    "a": 5, "w": 30, "v": 0,
+                    "a": 5,
                     "time_offset": 20, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
                 },
         }

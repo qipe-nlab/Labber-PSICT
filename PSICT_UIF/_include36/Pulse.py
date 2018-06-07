@@ -48,6 +48,18 @@ class Pulse:
     def valid_abs_time(self, new_value):
         self.__valid_abs_time = bool(new_value)
 
+    ## Get start and end times as attributes (will only work if appropriate params are set already)
+    @property
+    def start_time(self):
+        assert self.valid_abs_time
+        return self.attributes["absolute_time"]
+    @property
+    def end_time(self):
+        assert self.start_time
+        assert self["w"]
+        assert self["v"]
+        return self.start_time + self['w'] + self['v']
+
     def __getitem__(self, key):
         return self.attributes[key]
 

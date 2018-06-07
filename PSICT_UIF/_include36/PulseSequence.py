@@ -142,6 +142,14 @@ class InputPulseSeq(PulseSeq):
         ## call base class destructor
         super().__del__()
 
+    ## Global parameters for inverted pulses
+    @property
+    def inverted_params(self):
+        return self.__inverted_params
+    @inverted_params.setter
+    def inverted_params(self, new_params):
+        self.__inverted_params = new_params
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input-specific main parameter methods
 
@@ -165,12 +173,18 @@ class InputPulseSeq(PulseSeq):
             print("Setting input pulse sequence parameters...")
         ## Set pulse sequence from input dict
         for pulse_name, pulse_params in params_dict.items():
-            if pulse_name == "main":    # check for main specification
+            if pulse_name == "main":        # check for main specification
                 if verbose >= 2:
                     print("Setting sequence main parameters...")
                 self.main_params = pulse_params
                 if verbose >= 2:
                     print("Sequence main parameters set.")
+            elif pulse_name == "inverted":  # check for global inverted pulse specification
+                if verbose >= 2:
+                    print("Setting global inverted pulse parameters...")
+                self.inverted_params = pulse_params
+                if verbose >= 2:
+                    print("Global inverted pulse parameters set.")
             else:                       # add pulses normally
                 ## debug message
                 if verbose >= 2:
@@ -201,6 +215,10 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 2:
             print("Carrying out pulse sequence pre-conversion...")
 
+        ###########################################
+        #### Setting required pulse parameters ####
+        ###########################################
+
         if verbose >= 3:
             print("Setting required pulse parameter defaults...")
         ## Set required pulse parameter defaults
@@ -210,6 +228,24 @@ class InputPulseSeq(PulseSeq):
                     pulse[_default_param] = _default_value
         if verbose >= 3:
             print("Required pulse parameter defaults set.")
+        print("__________")
+        self.print_info(pulse_params = True)
+        print([pulse['is_inverted'] for pulse in self.pulse_list])
+        print([pulse for pulse in self.pulse_list if pulse['is_inverted']])
+        print("__________")
+
+        ##########################################
+        #### Setting special pulse parameters ####
+        ##########################################
+
+        if verbose >= 3:
+            print("Applying global inverted-pulse parameters... (pre-absolute_time calculation)")
+        ## For each pulse that is_inverted, apply the global parameters
+        for pulse in self.pulse_list:
+            if pulse["is_inverted"]:
+                pulse.set_attributes(self.inverted_params)
+        if verbose >= 3:
+            print("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
 
         ####################################
         #### Absolute time calculations ####
@@ -327,6 +363,87 @@ class InputPulseSeq(PulseSeq):
         ## debug message
         if verbose >= 3:
             print("Absolute time set for 'previous' and 'relative' reference pulses.")
+        ## Absolute times calculations finished
+        if verbose >= 2:
+            print("Absolute time calculations completed.")
+
+        ###################################
+        #### Inverted pulse conversion ####
+        ###################################
+        if verbose >= 2:
+            print("Converting inverted pulses...")
+
+        ## Extract inverted pulses so we can construct new pulses separately from the master sequence
+        inverted_pulses = [pulse for pulse in self.pulse_list if pulse["is_inverted"]]
+        ## Sort this list so that we can go from beginning to end
+        inverted_pulses = sorted(inverted_pulses, key = lambda x: x["absolute_time"])
+        ## Delete the inverted pulses from the original list
+        self.pulse_list = [pulse for pulse in self.pulse_list if pulse["is_inverted"] == False]
+
+        ## Convert inverted pulses
+        ##  Go from beginning to end, add an extra pulse at the end with 0
+        ##  width which will be extended to the end of the sequence by the
+        ##  OutputPulseSeq processing.
+        ####
+        ## Get half-width and half-truncation-range so they do not have to be accessed and recalculated every time
+        inverted_hw = self.inverted_params["w"]/2
+        inverted_tr = self.main_params["Truncation range"]
+        if verbose >= 4:
+            print("Inverted pulse half-width is:", inverted_hw)
+            print("Truncation range is:", inverted_tr)
+        ## Generate list of time markers
+        if verbose >= 3:
+            print("Generating time markers for inverted pulses...")
+        inverted_time_markers = []
+        ## t0 is always adiabatic ramping up at the beginning of the pulse sequence - width set by inverted_hw
+        inverted_time_markers.append(inverted_hw*(inverted_tr - 1))
+        ## Go through the pulse start and stop times, and add those to the time marker list
+        for pulse in inverted_pulses:
+            ## Start time
+            inverted_time_markers.append(pulse.start_time)
+            ## End time
+            inverted_time_markers.append(pulse.end_time)
+        if verbose >= 3:
+            print("Generating pulses from time markers...")
+        ## Get pairs of time markers (excluding final)
+        tmarker_iter = iter(inverted_time_markers[:-1])
+        tmarker_pairs = zip(tmarker_iter, tmarker_iter)
+        tmarker_final = inverted_time_markers[-1]
+        ## Create pulses with marker pairs
+        for pulse_index, (start_time, end_time) in enumerate(tmarker_pairs):
+            ## Create new pulse
+            new_pulse_name = "".join(["Complement", str(pulse_index)])     # fixed name format for ease of identification
+            new_pulse = Pulse(new_pulse_name)                         # create the pulse
+            new_pulse["absolute_time"] = start_time                   # set new absolute time as start time
+            new_pulse.valid_abs_time = True                           # set valid absolute time flag so other processes don't complain
+            new_pulse.set_attributes(self.inverted_params)            # set all inverted pulse globals
+            new_pulse["v"] = end_time - start_time - new_pulse["w"]   # plateau length is total duration less width
+            ## Add pulse back to master pulse sequence
+            self.add_pulse(new_pulse)
+        ## Final pulse: add zero-width pulse which will be extended in the OutputPulseSeq
+        final_pulse = Pulse("ComplementFinal")
+        final_pulse["absolute_time"] = tmarker_final
+        final_pulse.valid_abs_time = True
+        final_pulse.set_attributes(self.inverted_params)
+        final_pulse["v"] = 0.0
+        ## Add final pulse to master pulse sequence
+        self.add_pulse(final_pulse)
+        ## debug message
+        if verbose >= 2:
+            print("Complement sequence of inverted pulses generated.")
+
+
+
+
+        #### TODO
+
+
+        ## Re-introduce new inverted pulses
+        ##
+
+        ## End inverted pulse conversion
+        if verbose >= 3:
+            print("Inverted pulses converted.")
 
         ####
         ## debug message

@@ -31,6 +31,7 @@ PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS] f
 ## Overall pulse sequence parameters
 MAIN_PARAMS = [
                 "control_freq",    # microwave input control frequency
+                "Truncation range", # truncation range for Gaussian pulses in units of width; half on either side
             ]
 
 
@@ -42,6 +43,9 @@ PULSE_PARAM_DEFAULTS = {
             "w": 0.0,   # 0 width
             "v": 0.0,   # 0 plateau
             "s": 0.0,   # 0 spacing (not currently used)
+            ##
+            "is_inverted": False,
+            "is_measurement": False,
         }
 
 ## These (main) parameters are fixed and cannot be changed using Labber-PSICT; these are *always* set to the following values when using the script.

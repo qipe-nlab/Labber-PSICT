@@ -42,6 +42,8 @@ class PulseSeqManager:
 
         This is passed directly to the InputPulseSeq.
         '''
+        if verbose >= 1:
+            print("Importing point value specifications for SQPG...")
         self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
@@ -79,3 +81,13 @@ class PulseSeqManager:
             print("Conversion to output sequence completed.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Output sequence export
+
+    def export(self, *, verbose = 0):
+        '''
+        Export the output pulse sequence, in a form that can be parsed by the LabberExporter and applied to the Labber API.
+        '''
+        ## debug message
+        if verbose >= 2:
+            print("Exporting output pulse sequence...")
+        return self.outputPulseSeq.export(verbose = verbose)

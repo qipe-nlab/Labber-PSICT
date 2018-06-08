@@ -135,18 +135,15 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 1:
             print("Setting point values for instrument parameters...")
-        ## Extract pulse sequence for SQPG instrument
-        try:
-            pulse_seq_dict = point_values_dict["SQPG"]
-        except KeyError:
-            raise RuntimeWarning("There were no point-value specifications for the pulse sequence!")
-        else:
-            self.pulseSeqManager.set_input_pulse_seq(pulse_seq_dict, verbose = verbose)
-        ## Set point values for other instruments
-        ## TODO
+        ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager.
+        for instrument_name, instrument_params in point_values_dict.items():
+            if instrument_name == "SQPG":
+                self.pulseSeqManager.set_input_pulse_seq(instrument_params, verbose = verbose)
+            else:
+                self.labberExporter.add_point_value_spec(instrument_name, instrument_params, verbose = verbose)
         ## debug message
         if verbose >= 1:
-            print("Set instrument parameters as point values.")
+            print("Instrument parameter point values set.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
@@ -167,6 +164,8 @@ class psictUIFInterface:
         self.init_MeasurementObject(auto_init = True, verbose = verbose)
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
+        ## Export output pulse sequence to LabberExporter
+        self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export(verbose = verbose))
         ####
         ## debug message
         if verbose >= 1:

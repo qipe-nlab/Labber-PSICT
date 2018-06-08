@@ -13,8 +13,6 @@ psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 ## Set script rcfile
 psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
 
-print(psictInterface.labberExporter)
-sys.exit()
 
 ## Manually set Labber executable path
 # psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
@@ -54,12 +52,19 @@ point_values = {
                         "a": 5,
                         "time_offset": 400, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
                     },
-            } # end SQPG
-
+            }, # end SQPG
+        "AWG_A":
+            {
+                "foo": "bar", "baz": "quux",
+            },
+        "Digitizer":
+            {
+                "xyzzy": "blip", "bang": "esc",
+            },
     } # end point values
 
 ## Set input pulse sequence
-psictInterface.set_point_values(point_values, verbose = 0)
+psictInterface.set_point_values(point_values, verbose = 1)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
 psictInterface.init_MeasurementObject(verbose = 1)
@@ -67,4 +72,4 @@ psictInterface.init_MeasurementObject(verbose = 1)
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 1)
+psictInterface.perform_measurement(dry_run = True, verbose = 2)

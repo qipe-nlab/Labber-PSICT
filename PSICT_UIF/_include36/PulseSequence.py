@@ -505,6 +505,8 @@ class OutputPulseSeq(PulseSeq):
     def __init__(self, *, verbose = 0):
         ## call base class constructor
         super().__init__(verbose = verbose)
+        ## Flags
+        self.is_exportable = False
         ## debug message
         if self.verbose >= 4:
             print("Called OutputPulseSeq constructor.")
@@ -560,6 +562,22 @@ class OutputPulseSeq(PulseSeq):
         ## Assign pulse number attributes based on ordering
         for index, pulse in enumerate(self.pulse_list):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
+        ## set flag
+        self.is_exportable = True
         ## debug message
         if verbose >= 3:
             print("Post-conversion processing on output sequence completed.")
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse sequence export
+
+    def export(self, *, verbose = 0):
+        '''
+        Returns the output sequence, ready to be parsed by the LabberExporter and read into the Labber API.
+        '''
+        ## Check if pulse sequence is ready for export
+        if not self.is_exportable:
+            raise RuntimeError("Output pulse sequence is not ready for export.")
+        ## export pulse sequence
+        return self.pulse_list

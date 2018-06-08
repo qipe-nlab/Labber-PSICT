@@ -2,6 +2,8 @@
 ##  Stores and prepares all parameter settings before sending them to the
 ##  Labber measurement program.
 
+from Labber import ScriptTools
+
 class LabberExporter:
     '''
     Docstring for LabberExporter class.
@@ -10,6 +12,8 @@ class LabberExporter:
     def __init__(self, *, verbose = 0):
         ## set object log level
         self.verbose = verbose
+        ## Labber MeasurementObject - will be set later
+        self.MeasurementObject = None
         ## Parameter containers
         self._parameter_storage = {}
         self._pulse_sequence = {}
@@ -54,6 +58,32 @@ class LabberExporter:
         ## debug message
         if verbose >= 1:
             print("Pulse sequence received.")
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Labber MeasurementObject methods
+
+    def init_MeasurementObject(self, reference_path, output_path, *, auto_init = False, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Initialising MeasurementObject...")
+        ## Check that the MeasurementObject has not already been initialised
+        if self.MeasurementObject is not None:
+            if not auto_init:
+                ## This method has been called manually
+                warnings.warn("Labber MeasurementObject has already been initialised!", RuntimeWarning)
+            return
+        else:
+            ## Initialise MeasurementObject
+            self.MeasurementObject = ScriptTools.MeasurementObject(\
+                                        reference_path,
+                                        output_path)
+            ## debug message
+            if verbose >= 1:
+                print("MeasurementObject initialised.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

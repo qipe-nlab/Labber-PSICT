@@ -7,8 +7,6 @@ import importlib.util
 from pathlib import Path
 import warnings
 
-from Labber import ScriptTools
-
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 from PSICT_UIF._include36.LabberExporter import LabberExporter
@@ -32,11 +30,15 @@ class psictUIFInterface:
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
         self.labberExporter = LabberExporter(verbose = self.verbose)
-        self.MeasurementObject = None # will be initialized later once file paths are known
         ## debug message
         if self.verbose >= 4:
             print("Called psictUIFInterface constructor.")
         ##
+
+    ## Direct access to MeasurementObject as attribute
+    @property
+    def MeasurementObject(self):
+        return self.labberExporter.MeasurementObject
 
     def __del__(self):
         ## delete object attributes
@@ -103,27 +105,10 @@ class psictUIFInterface:
 
         If this is not called, the MeasurementObject will be initialised during pre-measurement processing.
         '''
-        ## debug message
-        if verbose >= 1:
-            print("Initialising MeasurementObject...")
-        ## Check that the MeasurementObject has not already been initialised
-        if self.MeasurementObject is not None:
-            if not auto_init:
-                ## This method has been called manually
-                warnings.warn("Labber MeasurementObject has already been initialised!", RuntimeWarning)
-                # RuntimeWarning("Labber MeasurementObject has already been initialised!")
-            return
-        else:
-            ## Ensure reference and output files are set properly
-            assert self.fileManager.reference_path
-            assert self.fileManager.output_path
-            ## Initialise MeasurementObject
-            self.MeasurementObject = ScriptTools.MeasurementObject(\
-                                        self.fileManager.reference_path,
-                                        self.fileManager.output_path)
-            ## debug message
-            if verbose >= 1:
-                print("MeasurementObject initialised.")
+        assert self.fileManager.reference_path
+        assert self.fileManager.output_path
+        self.labberExporter.init_MeasurementObject(self.fileManager.reference_path, self.fileManager.output_path, auto_init = auto_init, verbose = verbose)
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Instrument parameter setting methods

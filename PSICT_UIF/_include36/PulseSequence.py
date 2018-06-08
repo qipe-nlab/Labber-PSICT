@@ -228,11 +228,6 @@ class InputPulseSeq(PulseSeq):
                     pulse[_default_param] = _default_value
         if verbose >= 3:
             print("Required pulse parameter defaults set.")
-        print("__________")
-        self.print_info(pulse_params = True)
-        print([pulse['is_inverted'] for pulse in self.pulse_list])
-        print([pulse for pulse in self.pulse_list if pulse['is_inverted']])
-        print("__________")
 
         ##########################################
         #### Setting special pulse parameters ####

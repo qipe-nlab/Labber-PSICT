@@ -14,7 +14,7 @@ psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
 
 ## Manually set Labber executable path
-psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
+# psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
 
 ## Set template and output hdf5 files
 template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
@@ -48,9 +48,12 @@ point_values = {
     }
 
 ## Set input pulse sequence
-psictInterface.set_point_values(point_values, verbose = 4)
+psictInterface.set_point_values(point_values, verbose = 0)
 
-sys.exit()
+# Set up Labber MeasurementObject in case we would like to explicitly access it
+psictInterface.init_MeasurementObject(verbose = 1)
+## explicit access to MeasurementObject
+print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(verbose = 1)
+psictInterface.perform_measurement(dry_run = True, verbose = 1)

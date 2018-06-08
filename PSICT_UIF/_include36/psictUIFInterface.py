@@ -5,6 +5,9 @@
 import os
 import importlib.util
 from pathlib import Path
+import warnings
+
+from Labber import ScriptTools
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
@@ -90,6 +93,37 @@ class psictUIFInterface:
         self.fileManager.post_measurement_copy(verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Labber MeasurementObject methods
+
+    def init_MeasurementObject(self, *, auto_init = False, verbose = 0):
+        '''
+        Explicitly initialise the Labber MeasurementObject, so that it can be interacted with directly in the external script.
+
+        If this is not called, the MeasurementObject will be initialised during pre-measurement processing.
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Initialising MeasurementObject...")
+        ## Check that the MeasurementObject has not already been initialised
+        if self.MeasurementObject is not None:
+            if not auto_init:
+                ## This method has been called manually
+                warnings.warn("Labber MeasurementObject has already been initialised!", RuntimeWarning)
+                # RuntimeWarning("Labber MeasurementObject has already been initialised!")
+            return
+        else:
+            ## Ensure reference and output files are set properly
+            assert self.fileManager.reference_path
+            assert self.fileManager.output_path
+            ## Initialise MeasurementObject
+            self.MeasurementObject = ScriptTools.MeasurementObject(\
+                                        self.fileManager.reference_path,
+                                        self.fileManager.output_path)
+            ## debug message
+            if verbose >= 1:
+                print("MeasurementObject initialised.")
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Instrument parameter setting methods
 
     def set_point_values(self, point_values_dict, *, verbose = 0):
@@ -114,29 +148,35 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 
-    def perform_measurement(self, *, verbose = 0):
+    def perform_measurement(self, *, dry_run = False, verbose = 0):
         '''
         Calls Labber to perform the measurement.
 
         Note that a final few pre-processing actions are taken before Labber is actually called.
         '''
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Carrying out measurement pre-processing...")
         ##### measurement pre-processing
         ## set ScriptTools executable path
         self.fileManager.apply_labber_exe_path(verbose = verbose)
+        ## Initialise Labber MeasurementObject if not already done
+        self.init_MeasurementObject(auto_init = True, verbose = verbose)
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
         ####
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Measurement pre-processing completed.")
         if verbose >= 1:
             print("Calling Labber to perform measurement...")
         ## Call Labber to perform measurement
         if self.MeasurementObject is not None:
-            self.MeasurementObject.performMeasurement()
+            if dry_run:  # check what would have been done
+                if verbose >= 1:
+                    print("Measurement dry run; skipping actual measurement...")
+            else:        # actually perform measurement
+                self.MeasurementObject.performMeasurement()
         else:
             ## Error: MeasurementObject not set!
             ## TODO Change this to an error once everything else is implemented.

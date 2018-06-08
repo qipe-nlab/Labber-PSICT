@@ -11,6 +11,7 @@ from Labber import ScriptTools
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
+from PSICT_UIF._include36.LabberExporter import LabberExporter
 
 class psictUIFInterface:
     '''
@@ -30,6 +31,7 @@ class psictUIFInterface:
         ## Add constituent objects
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
+        self.labberExporter = LabberExporter(verbose = self.verbose)
         self.MeasurementObject = None # will be initialized later once file paths are known
         ## debug message
         if self.verbose >= 4:
@@ -140,7 +142,8 @@ class psictUIFInterface:
             raise RuntimeWarning("There were no point-value specifications for the pulse sequence!")
         else:
             self.pulseSeqManager.set_input_pulse_seq(pulse_seq_dict, verbose = verbose)
-        ## TODO generic other instrument parameter setting here
+        ## Set point values for other instruments
+        ## TODO
         ## debug message
         if verbose >= 1:
             print("Set instrument parameters as point values.")

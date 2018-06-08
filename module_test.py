@@ -72,8 +72,8 @@ psictInterface.init_MeasurementObject(verbose = 1)
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 2)
+psictInterface.perform_measurement(dry_run = True, verbose = 4)
 
 ## verify LabberExporter contents
-print(psictInterface.labberExporter._parameter_storage)
+print(psictInterface.labberExporter._point_values)
 print(psictInterface.labberExporter._pulse_sequence)

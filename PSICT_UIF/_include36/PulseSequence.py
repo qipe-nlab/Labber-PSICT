@@ -562,6 +562,16 @@ class OutputPulseSeq(PulseSeq):
         ## Assign pulse number attributes based on ordering
         for index, pulse in enumerate(self.pulse_list):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
+        ## Convert all physical parameter pulse shortcodes to full names
+        for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
+            for pulse in self.pulse_list:
+                try:
+                    param_value = pulse[param_short_name]
+                except KeyError:
+                    continue
+                else:
+                    del pulse[param_short_name]
+                    pulse[param_full_name] = param_value
         ## set flag
         self.is_exportable = True
         ## debug message

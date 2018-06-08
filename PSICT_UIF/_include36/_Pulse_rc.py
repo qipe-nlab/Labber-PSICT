@@ -25,8 +25,17 @@ ORD_PARAMS = [
             ##
             ]
 
+## Full names of pulse params - the values here should match all the PHYS_PARAMS; by the time the pulse sequence is exported from the OutputPulseSeq object, the full names should be used.
+FULL_NAMES_PULSES = {
+        "Amplitude": "a",
+        "Width": "w",
+        "Plateau": "v",
+        "Spacing": "s",
+    }
+
 ## all single-pulse parameter names (for checking validity etc)
-PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS] for param in param_list]
+PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS, FULL_NAMES_PULSES.keys()] for param in param_list]
+
 
 ## Overall pulse sequence parameters
 MAIN_PARAMS = [
@@ -53,6 +62,7 @@ CONST_MAIN_PARAMS = {
                 "Edge-to-edge pulses": 1,  # ON
                 "Pulse type": 2,           # Gaussian
             }
+## TODO add similar dict for arbitrary instruments
 
 ## Pulse sorting - DO NOT CHANGE!
 pulse_sort_attr = "absolute_time"

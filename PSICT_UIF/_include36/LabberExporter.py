@@ -46,3 +46,47 @@ class LabberExporter:
         ## debug message
         if verbose >= 1:
             print("Pulse sequence received.")
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Application of instrument parameter specifications
+
+    def apply_all(self, *, verbose = 0):
+        '''
+        Apply all stored parameters to the reference file, either through the Labber API or direct editing.
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Applying all instrument parameters from LabberExporter...")
+        ## Apply different parameter sets
+        self.apply_point_values(verbose = verbose)
+        self.apply_iteration_values(verbose = verbose)
+        self.apply_relations(verbose = verbose)
+        ## debug message
+        if verbose >= 1:
+            print("Instrument parameters applied.")
+
+    def apply_point_values(self, *, verbose = 0):
+        '''
+        Apply all stored point values (including for SQPG) through the Labber API.
+        '''
+        if verbose >= 2:
+            print("LabberExporter: Applying parameter point values...")
+
+    def apply_iteration_values(self, *, verbose = 0):
+        '''
+        Apply all stored iteration values through the Labber API.
+        '''
+        if verbose >= 2:
+            print("LabberExporter: Applying parameter iteration values...")
+
+    def apply_relations(self, *, verbose = 0):
+        '''
+        Apply all channel relations by directly editing the reference hdf5 file.
+        '''
+        if verbose >= 2:
+            print("LabberExporter: Applying channel relations...")
+
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

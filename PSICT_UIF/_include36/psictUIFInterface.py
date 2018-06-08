@@ -165,7 +165,9 @@ class psictUIFInterface:
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
         ## Export output pulse sequence to LabberExporter
-        self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export(verbose = verbose))
+        self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
+        ## Apply all parameters stored in LabberExporter
+        self.labberExporter.apply_all(verbose = verbose)
         ####
         ## debug message
         if verbose >= 1:

@@ -83,7 +83,7 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Output sequence export
 
-    def export(self, *, verbose = 0):
+    def export_output(self, *, verbose = 0):
         '''
         Export the output pulse sequence, in a form that can be parsed by the LabberExporter and applied to the Labber API.
         '''

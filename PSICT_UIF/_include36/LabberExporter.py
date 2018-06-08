@@ -10,6 +10,9 @@ class LabberExporter:
     def __init__(self, *, verbose = 0):
         ## set object log level
         self.verbose = verbose
+        ## Parameter containers
+        self._parameter_storage = {}
+        self._pulse_sequence = {}
         ## debug message
         if verbose >= 4:
             print("LabberExporter constructor called.")
@@ -23,6 +26,7 @@ class LabberExporter:
         if self.verbose >= 4:
             print("LabberExporter destructor finished.")
 
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Import instrument parameter specifications
 
@@ -30,8 +34,11 @@ class LabberExporter:
         '''
         Docstring.
         '''
+        ## debug message
         if verbose >= 1:
             print("Importing point value specifications for", instrument_name)
+        ## Import parameters
+        self._parameter_storage[instrument_name] = instrument_params
 
 
     ## Pulse-sequence-specific mathods
@@ -42,7 +49,8 @@ class LabberExporter:
         ## debug message
         if verbose >= 1:
             print("LabberExporter receiving pulse sequence...")
-        ## TODO
+        ## Receive pulse sequence
+        self._pulse_sequence = exported_pulse_seq
         ## debug message
         if verbose >= 1:
             print("Pulse sequence received.")

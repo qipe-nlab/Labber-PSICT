@@ -164,7 +164,9 @@ class psictUIFInterface:
         self.init_MeasurementObject(auto_init = True, verbose = verbose)
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
-        ## Export output pulse sequence to LabberExporter
+        ## Export output pulse sequence and main SQPG params to LabberExporter
+        self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose))
+        ## TODO get other spec (eg iteration/relations) from SQPG
         self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
         ## Apply all parameters stored in LabberExporter
         self.labberExporter.apply_all(verbose = verbose)
@@ -182,9 +184,7 @@ class psictUIFInterface:
             else:        # actually perform measurement
                 self.MeasurementObject.performMeasurement()
         else:
-            ## Error: MeasurementObject not set!
-            ## TODO Change this to an error once everything else is implemented.
-            print("MeasurementObject is not set.")
+            raise RuntimeError("MeasurementObject has not been set!")
         ## debug message
         if verbose >= 1:
             print("Measurement completed.")
@@ -192,7 +192,8 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Carrying out post-measurement operations...")
         ## Copy files (script, rcfile, etc) for reproducability
-        self.post_measurement_copy(verbose = verbose)
+        if not dry_run:
+            self.post_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Post-measurement operations completed.")

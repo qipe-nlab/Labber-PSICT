@@ -69,7 +69,7 @@ iteration_values = {
         "SQPG":
             {
                 "CCC": {
-                        "a": [500, 1500, 3],
+                        "w": [500, 1500, 3],
                        }
             },
         "AWG_A":
@@ -85,7 +85,7 @@ iteration_values = {
 
 iteration_order = [
         ("AWG_A", "foo"),
-        ("SQPG", "BBB", "Amplitude"),
+        ("SQPG", "CCC", "Width"),
         ("AWG_A", "this"),
     ] # end iteration order
 

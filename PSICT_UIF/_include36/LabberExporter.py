@@ -124,7 +124,6 @@ class LabberExporter:
             print("Applying all instrument parameters from LabberExporter...")
         ## Apply different parameter sets
         self.apply_api_values(verbose = verbose)
-        self.apply_iteration_values(verbose = verbose) # to be merged with apply_api_values
         self.apply_relations(verbose = verbose)
         ## debug message
         if verbose >= 1:
@@ -141,10 +140,7 @@ class LabberExporter:
         for instrument_name, instrument_params in self._api_values.items():
             for param_name, param_value in instrument_params.items():
                 target_string = " - ".join([instrument_name, param_name])
-                self.MeasurementObject.updateValue(\
-                                        target_string, param_value, 'SINGLE')
-                if verbose >= 4:
-                    print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
+                self.update_api_value(target_string, param_value, verbose = verbose)
         ## Apply pulse parameters for SQPG
         for pulse in self._pulse_sequence:
             pulse_number = pulse.attributes["pulse_number"]
@@ -156,20 +152,29 @@ class LabberExporter:
                 else:
                     target_string = "".join([
                                             "SQPG - ", param_name, " #", str(pulse_number)])
-                    self.MeasurementObject.updateValue(\
-                                            target_string, param_value, 'SINGLE')
-                    if verbose >= 4:
-                        print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
-        ## debug message
+                    self.update_api_value(target_string, param_value, verbose = verbose)
+        ## Status message
         if verbose >= 2:
             print("LabberExporter: Parameter point values applied")
 
-    def apply_iteration_values(self, *, verbose = 0):
+    def update_api_value(self, target_string, param_value, *, verbose = 0):
         '''
-        Apply all stored iteration values through the Labber API.
+        Update the value of an instrument parameter through the Labber API
+
+        The specific parameter should be specified in full by the target_string. The type of the param_value will determine what is set: single -> single, IterationSpec -> iteration.
         '''
+        ## Check type of param value
+        if isinstance(param_value, IterationSpec):
+            ## param_value is an IterationSpec object
+            self.MeasurementObject.updateValue(target_string, param_value.start_value, 'START')
+            self.MeasurementObject.updateValue(target_string, param_value.stop_value, 'STOP')
+            self.MeasurementObject.updateValue(target_string, param_value.n_pts, 'N_PTS')
+        else: # the parameter is a single value, either string or numeric
+            self.MeasurementObject.updateValue(target_string, param_value, 'SINGLE')
+        ## status message
         if verbose >= 2:
-            print("LabberExporter: Applying parameter iteration values...")
+            print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
+
 
     def apply_relations(self, *, verbose = 0):
         '''

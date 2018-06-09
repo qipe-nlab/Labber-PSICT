@@ -53,7 +53,8 @@ class PulseSeqManager:
         '''
         Set iteration specifications, potentially overriding point values.
         '''
-        print("--> Setting iteration specifications for SQPG...")
+        if verbose >= 1:
+            print("Setting iteration specifications for SQPG...")
         for pulse_name, iter_params in iteration_spec_dict.items():
             print(pulse_name, iter_params)
             for param_name, param_spec in iter_params.items():
@@ -63,10 +64,10 @@ class PulseSeqManager:
                                           "n_pts": param_spec[2],
                                         })
                 ## Set parameter using IterationSpec object
-                self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj)
-                ## debug message
-                if verbose >= 2:
-                    print("Inidividual pulse parameter set:", pulse_name, param_name, iter_obj)
+                self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj, verbose = verbose)
+                # ## debug message
+                # if verbose >= 2:
+                #     print("Individual pulse parameter set:", pulse_name, param_name, iter_obj)
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

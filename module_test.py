@@ -93,16 +93,16 @@ iteration_order = [
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ## Set input pulse sequence
-psictInterface.set_point_values(point_values, verbose = 1)
-psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 4)
+psictInterface.set_point_values(point_values, verbose = 0)
+psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 0)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
-psictInterface.init_MeasurementObject(verbose = 1)
+psictInterface.init_MeasurementObject(verbose = 0)
 ## explicit access to MeasurementObject
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 1)
+psictInterface.perform_measurement(dry_run = True, verbose = 3)
 
 ## verify LabberExporter contents
 print("++++++++++++++++++++++++++")

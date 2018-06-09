@@ -3,6 +3,7 @@
 ##  (used to set Labber parameters) pulse sequences.
 
 from PSICT_UIF._include36.PulseSequence import InputPulseSeq, OutputPulseSeq
+from PSICT_UIF._include36.ParameterSpec import IterationSpec
 
 class PulseSeqManager:
     '''
@@ -47,6 +48,25 @@ class PulseSeqManager:
         self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
+
+    def set_iteration_spec(self, iteration_spec_dict, *, verbose = 0):
+        '''
+        Set iteration specifications, potentially overriding point values.
+        '''
+        print("--> Setting iteration specifications for SQPG...")
+        for pulse_name, iter_params in iteration_spec_dict.items():
+            print(pulse_name, iter_params)
+            for param_name, param_spec in iter_params.items():
+                ## Convert to IterationSpec object
+                iter_obj = IterationSpec({"start_value": param_spec[0],
+                                          "stop_value": param_spec[1],
+                                          "n_pts": param_spec[2],
+                                        })
+                ## Set parameter using IterationSpec object
+                self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj)
+                ## debug message
+                if verbose >= 2:
+                    print("Inidividual pulse parameter set:", pulse_name, param_name, iter_obj)
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

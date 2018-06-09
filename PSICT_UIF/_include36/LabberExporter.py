@@ -5,6 +5,7 @@
 from Labber import ScriptTools
 
 import PSICT_UIF._include36._Pulse_rc as _Pulse_rc
+from PSICT_UIF._include36.ParameterSpec import IterationSpec
 
 class LabberExporter:
     '''
@@ -17,8 +18,8 @@ class LabberExporter:
         ## Labber MeasurementObject - will be set later
         self.MeasurementObject = None
         ## Parameter containers
-        self._point_values = {}
-        self._pulse_sequence = {}
+        self._api_values = {}     # parameter values which will be set through the Labber API
+        self._pulse_sequence = {} # parameter values specific to the pulse sequence (not including main SQPG parameters)
         ## debug message
         if verbose >= 4:
             print("LabberExporter constructor called.")
@@ -44,8 +45,31 @@ class LabberExporter:
         if verbose >= 1:
             print("Importing point value specifications for", instrument_name)
         ## Import parameters
-        self._point_values[instrument_name] = instrument_params
+        self._api_values[instrument_name] = instrument_params
 
+    def add_iteration_spec(self, instrument_name, instrument_params, *, verbose = 0):
+        '''
+        Docstring.
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Importing iteration specifications for:", instrument_name)
+        ## Ensure instrument entry exists
+        if not instrument_name in self._api_values:
+            self._api_values[instrument_name] = {}
+        ## Import parameters
+        for param_name, iter_list in instrument_params.items():
+            iter_obj = IterationSpec({"start_value": iter_list[0],
+                                      "stop_value": iter_list[1],
+                                      "n_pts": iter_list[2],
+                                    })
+            self._api_values[instrument_name][param_name] = iter_obj
+
+    def set_iteration_order(self, iteration_order_list, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        self._iteration_order = iteration_order_list
 
     ## Pulse-sequence-specific mathods
     def receive_pulse_sequence(self, exported_pulse_seq, *, verbose = 0):
@@ -99,14 +123,14 @@ class LabberExporter:
         if verbose >= 1:
             print("Applying all instrument parameters from LabberExporter...")
         ## Apply different parameter sets
-        self.apply_point_values(verbose = verbose)
-        self.apply_iteration_values(verbose = verbose)
+        self.apply_api_values(verbose = verbose)
+        self.apply_iteration_values(verbose = verbose) # to be merged with apply_api_values
         self.apply_relations(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Instrument parameters applied.")
 
-    def apply_point_values(self, *, verbose = 0):
+    def apply_api_values(self, *, verbose = 0):
         '''
         Apply all stored point values (including for SQPG) through the Labber API.
         '''
@@ -114,13 +138,13 @@ class LabberExporter:
         if verbose >= 2:
             print("LabberExporter: Applying parameter point values...")
         ## Apply all non-pulse parameters (including main SQPG parameters)
-        for instrument_name, instrument_params in self._point_values.items():
+        for instrument_name, instrument_params in self._api_values.items():
             for param_name, param_value in instrument_params.items():
                 target_string = " - ".join([instrument_name, param_name])
                 self.MeasurementObject.updateValue(\
                                         target_string, param_value, 'SINGLE')
                 if verbose >= 4:
-                    print("Point value updated: \"", target_string, "\" to ", param_value, sep="")
+                    print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
         ## Apply pulse parameters for SQPG
         for pulse in self._pulse_sequence:
             pulse_number = pulse.attributes["pulse_number"]
@@ -135,7 +159,7 @@ class LabberExporter:
                     self.MeasurementObject.updateValue(\
                                             target_string, param_value, 'SINGLE')
                     if verbose >= 4:
-                        print("Point value updated: \"", target_string, "\" to ", param_value, sep="")
+                        print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
         ## debug message
         if verbose >= 2:
             print("LabberExporter: Parameter point values applied")

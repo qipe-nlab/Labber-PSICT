@@ -200,6 +200,17 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 1:
             print("Input pulse sequence parameters set.")
 
+    def set_pulse_parameter(self, pulse_id, param_name, param_value, *, verbose = 0):
+        '''
+        Set the individual value for a pulse parameter.
+
+        Contrast with 'bulk import' of set_pulse_seq.
+        Note that the pulse can, as usual, be specified by either name or index.
+        '''
+        self[pulse_id][param_name] = param_value
+        if verbose >= 1:
+            print("Set pulse ", str(pulse_id))
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting

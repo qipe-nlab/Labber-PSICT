@@ -25,6 +25,7 @@ output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
 output_file = "K2018-04-21_226"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #### Instrument settings
 ## Point values
 point_values = {
@@ -63,8 +64,37 @@ point_values = {
             },
     } # end point values
 
+## Iteration values
+iteration_values = {
+        "SQPG":
+            {
+                "CCC": {
+                        "a": [500, 1500, 3],
+                       }
+            },
+        "AWG_A":
+            {
+                "this": [100, 200, 3],
+                "foo": [0, 25, 6],
+            },
+        "AWG_B":
+            {
+                "wop": "wop",
+            },
+    } # end iteration values
+
+iteration_order = [
+        ("AWG_A", "foo"),
+        ("SQPG", "BBB", "Amplitude"),
+        ("AWG_A", "this"),
+    ] # end iteration order
+
+## End instrument parameter settings
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 ## Set input pulse sequence
 psictInterface.set_point_values(point_values, verbose = 1)
+psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 4)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
 psictInterface.init_MeasurementObject(verbose = 1)
@@ -72,8 +102,12 @@ psictInterface.init_MeasurementObject(verbose = 1)
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 4)
+psictInterface.perform_measurement(dry_run = True, verbose = 1)
 
 ## verify LabberExporter contents
-print(psictInterface.labberExporter._point_values)
+print("++++++++++++++++++++++++++")
+print(psictInterface.labberExporter._api_values)
 print(psictInterface.labberExporter._pulse_sequence)
+for pulse in psictInterface.labberExporter._pulse_sequence:
+    pulse.print_info()
+print(psictInterface.labberExporter._iteration_order)

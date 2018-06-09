@@ -130,6 +130,25 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Instrument parameter point values set.")
 
+    def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 0):
+        '''
+        Set instrument parameters as (independent) iteration values.
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Setting iterated values for instrument parameters...")
+        ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
+        for instrument_name, instrument_params in iteration_values_dict.items():
+            if instrument_name == "SQPG":
+                self.pulseSeqManager.set_iteration_spec(instrument_params, verbose = verbose)
+            else:
+                self.labberExporter.add_iteration_spec(instrument_name, instrument_params, verbose = verbose)
+        ## Set iteration order
+        self.labberExporter.set_iteration_order(iteration_order_list)
+        ## debug message
+        if verbose >= 1:
+            print("Instrument parameter iteration values set.")
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 

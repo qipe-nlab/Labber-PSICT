@@ -9,6 +9,13 @@ import h5py             # for direct editing of hdf5 files to modify iteration p
 import numpy as np      # for working directly with h5py datasets
 import shutil           # for manipulating copies of the input reference config file
 
+###############################################################################
+## Labber-PSICT general information
+PSICT_VERSION = "0.1.4.1"
+print("Labber-PSICT version is", PSICT_VERSION)
+
+###############################################################################
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## Configs for admissible parameter input values.
 
@@ -31,8 +38,8 @@ params_main_config = {
         "IQ":     float,  # I/Q ratio
         "dphi":   float,  # Phase diff.
         ## IF/Control frequency specification
-        "cf":     float,  # Control frequency in MHz
-        "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
+        # "cf":     float,  # Control frequency in MHz
+        # "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
     }
 
 params_pulse_config = {
@@ -43,6 +50,8 @@ params_pulse_config = {
         "p":      float,  # Phase
         "f":      float,  # Mod. frequency (offset from IF frequency) in MHz
         "o":      str,    # Output
+        "cf":     float,  # Control frequency in MHz
+        "if":     float,  # IF frequency (to be modulated by Mod. freq) in MHz
     }
 
 ## dict for shortcode conversion
@@ -79,7 +88,7 @@ shortcodes = {
 }
 
 ## lists of shortcodes for sorting tests
-add_shortcodes = ["dead", "cf", "if"]
+add_shortcodes = ["dead"]
 pulseapp_shortcodes = ["IQ", "dphi"]
 
 ## expansion of full parameter label from disparate input
@@ -94,9 +103,9 @@ def get_full_label(instrument_name, param_name, pulse_number = 0):
     ## convert SQPG names to appropriate string
     if instrument_name in [None, "", "SQPG"]:
         # print("-> Instrument is SQPG.")
-        instrument_name = "Single-Qubit Pulse Generator"
+        instrument_name = "SQPG"
     ## expand param shortcode if instrument is SQPG
-    if (instrument_name == "Single-Qubit Pulse Generator") and (param_name in shortcodes):
+    if (instrument_name == "SQPG") and (param_name in shortcodes):
         # print("Param name", param_name, "is in shortcodes.")
         param_name = shortcodes[param_name]
     ## concatenate string together based on pulse number
@@ -120,7 +129,7 @@ convert_ptype = {"gauss": 0, "square": 1, "ramp": 2}
 MAX_PULSES = 8         # maximum number of pulses supported by driver
 
 ## pulse config
-convert_out = {"QubitControl": 0, "QubitReadout": 1, "MagnonControl": 2, "MagnonReadout": 3}
+convert_out = {"Readout": 0, "QubitControl": 1, "MagnonControl": 2, "Trigger": 3}
 ##      ## NB pulse output names cannot contain underscores (_) or spaces
 
 
@@ -184,12 +193,6 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
     ## additional data - not passed directly
     if "dead" in in_main:
         parserObj.add_values_out[shortcodes["dead"]] = in_main["dead"]*1e-9   # ns
-    if "cf" in in_main:
-        parserObj.add_values_out[shortcodes["cf"]] = in_main["cf"]*1e6        # MHz
-    if "if" in in_main:
-        parserObj.add_values_out[shortcodes["if"]] = in_main["if"]*1e6             # MHz
-    if "cf" in in_main and "if" in in_main:
-        parserObj.add_values_out["LO frequency"] = parserObj.add_values_out[shortcodes["cf"]] - parserObj.add_values_out[shortcodes["if"]]
     ## status print
     # if verbose:
         # print("(main) Sample rate:", parserObj.main_values_out["Sample rate"])
@@ -219,15 +222,21 @@ def post_process_params_values(parserObj, in_main = [], in_pulses = [], verbose 
         if "p" in in_pulse:
             parserObj.pulse_values_out[pulse_num][shortcodes["p"]] = in_pulse["p"]
         ## modulation frequency calculations: potential sideband switching
+        if "cf" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["cf"]] = in_pulse["cf"]*1e6        # MHz
+        if "if" in in_pulse:
+            parserObj.pulse_values_out[pulse_num][shortcodes["if"]] = in_pulse["if"]*1e6             # MHz
+        if "cf" in in_pulse and "if" in in_pulse:
+            parserObj.pulse_values_out[pulse_num]["LO frequency"] = parserObj.pulse_values_out[pulse_num][shortcodes["cf"]] - parserObj.pulse_values_out[pulse_num][shortcodes["if"]]
         ## same sign => same sideband
         if "f" in in_pulse:
             freq_offset = in_pulse["f"]*1e6      # MHz
-            if parserObj.add_values_out[shortcodes["if"]]*(parserObj.add_values_out["IF frequency"] + freq_offset) >= 0:
-                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"] + freq_offset)
+            if parserObj.pulse_values_out[pulse_num][shortcodes["if"]]*(parserObj.pulse_values_out[pulse_num]["IF frequency"] + freq_offset) >= 0:
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.pulse_values_out[pulse_num]["IF frequency"] + freq_offset)
             ## sideband switching
             else:
                 print("*** WARNING: Specified frequency offset induces a sideband switch for pulse ", pulse_num, "; defaulting to 0.", sep = "")
-                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.add_values_out["IF frequency"])
+                parserObj.pulse_values_out[pulse_num][shortcodes["f"]] = abs(parserObj.pulse_values_out[pulse_num]["IF frequency"])
         ##
         if "o" in in_pulse:
             parserObj.pulse_values_out[pulse_num][shortcodes["o"]] = convert_out[in_pulse["o"]]
@@ -334,11 +343,13 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
     '''
     flag_increment = False       # set through args or input if incrementation attempt is desired
     file_in = full_path(path_in, fname_in)
+    file_new = None
     if verbose: print("Verifying file:", file_in)
     ## Check if file already exists
     if not os.path.isfile(file_in):
         ## file does not exist; set new fname to input fname as-is
         fname_new = fname_in
+        file_new = full_path(path_in, fname_new)
     else:
         ## file already exists
         if verbose: print("The file", file_in, "already exists.")
@@ -374,12 +385,12 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
             try:
                 ## TODO implement with proper exception handling
                 fname_new = increment_filename(fname_new)
-                file_new = full_path(path_in, fname_new)
             except:
                 ## could not increment path!
                 if verbose: print("Could not increment filename", fname_new)
                 return None
             finally:
+                file_new = full_path(path_in, fname_new)
                 n_attempts = n_attempts + 1
             if n_attempts > MAX_INCREMENT_ATTEMPTS:
                 ## failure by number of attempts
@@ -387,7 +398,7 @@ def get_valid_out_fname(path_in, fname_in, user_input = True, default_attempt_in
                 return None
 
     ## return new path (can be same as old path)
-    if verbose: print("The file", file_new, "is a valid output file.")
+    print("Output file set as:", file_new)
     return fname_new
 
 
@@ -688,9 +699,9 @@ class InputStrParser:
         return param_values
 
 
-    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "Single-Qubit Pulse Generator", verbose = False):
+    def set_MeasurementObject(self, target_MeasurementObject, target_instrument_name = "SQPG", verbose = False):
         '''
-        Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "Single-Qubit Pulse Generator").
+        Specify the target Labber MeasurementObject instance whose values should be updated, along with the instrument name (default is "SQPG").
 
         This method checks whether or not the file path specified for output at the MeasurementObject already exists, and, if so, exits the program in order to prevent appending data to an existing log file. If the file does not already exist, execution continues.
         '''
@@ -740,7 +751,14 @@ class InputStrParser:
         for pulse_num in range(1,MAX_PULSES+1):
             target_string = "".join([self.target_name, " - Amplitude #", str(pulse_num)])
             self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
-        if verbose: print("Pulse amplitude reset.")
+            target_string = "".join([self.target_name, " - Width #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+            target_string = "".join([self.target_name, " - Plateau #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+            target_string = "".join([self.target_name, " - Spacing #", str(pulse_num)])
+            self.target_MO.updateValue(target_string, 0.0, 'SINGLE')
+        if verbose: print("Pulse amplitudes, widths, plateaux, spacings reset.")
+
 
         ## update pulse config values
         if verbose: print("Updating pulse config values...")
@@ -748,14 +766,17 @@ class InputStrParser:
             if verbose: print("Updating values for pulse", str(pulse_num))
             param_vals = self.pulse_values_out[pulse_num]
             for param_name in param_vals:
-                target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
-                self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
+                if param_name in [shortcodes["cf"], shortcodes["if"], "LO frequency"]:
+                    continue
+                else:
+                    target_string = "".join([self.target_name, " - ", param_name, " #", str(pulse_num)])
+                    self.target_MO.updateValue(target_string, param_vals[param_name], 'SINGLE')
         if verbose: print("Pulse config values updated.")
 
         ## exit message
         if verbose: print("MeasurementObject values updated successfully.")
 
-    def set_iteration_params(self, iteration_input, instrument_name = "Single-Qubit Pulse Generator", verbose = False):
+    def set_iteration_params(self, iteration_input, instrument_name = "SQPG", verbose = False):
         '''
         Parse input for variable iteration, and set the corresponding Labber MeasurementObject values.
 
@@ -786,7 +807,7 @@ class InputStrParser:
             param_name = param_code
         ## main value
         if pulse_num == 0:
-            if instrument_name == "Single-Qubit Pulse Generator":
+            if instrument_name == "SQPG":
                 ## check if parameter is in additional or pulse-specific shortcodes
                 if param_code in pulseapp_shortcodes or param_code in add_shortcodes:
                     ## not sure how best to handle this right now; probably not needed
@@ -1030,7 +1051,7 @@ def update_values_from_string(param_string_list, labber_measurement_object, inst
         "<param 1 name>_<param 1 value> <param 2 name>_<param 2 value> ..."
     and must exactly match the parameter names specified in the params_main_config and params_pulse_config.
 
-    If left blank, instrument_name will default to "Single-Qubit Pulse Generator".
+    If left blank, instrument_name will default to "SQPG" (the Single-Qubit Pulse Generator).
     '''
 
     ## init parser object

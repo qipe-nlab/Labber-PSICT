@@ -32,35 +32,37 @@ point_values = {
         "SQPG":
             {
                 "main": {       # parameters for overall pulse sequence - general SGPQ parameters
-                        "control_freq": 7850, "Truncation range": 2,
+                        "Truncation range": 5, "Sample rate": 1e9,
                     },
                 "inverted": {   # physical parameters that will be applied to all inverted pulses - the inverted pulse entries should not specify these, otherwise they will be overwritten
-                        "a": 200, "w": 100,
+                        "a": 200, "w": 100e-9,
                     },
                 "AAA": \
                     {
-                        "a": 2, "v": 1200,
-                        "time_offset": 450, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
+                        "a": 2, "v": 200e-9,
+                        "time_offset": 450e-9, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
                         "is_inverted": True,
                     },
                 "BBB": \
                     {
-                        "a": 5, "w": 95,
-                        "time_offset": 650, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
+                        "a": 5, "w": 95e-9,
+                        "time_offset": 650e-9, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
                     },
                 "CCC": \
                     {
                         "a": 5,
-                        "time_offset": 400, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
+                        "time_offset": 400e-9, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
+                    },
+                "dead": \
+                    {
+                        "a": 0, "w": 0, "v": 1e-6,
+                        "time_offset": 200e-9, "time_reference": "previous",
+                        "pulse_number": 99,
                     },
             }, # end SQPG
-        "AWG_A":
+        "Signal demodulation":
             {
-                "foo": "bar", "baz": "quux",
-            },
-        "Digitizer":
-            {
-                "xyzzy": "blip", "bang": "esc",
+                "Skip start": 145e-9,
             },
     } # end point values
 
@@ -73,7 +75,7 @@ iteration_values = {
         "SQPG":
             {
                 "CCC": {
-                        "w": [500, 1500, 3],
+                        "w": [500e-9, 1500e-9, 3],
                        }
             },
         "Digitizer":
@@ -82,12 +84,12 @@ iteration_values = {
             },
         "Manual":
             {
-                "Re": [2, 3, 2],
+                "Value 1": [2, 3, 2],
             },
     } # end iteration values
 
 iteration_order = [
-        ("Manual", "Re"),
+        ("Manual", "Value 1"),
         ("SQPG", ("CCC", "Width")),
         ("Digitizer", "Number of samples"),
     ] # end iteration order
@@ -111,8 +113,8 @@ channel_defs = {
             }, # end AWG_A
         "Manual":
             {
-                'Re': "Re",
-                'Im': "Im",
+                'Re': "Value 1",
+                'Im': "Value 2",
             },
     } # end relation channels
 
@@ -128,7 +130,7 @@ channel_relations = {
             'Number of averages': ["Re + Im", ['Re', 'Im']],
         },
         "Manual": {
-            'Im': ["Re * np.pi", ['Re']],
+            'Value 2': ["Re * np.pi", ['Re']],
         },
     } # end channel relations
 
@@ -149,11 +151,3 @@ print(psictInterface.MeasurementObject)
 psictInterface.perform_measurement(dry_run = True, verbose = 0)
 
 sys.exit()
-
-## verify LabberExporter contents
-print("++++++++++++++++++++++++++")
-print(psictInterface.labberExporter._api_values)
-print(psictInterface.labberExporter._pulse_sequence)
-for pulse in psictInterface.labberExporter._pulse_sequence:
-    pulse.print_info()
-print(psictInterface.labberExporter._iteration_order)

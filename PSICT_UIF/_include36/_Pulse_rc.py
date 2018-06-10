@@ -39,8 +39,8 @@ PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS, F
 
 ## Overall pulse sequence parameters
 MAIN_PARAMS = [
-                "control_freq",    # microwave input control frequency
                 "Truncation range", # truncation range for Gaussian pulses in units of width; half on either side
+                "Sample rate",      # point sampling rate
             ]
 
 
@@ -55,6 +55,9 @@ PULSE_PARAM_DEFAULTS = {
             ##
             "is_inverted": False,
             "is_measurement": False,
+        }
+SQPG_CONSTS = {
+            "end_buffer_time": 2e-6, # buffer time for end-of-sequence calculation inaccuracies due to potential iterations or relations
         }
 
 ## These (main) parameters are fixed and cannot be changed using Labber-PSICT; these are *always* set to the following values when using the script.

@@ -2,6 +2,8 @@
 ##  Subclassed into distinct classes for input (ie specified by user)
 ##  and output (used to set Labber parameters).
 
+from operator import attrgetter
+
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
 
@@ -545,6 +547,9 @@ class InputPulseSeq(PulseSeq):
             print("Sorting by attribute:", sort_attribute)
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])
 
+###############################################################################
+
+###############################################################################
 
 ###############################################################################
 
@@ -569,6 +574,13 @@ class OutputPulseSeq(PulseSeq):
             print("Called OutputPulseSeq destructor.")
         ## call base class destructor
         super().__del__()
+
+    @property
+    def end_pulse(self):
+        return max(self.pulse_list, key = attrgetter('end_time'))
+    @property
+    def total_time(self):
+        return self.end_pulse.end_time + self.end_pulse["w"]*(self.main_params["Truncation range"] - 1)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse import methods (post-conversion)
@@ -614,6 +626,24 @@ class OutputPulseSeq(PulseSeq):
         ## Assign pulse number attributes based on ordering
         for index, pulse in enumerate(self.pulse_list):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
+        ## Set number of pulses
+        self.main_params["# of pulses"] = len(self.pulse_list)
+        ## TODO unit processing on values?
+        ###################
+        ## Set up timing ##
+        ###################
+        ## Get first pulse delay from absolute time of first pulse
+        self.main_params["First pulse delay"] = self.pulse_list[0]["absolute_time"]
+        ## Iterate through pulses, setting previous pulse's spacing based on next pulse's absolute_time
+        for current_pulse, next_pulse in zip(self.pulse_list[:-1], self.pulse_list[1:]):
+            current_pulse["Spacing"] = next_pulse["absolute_time"] - current_pulse.end_time
+        ## Set SQPG number of points (based on total time)
+        self.main_params["Number of points"] = self.main_params["Sample rate"]*self.total_time
+        ##
+        ## Stretch final inverted pulse (this will always be called 'ComplementFinal') based on total time
+        if "ComplementFinal" in self.pulse_names:
+            self["ComplementFinal"]["v"] = self.total_time + _rc.SQPG_CONSTS["end_buffer_time"] - self["ComplementFinal"].start_time - self["ComplementFinal"]["w"]*(self.main_params["Truncation range"] - 1)
+        ####
         ## Convert all physical parameter pulse shortcodes to full names
         for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
             for pulse in self.pulse_list:

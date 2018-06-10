@@ -199,6 +199,7 @@ class psictUIFInterface:
         ## Export output pulse sequence and main SQPG params to LabberExporter
         self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose))
         self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
+        ## Pulse sequence relations
         self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
         ## Apply all parameters stored in LabberExporter
         self.labberExporter.apply_all(verbose = verbose)

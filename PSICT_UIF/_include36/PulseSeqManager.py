@@ -56,7 +56,6 @@ class PulseSeqManager:
         if verbose >= 1:
             print("Setting iteration specifications for SQPG...")
         for pulse_name, iter_params in iteration_spec_dict.items():
-            print(pulse_name, iter_params)
             for param_name, param_spec in iter_params.items():
                 ## Convert to IterationSpec object
                 iter_obj = IterationSpec({"start_value": param_spec[0],
@@ -65,9 +64,7 @@ class PulseSeqManager:
                                         })
                 ## Set parameter using IterationSpec object
                 self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj, verbose = verbose)
-                # ## debug message
-                # if verbose >= 2:
-                #     print("Individual pulse parameter set:", pulse_name, param_name, iter_obj)
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Channel relations methods
@@ -164,3 +161,16 @@ class PulseSeqManager:
         SQPG_defs = {"SQPG": self.outputPulseSeq.get_channel_defs(verbose = verbose)}
         SQPG_rels = {"SQPG": self.outputPulseSeq.get_channel_relations(verbose = verbose)}
         return SQPG_defs, SQPG_rels
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Misc
+
+    def convert_iter_order_pulses(self, iter_order, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## status message
+        if verbose >= 3:
+            print("Converting pulse names to numbers in iteration order...")
+        new_iter_order = []
+        return new_iter_order

@@ -65,6 +65,10 @@ point_values = {
     } # end point values
 
 ## Iteration values
+# iteration_values = [
+#         ["Digitizer", "Number of samples", [1e3, 1.5e3, 6]],
+#         ["SQPG", ("BBB", "Amplitude"), [0, 1e3, 3]],
+#     ]
 iteration_values = {
         "SQPG":
             {
@@ -72,21 +76,20 @@ iteration_values = {
                         "w": [500, 1500, 3],
                        }
             },
-        "AWG_A":
+        "Digitizer":
             {
-                "this": [100, 200, 3],
-                "foo": [0, 25, 6],
+                "Number of samples": [100, 200, 3],
             },
-        "AWG_B":
+        "Manual":
             {
-                "wop": [2, 3, 2],
+                "Re": [2, 3, 2],
             },
     } # end iteration values
 
 iteration_order = [
-        ("AWG_A", "foo"),
-        ("SQPG", "CCC", "Width"),
-        ("AWG_A", "this"),
+        ("Manual", "Re"),
+        ("SQPG", ("CCC", "Width")),
+        ("Digitizer", "Number of samples"),
     ] # end iteration order
 
 ## Channel relations - set available quantities (could be outsourced to rcfile?)

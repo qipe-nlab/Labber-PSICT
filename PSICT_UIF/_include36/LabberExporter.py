@@ -23,6 +23,7 @@ class LabberExporter:
         ## Parameter containers
         self._api_values = {}     # parameter values which will be set through the Labber API
         self._pulse_sequence = {} # parameter values specific to the pulse sequence (not including main SQPG parameters)
+        self._iteration_order = [] # list specifying order of iteration quantities
         self._raw_channel_defs = {} # Raw channel definitions for relations
         self._channel_defs = {}      # Processed (final-format) channel definitions for relations
         self._channel_relations = {} # Actual channel relations
@@ -92,10 +93,45 @@ class LabberExporter:
         '''
         Docstring
         '''
-        print("[Not implemented] Setting iteration order...")
+        ## status message
+        if verbose >= 2:
+            print("Setting iteration order...")
         self._iteration_order = iteration_order_list
 
-    ## Pulse-sequence-specific mathods
+    ## Pulse-sequence-specific methods
+
+    def process_iteration_order(self, *, verbose = 0):
+        '''
+        Carry out any processing operations required on the iteration order specification.
+
+        Most importantly, converts the iteration order specifications into full channel names.
+        '''
+        ## status message
+        if verbose >= 3:
+            print("Processing iteration order specification...")
+        ## Build full-channel names iteration order spec
+        new_iteration_order = []
+        for iter_item in self._iteration_order:
+            instrument_name = iter_item[0]
+            if instrument_name == "SQPG" and not iter_item == "main":
+                pulse_name = iter_item[1][0]
+                param_name = iter_item[1][1]
+                ## Get pulse number corresponding to given name
+                pulse_number = [pulse["pulse_number"] for pulse in self._pulse_sequence][0]
+                ## Construct channel name
+                channel_name = "".join([instrument_name, " - ", param_name, " #", str(pulse_number)])
+            else:
+                param_name = iter_item[1]
+                channel_name = " - ".join([instrument_name, param_name])
+            ## Populate new iteration order
+            new_iteration_order.append(channel_name)
+        ## Set as new iteration order
+        self.set_iteration_order(new_iteration_order, verbose = verbose-1)
+        ## status message
+        if verbose >= 3:
+            print("Iteration order specification processed.")
+
+
     def receive_pulse_sequence(self, exported_pulse_seq, *, verbose = 0):
         '''
         Docstring for receive_pulse_sequence
@@ -105,6 +141,8 @@ class LabberExporter:
             print("LabberExporter receiving pulse sequence...")
         ## Receive pulse sequence
         self._pulse_sequence = exported_pulse_seq
+        ## Update iteration order to final format
+        self.process_iteration_order(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Pulse sequence received.")
@@ -224,6 +262,34 @@ class LabberExporter:
         if verbose >= 1:
             print("Instrument parameters applied.")
 
+    def swap_items_by_index(self, container, index_1, index_2):
+        '''
+        Swap two items (specified by index) in the given container.
+        '''
+        temp = container[index_1]
+        container[index_1] = container[index_2]
+        container[index_2] = temp
+
+    def sort_iteration_order(self, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Sorting iteration order...")
+        ## Open reference config file and re-order iteration list
+        with h5py.File(self.MeasurementObject.sCfgFileIn, 'r+') as config_file:
+            for index_counter, channel_name in enumerate(self._iteration_order):
+                ## Generate list of channels in the order they currently appear
+                current_iter_order = [step_item[0] for step_item in config_file['Step list'].value]
+                ## Get index of desired channel name in current order
+                channel_index = current_iter_order.index(channel_name)
+                ## Swap desired channel with that at index_counter
+                self.swap_items_by_index(config_file['Step list'], index_counter, channel_index)
+        ## status message
+        if verbose >= 2:
+            print("Iteration order sorted.")
+
     def apply_api_values(self, *, verbose = 0):
         '''
         Apply all stored point values (including for SQPG) through the Labber API.
@@ -248,6 +314,8 @@ class LabberExporter:
                     target_string = "".join([
                                             "SQPG - ", param_name, " #", str(pulse_number)])
                     self.update_api_value(target_string, param_value, verbose = verbose)
+        ## Sort iteration parameters
+        self.sort_iteration_order(verbose = verbose)
         ## Status message
         if verbose >= 2:
             print("LabberExporter: Parameter point values applied")

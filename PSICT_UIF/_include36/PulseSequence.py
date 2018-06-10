@@ -211,7 +211,7 @@ class InputPulseSeq(PulseSeq):
         '''
         self[pulse_id][param_name] = param_value
         if verbose >= 1:
-            print("Set pulse ", str(pulse_id))
+            print("Set pulse", str(pulse_id), "parameter", param_name, "to", param_value)
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

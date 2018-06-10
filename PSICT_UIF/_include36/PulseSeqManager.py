@@ -69,6 +69,34 @@ class PulseSeqManager:
                 # if verbose >= 2:
                 #     print("Individual pulse parameter set:", pulse_name, param_name, iter_obj)
 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Channel relations methods
+
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+        '''
+        Process SQPG channel definitions, and return a format-compliant dict.
+        '''
+        ## status message
+        self.inputPulseSeq.add_channel_defs(channel_defs_dict, verbose = verbose)
+
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Process SQPG channel relations, and return a generic-format-compliant dict.
+        '''
+        self.inputPulseSeq.add_channel_relations(channel_relations_dict, verbose = verbose)
+
+    def get_channel_defs(self, *, verbose = 0):
+        '''
+        Get SQPG channel key definitions (for channel relations), in the format required by the LabberExporter.
+        '''
+        return self.outputPulseSeq.get_channel_defs(verbose = verbose)
+
+    def get_channel_relations(self, *, verbose = 0):
+        '''
+        Get SQPG channel relations in the format required by the LabberExporter.
+        '''
+        return self.outputPulseSeq.get_channel_relations(verbose = verbose)
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Conversion methods
@@ -92,8 +120,15 @@ class PulseSeqManager:
         self.outputPulseSeq.set_main_params(self.inputPulseSeq.export_main_params())
         ## Get list of pulses from inputPulseSeq (sorted by absolute_time)
         ##  and set the outputPulseSeq to this list
+        if verbose >= 3:
+            print("Sorting pulses...")
         sorted_pulses = self.inputPulseSeq.get_sorted_list(verbose = verbose)
         self.outputPulseSeq.set_pulse_seq(sorted_pulses, verbose = verbose)
+        ## Transfer channel relations data
+        if verbose >= 3:
+            print("Transferring channel relations data...")
+        self.outputPulseSeq.add_channel_defs(self.inputPulseSeq.get_channel_defs())
+        self.outputPulseSeq.add_channel_relations(self.inputPulseSeq.get_channel_relations())
         ####
         ## Set flag
         self.is_output_seq_populated = True
@@ -118,3 +153,14 @@ class PulseSeqManager:
         if verbose >= 2:
             print("Exporting output pulse sequence...")
         return self.outputPulseSeq.export(verbose = verbose)
+
+    def export_relations(self, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Exporting pulse definitions and relations...")
+        SQPG_defs = {"SQPG": self.outputPulseSeq.get_channel_defs(verbose = verbose)}
+        SQPG_rels = {"SQPG": self.outputPulseSeq.get_channel_relations(verbose = verbose)}
+        return SQPG_defs, SQPG_rels

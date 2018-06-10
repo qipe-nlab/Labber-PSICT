@@ -120,7 +120,11 @@ class LabberExporter:
             print("Setting channel definitions...")
         for instrument_name, instrument_defs in channel_def_dict.items():
             if instrument_name == "SQPG":
-                print("[Not implemented] SQPG channel definitions.")
+                for pulse_number, pulse_defs in instrument_defs.items():
+                    for channel_key, param_name in pulse_defs.items():
+                        channel_name = self.get_full_label(instrument_name, param_name, pulse_number)
+                        ## Store in self._raw_channel_defs
+                        self._raw_channel_defs[channel_key] = channel_name
             else: # generic instrument
                 for channel_key, param_name in instrument_defs.items():
                     channel_name = self.get_full_label(instrument_name, param_name)
@@ -134,8 +138,12 @@ class LabberExporter:
     def set_channel_relations(self, channel_relations_dict, *, verbose = 0):
         '''
         Store the channel relations.
+
+        The stored format will be {<full channel name>: [<relation string>, [<required key 1>, <required key 2>, ...]], ...}.
         '''
-        print("--> Setting generic channel relations...")
+        ## status message
+        if verbose >= 2:
+            print("Setting generic channel relations...")
         ## Concatenate the instrument and parameter names to create the full channel name, and store the relation under that name
         for instrument_name, instrument_relations in channel_relations_dict.items():
             ## Go through each of the instrument relations
@@ -145,6 +153,33 @@ class LabberExporter:
                 self._channel_relations[channel_name] = channel_relation
                 if verbose >= 3:
                     print("Set channel relation for:", channel_name)
+
+    def receive_pulse_rels(self, pulse_defs, pulse_rels, *, verbose = 0):
+        '''
+        Docstring
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Receiving pulse definitions and relations...")
+        ## Add channel definitions
+        self.add_channel_defs(pulse_defs)
+        ## status message
+        if verbose >= 2:
+            print("Setting SQPG channel relations...")
+        ## Add channel relations
+        all_pulse_rels = pulse_rels["SQPG"]
+        for pulse_number, pulse_relations in all_pulse_rels.items():
+            for param_name, channel_relation in pulse_relations.items():
+                ## Construct full channel name
+                channel_name = self.get_full_label("SQPG", param_name, pulse_number)
+                self._channel_relations[channel_name] = channel_relation
+                ## status message
+                if verbose >= 3:
+                    print("Set channel relation for:", channel_name)
+        ## status message
+        if verbose >= 2:
+            print("Pulse definitions and relations received.")
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
@@ -256,7 +291,8 @@ class LabberExporter:
         ## Convert each of the stored definitions in self._raw_channel_defs to the appropriate format, and store in self._channel_defs
         for channel_key, channel_name in self._raw_channel_defs.items():
             self._channel_defs[channel_key] = np.array([(channel_key, channel_name, False)], dtype = self._hdf5_sl_entry_dtype)
-        print("Channel definitions processed.")
+        if verbose >= 1:
+            print("Channel definitions processed.")
 
     def get_sl_index(self, label_string, *, verbose = 0):
         '''
@@ -286,7 +322,8 @@ class LabberExporter:
         It is the user's responsibility to ensure that the correct channel keys are provided and referenced in the step config!
         '''
         ## status message
-        print("---> Applying equation string \"", equation_string, "\" for ", label_string, sep="")
+        if verbose >= 3:
+            print("Applying equation string \"", equation_string, "\" for ", label_string, sep="")
         ## Get step list index of label string
         step_list_index =self.get_sl_index(label_string)
         ## Modify step list entry
@@ -297,7 +334,8 @@ class LabberExporter:
             new_entry['show_advanced'] = True
             config_file['Step list'][step_list_index] = new_entry
         ## status message
-        print("Equation string set for", label_string)
+        if verbose >= 3:
+            print("Equation string set for", label_string)
 
     def apply_step_config(self, label_string, required_channel_keys, *, verbose = 0):
         '''

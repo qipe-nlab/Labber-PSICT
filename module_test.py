@@ -118,7 +118,7 @@ channel_relations = {
         "SQPG":
             {
                 "CCC": {
-                    'Amplitude': ["a1 + a3", ['a1', 'a3']],
+                    'Amplitude': ["Re - Im", ['Re', 'Im']],
                 },
             }, # end SQPG
         "Digitizer": {
@@ -135,21 +135,18 @@ channel_relations = {
 ## Set input pulse sequence
 psictInterface.set_point_values(point_values, verbose = 0)
 psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 0)
-psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 4)
-
-## verify LabberExporter contents
-print("_+_+_+_+_+_+_+_+_+_")
-print(psictInterface.labberExporter._channel_defs)
-print(psictInterface.labberExporter._channel_relations)
+psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 0)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
-psictInterface.init_MeasurementObject(verbose = 1)
+psictInterface.init_MeasurementObject(verbose = 0)
 ## explicit access to MeasurementObject
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 3)
+psictInterface.perform_measurement(dry_run = True, verbose = 0)
+
 sys.exit()
+
 ## verify LabberExporter contents
 print("++++++++++++++++++++++++++")
 print(psictInterface.labberExporter._api_values)

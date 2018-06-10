@@ -149,27 +149,29 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Instrument parameter iteration values set.")
 
-    def set_channel_relations(self, channel_def_dict, channel_relations_dict, *, verbose = 1):
+    def set_channel_relations(self, channel_defs_dict, channel_relations_dict, *, verbose = 1):
         '''
         Set the channel relations.
 
-        channel_def_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
+        channel_defs_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
         '''
         ## status message
         if verbose >= 1:
             print("Setting channel relations...")
         ## Peel off SQPG specifications
-        if "SQPG" in channel_def_dict:
-            SQPG_defs = channel_def_dict["SQPG"]
-            del channel_def_dict["SQPG"]
-            ## TODO
+        if "SQPG" in channel_defs_dict:
+            SQPG_defs = channel_defs_dict["SQPG"]
+            del channel_defs_dict["SQPG"]
+            ## Set definitions
+            self.pulseSeqManager.add_channel_defs(SQPG_defs, verbose = verbose)
         if "SQPG" in channel_relations_dict:
             SQPG_relations = channel_relations_dict["SQPG"]
             del channel_relations_dict["SQPG"]
-            ## TODO
-        ## Set channel definitions - ie what is available for use in relations
-        self.labberExporter.add_channel_defs(channel_def_dict, verbose = verbose)
-        ## Set channel relations
+            ## Set relations
+            self.pulseSeqManager.add_channel_relations(SQPG_relations, verbose = verbose)
+        ## Set channel definitions for generic instruments
+        self.labberExporter.add_channel_defs(channel_defs_dict, verbose = verbose)
+        ## Set channel relations for generic instruments
         self.labberExporter.set_channel_relations(channel_relations_dict, verbose = verbose)
         ## status message
         if verbose >= 1:
@@ -196,8 +198,8 @@ class psictUIFInterface:
         self.pulseSeqManager.convert_seq(verbose = verbose)
         ## Export output pulse sequence and main SQPG params to LabberExporter
         self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose))
-        ## TODO get other spec (eg iteration/relations) from SQPG
         self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
+        self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
         ## Apply all parameters stored in LabberExporter
         self.labberExporter.apply_all(verbose = verbose)
         ####

@@ -17,6 +17,8 @@ class PulseSeq:
         ## initialise containers
         self.pulse_list = []  # holds Pulse objects
         self.main_params = {} # holds parameters that are set for the whole sequence
+        self.channel_defs = {}
+        self.channel_relations = {}
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq constructor.")
@@ -211,6 +213,45 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 1:
             print("Set pulse ", str(pulse_id))
 
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Channel relations
+
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+        '''
+        Add channel key definitions (for setting channel relations)
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel definitions to InputPulseSeq...")
+        self.channel_defs = channel_defs_dict
+
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Add channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel relations to InputPulseSeq...")
+        self.channel_relations = channel_relations_dict
+
+    def get_channel_defs(self, *, verbose = 0):
+        '''
+        Get channel definitions.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel definitions from InputPulseSeq...")
+        return self.channel_defs
+
+    def get_channel_relations(self, *, verbose = 0):
+        '''
+        Get channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel relations from InputPulseSeq...")
+        return self.channel_relations
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting
@@ -589,6 +630,79 @@ class OutputPulseSeq(PulseSeq):
         if verbose >= 3:
             print("Post-conversion processing on output sequence completed.")
 
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Channel relations
+
+    def process_channel_defs(self, channel_defs_dict, * ,verbose = 0):
+        '''
+        Process channel definitions.
+        '''
+        if verbose >= 3:
+            print("Processing channel definitions in OutputPulseSeq...")
+        processed_channel_defs = {}
+        ## Convert pulse names to pulse numbers
+        for pulse_name, pulse_defs in channel_defs_dict.items():
+            if pulse_name == "main":
+                processed_channel_defs[0] = pulse_defs
+            else:
+                pulse_number = self[pulse_name]["pulse_number"]
+                processed_channel_defs[pulse_number] = pulse_defs
+        ##
+        return processed_channel_defs
+
+    def process_channel_relations(self, channel_relations_dict, * ,verbose = 0):
+        '''
+        Process channel relations.
+        '''
+        ## status message
+        if verbose >= 3:
+            print("Processing channel relations in OutputPulseSeq...")
+        processed_channel_relations = {}
+        ## Convert pulse names to pulse numbers
+        for pulse_name, pulse_defs in channel_relations_dict.items():
+            if pulse_name == "main":
+                processed_channel_relations[0] = pulse_defs
+            else:
+                pulse_number = self[pulse_name]["pulse_number"]
+                processed_channel_relations[pulse_number] = pulse_defs
+        return processed_channel_relations
+
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+        '''
+        Add channel key definitions (for setting channel relations)
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel definitions to OutputPulseSeq...")
+        self.channel_defs = self.process_channel_defs(channel_defs_dict, verbose = verbose)
+
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Add channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel relations to OutputPulseSeq...")
+        self.channel_relations = self.process_channel_relations(channel_relations_dict, verbose = verbose)
+
+    def get_channel_defs(self, *, verbose = 0):
+        '''
+        Get channel definitions.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel definitions from OutputPulseSeq...")
+        return self.channel_defs
+
+    def get_channel_relations(self, *, verbose = 0):
+        '''
+        Get channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel relations from OutputPulseSeq...")
+        return self.channel_relations
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence export

@@ -56,8 +56,8 @@ class Pulse:
     @property
     def end_time(self):
         assert self.start_time
-        assert self["w"]
-        assert self["v"]
+        assert "w" in self.attributes
+        assert "v" in self.attributes
         return self.start_time + self['w'] + self['v']
 
     def __getitem__(self, key):

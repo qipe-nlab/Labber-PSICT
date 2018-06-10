@@ -5,6 +5,18 @@ import sys
 from PSICT_UIF._include36.Pulse import Pulse
 from PSICT_UIF._include36.PulseSequence import PulseSeq, InputPulseSeq
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
+from PSICT_UIF._include36.ParameterSpec import IterationSpec
+
+myiter_params = {"start_value": 3, "stop_value": 5, "n_pts": 2}
+myiter = IterationSpec(myiter_params)
+
+print(myiter < 4)
+print(myiter > 2)
+print(4 < myiter)
+print(2 > myiter)
+
+sys.exit()
+
 
 my_pulse_seq = \
         {

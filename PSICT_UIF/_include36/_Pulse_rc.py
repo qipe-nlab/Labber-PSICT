@@ -25,13 +25,22 @@ ORD_PARAMS = [
             ##
             ]
 
+## Full names of pulse params - the values here should match all the PHYS_PARAMS; by the time the pulse sequence is exported from the OutputPulseSeq object, the full names should be used.
+FULL_NAMES_PULSES = {
+        "Amplitude": "a",
+        "Width": "w",
+        "Plateau": "v",
+        "Spacing": "s",
+    }
+
 ## all single-pulse parameter names (for checking validity etc)
-PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS] for param in param_list]
+PULSE_PARAMS = [param for param_list in [NAME_PARAMS, PHYS_PARAMS, ORD_PARAMS, FULL_NAMES_PULSES.keys()] for param in param_list]
+
 
 ## Overall pulse sequence parameters
 MAIN_PARAMS = [
-                "control_freq",    # microwave input control frequency
                 "Truncation range", # truncation range for Gaussian pulses in units of width; half on either side
+                "Sample rate",      # point sampling rate
             ]
 
 
@@ -47,12 +56,16 @@ PULSE_PARAM_DEFAULTS = {
             "is_inverted": False,
             "is_measurement": False,
         }
+SQPG_CONSTS = {
+            "end_buffer_time": 2e-6, # buffer time for end-of-sequence calculation inaccuracies due to potential iterations or relations
+        }
 
 ## These (main) parameters are fixed and cannot be changed using Labber-PSICT; these are *always* set to the following values when using the script.
 CONST_MAIN_PARAMS = {
                 "Edge-to-edge pulses": 1,  # ON
                 "Pulse type": 2,           # Gaussian
             }
+## TODO add similar dict for arbitrary instruments
 
 ## Pulse sorting - DO NOT CHANGE!
 pulse_sort_attr = "absolute_time"

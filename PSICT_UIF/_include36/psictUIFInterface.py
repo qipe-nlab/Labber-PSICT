@@ -5,9 +5,11 @@
 import os
 import importlib.util
 from pathlib import Path
+import warnings
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
+from PSICT_UIF._include36.LabberExporter import LabberExporter
 
 class psictUIFInterface:
     '''
@@ -27,11 +29,16 @@ class psictUIFInterface:
         ## Add constituent objects
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
-        self.MeasurementObject = None # will be initialized later once file paths are known
+        self.labberExporter = LabberExporter(verbose = self.verbose)
         ## debug message
         if self.verbose >= 4:
             print("Called psictUIFInterface constructor.")
         ##
+
+    ## Direct access to MeasurementObject as attribute
+    @property
+    def MeasurementObject(self):
+        return self.labberExporter.MeasurementObject
 
     def __del__(self):
         ## delete object attributes
@@ -90,6 +97,20 @@ class psictUIFInterface:
         self.fileManager.post_measurement_copy(verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Labber MeasurementObject methods
+
+    def init_MeasurementObject(self, *, auto_init = False, verbose = 0):
+        '''
+        Explicitly initialise the Labber MeasurementObject, so that it can be interacted with directly in the external script.
+
+        If this is not called, the MeasurementObject will be initialised during pre-measurement processing.
+        '''
+        assert self.fileManager.reference_path
+        assert self.fileManager.output_path
+        self.labberExporter.init_MeasurementObject(self.fileManager.reference_path, self.fileManager.output_path, auto_init = auto_init, verbose = verbose)
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Instrument parameter setting methods
 
     def set_point_values(self, point_values_dict, *, verbose = 0):
@@ -99,48 +120,104 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 1:
             print("Setting point values for instrument parameters...")
-        ## Extract pulse sequence for SQPG instrument
-        try:
-            pulse_seq_dict = point_values_dict["SQPG"]
-        except KeyError:
-            raise RuntimeWarning("There were no point-value specifications for the pulse sequence!")
-        else:
-            self.pulseSeqManager.set_input_pulse_seq(pulse_seq_dict, verbose = verbose)
-        ## TODO generic other instrument parameter setting here
+        ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager.
+        for instrument_name, instrument_params in point_values_dict.items():
+            if instrument_name == "SQPG":
+                self.pulseSeqManager.set_input_pulse_seq(instrument_params, verbose = verbose)
+            else:
+                self.labberExporter.add_point_value_spec(instrument_name, instrument_params, verbose = verbose)
         ## debug message
         if verbose >= 1:
-            print("Set instrument parameters as point values.")
+            print("Instrument parameter point values set.")
+
+    def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 0):
+        '''
+        Set instrument parameters as (independent) iteration values.
+        '''
+        ## debug message
+        if verbose >= 1:
+            print("Setting iterated values for instrument parameters...")
+        ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
+        for instrument_name, instrument_params in iteration_values_dict.items():
+            if instrument_name == "SQPG":
+                self.pulseSeqManager.set_iteration_spec(instrument_params, verbose = verbose)
+            else:
+                self.labberExporter.add_iteration_spec(instrument_name, instrument_params, verbose = verbose)
+        ## Set iteration order
+        self.labberExporter.set_iteration_order(iteration_order_list)
+        ## debug message
+        if verbose >= 1:
+            print("Instrument parameter iteration values set.")
+
+    def set_channel_relations(self, channel_defs_dict, channel_relations_dict, *, verbose = 1):
+        '''
+        Set the channel relations.
+
+        channel_defs_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
+        '''
+        ## status message
+        if verbose >= 1:
+            print("Setting channel relations...")
+        ## Peel off SQPG specifications
+        if "SQPG" in channel_defs_dict:
+            SQPG_defs = channel_defs_dict["SQPG"]
+            del channel_defs_dict["SQPG"]
+            ## Set definitions
+            self.pulseSeqManager.add_channel_defs(SQPG_defs, verbose = verbose)
+        if "SQPG" in channel_relations_dict:
+            SQPG_relations = channel_relations_dict["SQPG"]
+            del channel_relations_dict["SQPG"]
+            ## Set relations
+            self.pulseSeqManager.add_channel_relations(SQPG_relations, verbose = verbose)
+        ## Set channel definitions for generic instruments
+        self.labberExporter.add_channel_defs(channel_defs_dict, verbose = verbose)
+        ## Set channel relations for generic instruments
+        self.labberExporter.set_channel_relations(channel_relations_dict, verbose = verbose)
+        ## status message
+        if verbose >= 1:
+            print("Channel relations set.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 
-    def perform_measurement(self, *, verbose = 0):
+    def perform_measurement(self, *, dry_run = False, verbose = 0):
         '''
         Calls Labber to perform the measurement.
 
         Note that a final few pre-processing actions are taken before Labber is actually called.
         '''
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Carrying out measurement pre-processing...")
         ##### measurement pre-processing
         ## set ScriptTools executable path
         self.fileManager.apply_labber_exe_path(verbose = verbose)
+        ## Initialise Labber MeasurementObject if not already done
+        self.init_MeasurementObject(auto_init = True, verbose = verbose)
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
+        ## Export output pulse sequence and main SQPG params to LabberExporter
+        self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose))
+        self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
+        ## Pulse sequence relations
+        self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
+        ## Apply all parameters stored in LabberExporter
+        self.labberExporter.apply_all(verbose = verbose)
         ####
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Measurement pre-processing completed.")
         if verbose >= 1:
             print("Calling Labber to perform measurement...")
         ## Call Labber to perform measurement
         if self.MeasurementObject is not None:
-            self.MeasurementObject.performMeasurement()
+            if dry_run:  # check what would have been done
+                if verbose >= 1:
+                    print("Measurement dry run; skipping actual measurement...")
+            else:        # actually perform measurement
+                self.MeasurementObject.performMeasurement()
         else:
-            ## Error: MeasurementObject not set!
-            ## TODO Change this to an error once everything else is implemented.
-            print("MeasurementObject is not set.")
+            raise RuntimeError("MeasurementObject has not been set!")
         ## debug message
         if verbose >= 1:
             print("Measurement completed.")
@@ -148,7 +225,8 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Carrying out post-measurement operations...")
         ## Copy files (script, rcfile, etc) for reproducability
-        self.post_measurement_copy(verbose = verbose)
+        if not dry_run:
+            self.post_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Post-measurement operations completed.")

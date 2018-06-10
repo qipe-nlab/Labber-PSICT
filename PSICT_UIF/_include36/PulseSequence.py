@@ -2,6 +2,8 @@
 ##  Subclassed into distinct classes for input (ie specified by user)
 ##  and output (used to set Labber parameters).
 
+from operator import attrgetter
+
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
 
@@ -17,6 +19,8 @@ class PulseSeq:
         ## initialise containers
         self.pulse_list = []  # holds Pulse objects
         self.main_params = {} # holds parameters that are set for the whole sequence
+        self.channel_defs = {}
+        self.channel_relations = {}
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq constructor.")
@@ -200,6 +204,56 @@ class InputPulseSeq(PulseSeq):
         if verbose >= 1:
             print("Input pulse sequence parameters set.")
 
+    def set_pulse_parameter(self, pulse_id, param_name, param_value, *, verbose = 0):
+        '''
+        Set the individual value for a pulse parameter.
+
+        Contrast with 'bulk import' of set_pulse_seq.
+        Note that the pulse can, as usual, be specified by either name or index.
+        '''
+        self[pulse_id][param_name] = param_value
+        if verbose >= 1:
+            print("Set pulse", str(pulse_id), "parameter", param_name, "to", param_value)
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Channel relations
+
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+        '''
+        Add channel key definitions (for setting channel relations)
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel definitions to InputPulseSeq...")
+        self.channel_defs = channel_defs_dict
+
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Add channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel relations to InputPulseSeq...")
+        self.channel_relations = channel_relations_dict
+
+    def get_channel_defs(self, *, verbose = 0):
+        '''
+        Get channel definitions.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel definitions from InputPulseSeq...")
+        return self.channel_defs
+
+    def get_channel_relations(self, *, verbose = 0):
+        '''
+        Get channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel relations from InputPulseSeq...")
+        return self.channel_relations
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting
@@ -228,11 +282,6 @@ class InputPulseSeq(PulseSeq):
                     pulse[_default_param] = _default_value
         if verbose >= 3:
             print("Required pulse parameter defaults set.")
-        print("__________")
-        self.print_info(pulse_params = True)
-        print([pulse['is_inverted'] for pulse in self.pulse_list])
-        print([pulse for pulse in self.pulse_list if pulse['is_inverted']])
-        print("__________")
 
         ##########################################
         #### Setting special pulse parameters ####
@@ -498,6 +547,9 @@ class InputPulseSeq(PulseSeq):
             print("Sorting by attribute:", sort_attribute)
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])
 
+###############################################################################
+
+###############################################################################
 
 ###############################################################################
 
@@ -510,6 +562,8 @@ class OutputPulseSeq(PulseSeq):
     def __init__(self, *, verbose = 0):
         ## call base class constructor
         super().__init__(verbose = verbose)
+        ## Flags
+        self.is_exportable = False
         ## debug message
         if self.verbose >= 4:
             print("Called OutputPulseSeq constructor.")
@@ -520,6 +574,13 @@ class OutputPulseSeq(PulseSeq):
             print("Called OutputPulseSeq destructor.")
         ## call base class destructor
         super().__del__()
+
+    @property
+    def end_pulse(self):
+        return max(self.pulse_list, key = attrgetter('end_time'))
+    @property
+    def total_time(self):
+        return self.end_pulse.end_time + self.end_pulse["w"]*(self.main_params["Truncation range"] - 1)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse import methods (post-conversion)
@@ -565,6 +626,123 @@ class OutputPulseSeq(PulseSeq):
         ## Assign pulse number attributes based on ordering
         for index, pulse in enumerate(self.pulse_list):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
+        ## Set number of pulses
+        self.main_params["# of pulses"] = len(self.pulse_list)
+        ## TODO unit processing on values?
+        ###################
+        ## Set up timing ##
+        ###################
+        ## Get first pulse delay from absolute time of first pulse
+        self.main_params["First pulse delay"] = self.pulse_list[0]["absolute_time"]
+        ## Iterate through pulses, setting previous pulse's spacing based on next pulse's absolute_time
+        for current_pulse, next_pulse in zip(self.pulse_list[:-1], self.pulse_list[1:]):
+            current_pulse["Spacing"] = next_pulse["absolute_time"] - current_pulse.end_time
+        ## Set SQPG number of points (based on total time)
+        self.main_params["Number of points"] = self.main_params["Sample rate"]*self.total_time
+        ##
+        ## Stretch final inverted pulse (this will always be called 'ComplementFinal') based on total time
+        if "ComplementFinal" in self.pulse_names:
+            self["ComplementFinal"]["v"] = self.total_time + _rc.SQPG_CONSTS["end_buffer_time"] - self["ComplementFinal"].start_time - self["ComplementFinal"]["w"]*(self.main_params["Truncation range"] - 1)
+        ####
+        ## Convert all physical parameter pulse shortcodes to full names
+        for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
+            for pulse in self.pulse_list:
+                try:
+                    param_value = pulse[param_short_name]
+                except KeyError:
+                    continue
+                else:
+                    del pulse[param_short_name]
+                    pulse[param_full_name] = param_value
+        ## set flag
+        self.is_exportable = True
         ## debug message
         if verbose >= 3:
             print("Post-conversion processing on output sequence completed.")
+
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Channel relations
+
+    def process_channel_defs(self, channel_defs_dict, * ,verbose = 0):
+        '''
+        Process channel definitions.
+        '''
+        if verbose >= 3:
+            print("Processing channel definitions in OutputPulseSeq...")
+        processed_channel_defs = {}
+        ## Convert pulse names to pulse numbers
+        for pulse_name, pulse_defs in channel_defs_dict.items():
+            if pulse_name == "main":
+                processed_channel_defs[0] = pulse_defs
+            else:
+                pulse_number = self[pulse_name]["pulse_number"]
+                processed_channel_defs[pulse_number] = pulse_defs
+        ##
+        return processed_channel_defs
+
+    def process_channel_relations(self, channel_relations_dict, * ,verbose = 0):
+        '''
+        Process channel relations.
+        '''
+        ## status message
+        if verbose >= 3:
+            print("Processing channel relations in OutputPulseSeq...")
+        processed_channel_relations = {}
+        ## Convert pulse names to pulse numbers
+        for pulse_name, pulse_defs in channel_relations_dict.items():
+            if pulse_name == "main":
+                processed_channel_relations[0] = pulse_defs
+            else:
+                pulse_number = self[pulse_name]["pulse_number"]
+                processed_channel_relations[pulse_number] = pulse_defs
+        return processed_channel_relations
+
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+        '''
+        Add channel key definitions (for setting channel relations)
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel definitions to OutputPulseSeq...")
+        self.channel_defs = self.process_channel_defs(channel_defs_dict, verbose = verbose)
+
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Add channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Adding channel relations to OutputPulseSeq...")
+        self.channel_relations = self.process_channel_relations(channel_relations_dict, verbose = verbose)
+
+    def get_channel_defs(self, *, verbose = 0):
+        '''
+        Get channel definitions.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel definitions from OutputPulseSeq...")
+        return self.channel_defs
+
+    def get_channel_relations(self, *, verbose = 0):
+        '''
+        Get channel relations.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Getting channel relations from OutputPulseSeq...")
+        return self.channel_relations
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Pulse sequence export
+
+    def export(self, *, verbose = 0):
+        '''
+        Returns the output sequence, ready to be parsed by the LabberExporter and read into the Labber API.
+        '''
+        ## Check if pulse sequence is ready for export
+        if not self.is_exportable:
+            raise RuntimeError("Output pulse sequence is not ready for export.")
+        ## export pulse sequence
+        return self.pulse_list

@@ -149,6 +149,32 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Instrument parameter iteration values set.")
 
+    def set_channel_relations(self, channel_def_dict, channel_relations_dict, *, verbose = 1):
+        '''
+        Set the channel relations.
+
+        channel_def_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
+        '''
+        ## status message
+        if verbose >= 1:
+            print("Setting channel relations...")
+        ## Peel off SQPG specifications
+        if "SQPG" in channel_def_dict:
+            SQPG_defs = channel_def_dict["SQPG"]
+            del channel_def_dict["SQPG"]
+            ## TODO
+        if "SQPG" in channel_relations_dict:
+            SQPG_relations = channel_relations_dict["SQPG"]
+            del channel_relations_dict["SQPG"]
+            ## TODO
+        ## Set channel definitions - ie what is available for use in relations
+        self.labberExporter.add_channel_defs(channel_def_dict, verbose = verbose)
+        ## Set channel relations
+        self.labberExporter.set_channel_relations(channel_relations_dict, verbose = verbose)
+        ## status message
+        if verbose >= 1:
+            print("Channel relations set.")
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 

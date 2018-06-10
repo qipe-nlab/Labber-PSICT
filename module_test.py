@@ -18,11 +18,11 @@ psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
 # psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
 
 ## Set template and output hdf5 files
-template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
-template_file = "K2018-04-21_222"
+template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/06/Data_0604"
+template_file = "K2018-06-04_001"
 psictInterface.set_template_file(template_dir, template_file, verbose = 1)
 output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
-output_file = "K2018-04-21_226"
+output_file = "K2018-06-04_001"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -79,7 +79,7 @@ iteration_values = {
             },
         "AWG_B":
             {
-                "wop": "wop",
+                "wop": [2, 3, 2],
             },
     } # end iteration values
 
@@ -89,21 +89,67 @@ iteration_order = [
         ("AWG_A", "this"),
     ] # end iteration order
 
+## Channel relations - set available quantities (could be outsourced to rcfile?)
+channel_defs = {
+        "SQPG":
+            {
+                "main":
+                    {
+                        "delay": "First pulse delay",
+                    },
+                "CCC":
+                    {
+                        "a_CCC": "Amplitude",
+                    },
+            }, # end SQPG
+        "Digitizer":
+            {
+                "Digitizer_n_avgs": "Number of averages",
+            }, # end AWG_A
+        "Manual":
+            {
+                'Re': "Re",
+                'Im': "Im",
+            },
+    } # end relation channels
+
+## Channel relations - set relation strings
+channel_relations = {
+        "SQPG":
+            {
+                "CCC": {
+                    'Amplitude': ["a1 + a3", ['a1', 'a3']],
+                },
+            }, # end SQPG
+        "Digitizer": {
+            'Number of averages': ["Re + Im", ['Re', 'Im']],
+        },
+        "Manual": {
+            'Im': ["Re * np.pi", ['Re']],
+        },
+    } # end channel relations
+
 ## End instrument parameter settings
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ## Set input pulse sequence
 psictInterface.set_point_values(point_values, verbose = 0)
 psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 0)
+psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 4)
+
+## verify LabberExporter contents
+print("_+_+_+_+_+_+_+_+_+_")
+print(psictInterface.labberExporter._channel_defs)
+print(psictInterface.labberExporter._channel_relations)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
-psictInterface.init_MeasurementObject(verbose = 0)
+psictInterface.init_MeasurementObject(verbose = 1)
 ## explicit access to MeasurementObject
 print(psictInterface.MeasurementObject)
 
 ## Run measurement
 psictInterface.perform_measurement(dry_run = True, verbose = 3)
-
+sys.exit()
 ## verify LabberExporter contents
 print("++++++++++++++++++++++++++")
 print(psictInterface.labberExporter._api_values)

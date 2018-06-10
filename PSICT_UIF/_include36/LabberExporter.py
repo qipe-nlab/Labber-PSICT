@@ -2,6 +2,9 @@
 ##  Stores and prepares all parameter settings before sending them to the
 ##  Labber measurement program.
 
+import h5py
+import numpy as np
+
 from Labber import ScriptTools
 
 import PSICT_UIF._include36._Pulse_rc as _Pulse_rc
@@ -20,6 +23,11 @@ class LabberExporter:
         ## Parameter containers
         self._api_values = {}     # parameter values which will be set through the Labber API
         self._pulse_sequence = {} # parameter values specific to the pulse sequence (not including main SQPG parameters)
+        self._raw_channel_defs = {} # Raw channel definitions for relations
+        self._channel_defs = {}      # Processed (final-format) channel definitions for relations
+        self._channel_relations = {} # Actual channel relations
+        ## Other attributes
+        self._hdf5_sl_entry_dtype = None # Stores the dtype of the hdf5 step list entries (this can't be auto-generated for some reason...)
         ## debug message
         if verbose >= 4:
             print("LabberExporter constructor called.")
@@ -33,6 +41,21 @@ class LabberExporter:
         if self.verbose >= 4:
             print("LabberExporter destructor finished.")
 
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Convenience methods
+
+    def get_full_label(self, instrument_name, param_name, pulse_number = 0):
+        '''
+        Generate the full label of the channel from its components.
+        '''
+        if pulse_number == 0:
+            ## Generic instrument, or SQPG main parameter
+            full_label = " - ".join([instrument_name, param_name])
+        else:
+            ## SQPG pulse-specific parameter
+            full_label = "".join([instrument_name, " - ", param_name, " #", str(pulse_number)])
+        return full_label
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Import instrument parameter specifications
@@ -69,6 +92,7 @@ class LabberExporter:
         '''
         Docstring
         '''
+        print("[Not implemented] Setting iteration order...")
         self._iteration_order = iteration_order_list
 
     ## Pulse-sequence-specific mathods
@@ -85,6 +109,42 @@ class LabberExporter:
         if verbose >= 1:
             print("Pulse sequence received.")
 
+    def add_channel_defs(self, channel_def_dict, *, verbose = 0):
+        '''
+        Store the definitions of the channels which are available for use in relations.
+
+        The stored format will be {<channel key>: <full channel name>}.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Setting channel definitions...")
+        for instrument_name, instrument_defs in channel_def_dict.items():
+            if instrument_name == "SQPG":
+                print("[Not implemented] SQPG channel definitions.")
+            else: # generic instrument
+                for channel_key, param_name in instrument_defs.items():
+                    channel_name = self.get_full_label(instrument_name, param_name)
+                    ## Store in self._raw_channel_defs
+                    self._raw_channel_defs[channel_key] = channel_name
+        ## status message
+        if verbose >= 2:
+            print("Setting channel definitions completed.")
+
+
+    def set_channel_relations(self, channel_relations_dict, *, verbose = 0):
+        '''
+        Store the channel relations.
+        '''
+        print("--> Setting generic channel relations...")
+        ## Concatenate the instrument and parameter names to create the full channel name, and store the relation under that name
+        for instrument_name, instrument_relations in channel_relations_dict.items():
+            ## Go through each of the instrument relations
+            for param_name, channel_relation in instrument_relations.items():
+                channel_name = self.get_full_label(instrument_name, param_name)
+                ## Set relation in container
+                self._channel_relations[channel_name] = channel_relation
+                if verbose >= 3:
+                    print("Set channel relation for:", channel_name)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
@@ -175,13 +235,122 @@ class LabberExporter:
         if verbose >= 2:
             print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
 
+    def process_channel_defs(self, *, verbose = 0):
+        '''
+        Convert the stored channel definitions to the format required for application to the hdf5 file.
+
+        Note that this cannot be done during calling of the add_channel_defs method, as there is no guarantee that the MeasurementObject has been initialised at that stage.
+        '''
+        ## status message
+        if verbose >= 2:
+            print("Processing channel definitions...")
+        ## Fetch step list entry dtype (if not already fetched)
+        if self._hdf5_sl_entry_dtype is None:
+            ## status message
+            if verbose >= 3:
+                print("Fetching step list entry dtype...")
+            with h5py.File(self.MeasurementObject.sCfgFileIn, 'r') as config_file:
+                for instrument_key in config_file['Step config']:
+                    self._hdf5_sl_entry_dtype = np.dtype(config_file['Step config'][instrument_key]['Relation parameters'].dtype)
+                    break # only need to fetch once
+        ## Convert each of the stored definitions in self._raw_channel_defs to the appropriate format, and store in self._channel_defs
+        for channel_key, channel_name in self._raw_channel_defs.items():
+            self._channel_defs[channel_key] = np.array([(channel_key, channel_name, False)], dtype = self._hdf5_sl_entry_dtype)
+        print("Channel definitions processed.")
+
+    def get_sl_index(self, label_string, *, verbose = 0):
+        '''
+        Gets the index of the entry matching label_string in the config file's 'Step list'.
+
+        label_string should be a full channel name.
+        '''
+        ## status message
+        if verbose >= 4:
+            print("Fetching step list index for", label_string)
+        ## Open file and extract existing step list
+        with h5py.File(self.MeasurementObject.sCfgFileIn, 'r') as config_file:
+            step_list = config_file['Step list'].value
+        if verbose >= 5:
+            print("Step list extracted.")
+        ## Get index of element with matching label string
+        step_list_labels = [labels['channel_name'] for labels in step_list]
+        index = step_list_labels.index(label_string)
+        if verbose >= 5:
+            print("Step list index extracted.")
+        return index
+
+    def apply_equation_string(self, label_string, equation_string, *, verbose = 0):
+        '''
+        Apply the equation string for the given label_string specifying a full channel name.
+
+        It is the user's responsibility to ensure that the correct channel keys are provided and referenced in the step config!
+        '''
+        ## status message
+        print("---> Applying equation string \"", equation_string, "\" for ", label_string, sep="")
+        ## Get step list index of label string
+        step_list_index =self.get_sl_index(label_string)
+        ## Modify step list entry
+        with h5py.File(self.MeasurementObject.sCfgFileIn, 'r+') as config_file:
+            new_entry = config_file['Step list'][step_list_index]
+            new_entry['equation'] = equation_string
+            new_entry['use_relations'] = True
+            new_entry['show_advanced'] = True
+            config_file['Step list'][step_list_index] = new_entry
+        ## status message
+        print("Equation string set for", label_string)
+
+    def apply_step_config(self, label_string, required_channel_keys, *, verbose = 0):
+        '''
+        Apply the step config for a given label_string (describing a full channel name).
+
+        This includes setting up the required_channel_keys from the stored processed channel key definitions.
+        '''
+        ## status message
+        if verbose >= 4:
+            print("Applying step config for", label_string)
+        ## Build up new step config entry from channel keys
+        new_sc_entries = np.concatenate([self._channel_defs[channel_key] for channel_key in required_channel_keys])
+        ## Delete old step config entry and replace with new one
+        with h5py.File(self.MeasurementObject.sCfgFileIn, 'r+') as config_file:
+            try:
+                del config_file['Step config'][label_string]['Relation parameters']
+            except KeyError:
+                pass
+            config_file['Step config'][label_string].create_dataset('Relation parameters', data = new_sc_entries)
+        ## status message
+        if verbose >= 4:
+            print("Step config entries applied for", label_string)
+
+    def apply_relation(self, channel_name, channel_relation, *, verbose = 0):
+        '''
+        Apply a single channel relation to the hdf5 database file.
+        '''
+        ## status message
+        if verbose >= 3:
+            print("Applying relation for:", channel_name)
+        ## Extract equation and required channel keys
+        equation_string = channel_relation[0]
+        required_channel_keys = channel_relation[1]
+        # Apply equation string
+        self.apply_equation_string(channel_name, equation_string, verbose = verbose)
+        ## Set appropriate step config entries
+        self.apply_step_config(channel_name, required_channel_keys, verbose = verbose)
+        ## status message
+        if verbose >= 3:
+            print("Relation applied for:", channel_name)
 
     def apply_relations(self, *, verbose = 0):
         '''
         Apply all channel relations by directly editing the reference hdf5 file.
         '''
+        ## status message
         if verbose >= 2:
             print("LabberExporter: Applying channel relations...")
+        ## Process channel definitions
+        self.process_channel_defs(verbose = verbose)
+        ## Set relations for each item in the stored relations
+        for channel_name, channel_relation in self._channel_relations.items():
+            self.apply_relation(channel_name, channel_relation)
 
 
 

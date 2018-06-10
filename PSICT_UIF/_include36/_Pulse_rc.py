@@ -7,6 +7,7 @@ PHYS_PARAMS = [
                 "w",     # width
                 "v",     # plateau
                 "s",     # spacing
+                "o",     # output
                 ## etc
               ]
 ORD_PARAMS = [
@@ -31,6 +32,7 @@ FULL_NAMES_PULSES = {
         "Width": "w",
         "Plateau": "v",
         "Spacing": "s",
+        "Output": "o",
     }
 
 ## all single-pulse parameter names (for checking validity etc)

@@ -150,4 +150,4 @@ print(psictInterface.MeasurementObject)
 ## Run measurement
 psictInterface.perform_measurement(dry_run = True, verbose = 0)
 
-sys.exit()
+# sys.exit()

@@ -341,7 +341,7 @@ class FileManager:
             if self._script_rc.script_rc_copy_enabled:
                 additional_paths.append(self._script_rcpath)
             ## Copy external script (the one which runs the whole thing)
-            script_path_original = os.path.abspath(os.path.basename(inspect.stack()[-1][1]))
+            script_path_original = os.path.abspath(os.path.join(os.getcwd(), sys.argv[0]))
             if verbose >= 3:
                 print("The original script is at", script_path_original)
             script_path_new = shutil.copy(script_path_original, script_target_path)

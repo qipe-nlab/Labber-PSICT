@@ -225,8 +225,7 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Carrying out post-measurement operations...")
         ## Copy files (script, rcfile, etc) for reproducability
-        if not dry_run:
-            self.post_measurement_copy(verbose = verbose)
+        self.post_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 1:
             print("Post-measurement operations completed.")

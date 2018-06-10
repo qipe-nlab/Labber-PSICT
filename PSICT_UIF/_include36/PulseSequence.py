@@ -419,68 +419,71 @@ class InputPulseSeq(PulseSeq):
         ###################################
         #### Inverted pulse conversion ####
         ###################################
-        if verbose >= 2:
-            print("Converting inverted pulses...")
+        ## Check if there are any inverted pulses
+        if any([pulse["is_inverted"] for pulse in self.pulse_list]):
+            ## status message
+            if verbose >= 2:
+                print("Converting inverted pulses...")
 
-        ## Extract inverted pulses so we can construct new pulses separately from the master sequence
-        inverted_pulses = [pulse for pulse in self.pulse_list if pulse["is_inverted"]]
-        ## Sort this list so that we can go from beginning to end
-        inverted_pulses = sorted(inverted_pulses, key = lambda x: x["absolute_time"])
-        ## Delete the inverted pulses from the original list
-        self.pulse_list = [pulse for pulse in self.pulse_list if pulse["is_inverted"] == False]
+            ## Extract inverted pulses so we can construct new pulses separately from the master sequence
+            inverted_pulses = [pulse for pulse in self.pulse_list if pulse["is_inverted"]]
+            ## Sort this list so that we can go from beginning to end
+            inverted_pulses = sorted(inverted_pulses, key = lambda x: x["absolute_time"])
+            ## Delete the inverted pulses from the original list
+            self.pulse_list = [pulse for pulse in self.pulse_list if pulse["is_inverted"] == False]
 
-        ## Convert inverted pulses
-        ##  Go from beginning to end, add an extra pulse at the end with 0
-        ##  width which will be extended to the end of the sequence by the
-        ##  OutputPulseSeq processing.
-        ####
-        ## Get half-width and half-truncation-range so they do not have to be accessed and recalculated every time
-        inverted_hw = self.inverted_params["w"]/2
-        inverted_tr = self.main_params["Truncation range"]
-        if verbose >= 4:
-            print("Inverted pulse half-width is:", inverted_hw)
-            print("Truncation range is:", inverted_tr)
-        ## Generate list of time markers
-        if verbose >= 3:
-            print("Generating time markers for inverted pulses...")
-        inverted_time_markers = []
-        ## t0 is always adiabatic ramping up at the beginning of the pulse sequence - width set by inverted_hw
-        inverted_time_markers.append(inverted_hw*(inverted_tr - 1))
-        ## Go through the pulse start and stop times, and add those to the time marker list
-        for pulse in inverted_pulses:
-            ## Start time
-            inverted_time_markers.append(pulse.start_time)
-            ## End time
-            inverted_time_markers.append(pulse.end_time)
-        if verbose >= 3:
-            print("Generating pulses from time markers...")
-        ## Get pairs of time markers (excluding final)
-        tmarker_iter = iter(inverted_time_markers[:-1])
-        tmarker_pairs = zip(tmarker_iter, tmarker_iter)
-        tmarker_final = inverted_time_markers[-1]
-        ## Create pulses with marker pairs
-        for pulse_index, (start_time, end_time) in enumerate(tmarker_pairs):
-            ## Create new pulse
-            new_pulse_name = "".join(["Complement", str(pulse_index)])     # fixed name format for ease of identification
-            new_pulse = Pulse(new_pulse_name)                         # create the pulse
-            new_pulse["absolute_time"] = start_time                   # set new absolute time as start time
-            new_pulse.valid_abs_time = True                           # set valid absolute time flag so other processes don't complain
-            new_pulse.set_attributes(self.inverted_params)            # set all inverted pulse globals
-            new_pulse["v"] = end_time - start_time - new_pulse["w"]   # plateau length is total duration less width
-            ## Add pulse back to master pulse sequence
-            self.add_pulse(new_pulse)
-        ## Final pulse: add zero-width pulse which will be extended in the OutputPulseSeq
-        final_pulse = Pulse("ComplementFinal")
-        final_pulse["absolute_time"] = tmarker_final
-        final_pulse.valid_abs_time = True
-        final_pulse.set_attributes(self.inverted_params)
-        final_pulse["v"] = 0.0
-        ## Add final pulse to master pulse sequence
-        self.add_pulse(final_pulse)
-        ## debug message
-        if verbose >= 2:
-            print("Complement sequence of inverted pulses generated.")
-
+            ## Convert inverted pulses
+            ##  Go from beginning to end, add an extra pulse at the end with 0
+            ##  width which will be extended to the end of the sequence by the
+            ##  OutputPulseSeq processing.
+            ####
+            ## Get half-width and half-truncation-range so they do not have to be accessed and recalculated every time
+            inverted_hw = self.inverted_params["w"]/2
+            inverted_tr = self.main_params["Truncation range"]
+            if verbose >= 4:
+                print("Inverted pulse half-width is:", inverted_hw)
+                print("Truncation range is:", inverted_tr)
+            ## Generate list of time markers
+            if verbose >= 3:
+                print("Generating time markers for inverted pulses...")
+            inverted_time_markers = []
+            ## t0 is always adiabatic ramping up at the beginning of the pulse sequence - width set by inverted_hw
+            inverted_time_markers.append(inverted_hw*(inverted_tr - 1))
+            ## Go through the pulse start and stop times, and add those to the time marker list
+            for pulse in inverted_pulses:
+                ## Start time
+                inverted_time_markers.append(pulse.start_time)
+                ## End time
+                inverted_time_markers.append(pulse.end_time)
+            if verbose >= 3:
+                print("Generating pulses from time markers...")
+            ## Get pairs of time markers (excluding final)
+            tmarker_iter = iter(inverted_time_markers[:-1])
+            tmarker_pairs = zip(tmarker_iter, tmarker_iter)
+            tmarker_final = inverted_time_markers[-1]
+            ## Create pulses with marker pairs
+            for pulse_index, (start_time, end_time) in enumerate(tmarker_pairs):
+                ## Create new pulse
+                new_pulse_name = "".join(["Complement", str(pulse_index)])     # fixed name format for ease of identification
+                new_pulse = Pulse(new_pulse_name)                         # create the pulse
+                new_pulse["absolute_time"] = start_time                   # set new absolute time as start time
+                new_pulse.valid_abs_time = True                           # set valid absolute time flag so other processes don't complain
+                new_pulse.set_attributes(self.inverted_params)            # set all inverted pulse globals
+                new_pulse["v"] = end_time - start_time - new_pulse["w"]   # plateau length is total duration less width
+                ## Add pulse back to master pulse sequence
+                self.add_pulse(new_pulse)
+            ## Final pulse: add zero-width pulse which will be extended in the OutputPulseSeq
+            final_pulse = Pulse("ComplementFinal")
+            final_pulse["absolute_time"] = tmarker_final
+            final_pulse.valid_abs_time = True
+            final_pulse.set_attributes(self.inverted_params)
+            final_pulse["v"] = 0.0
+            ## Add final pulse to master pulse sequence
+            self.add_pulse(final_pulse)
+            ## debug message
+            if verbose >= 2:
+                print("Complement sequence of inverted pulses generated.")
+        ## End inverted pulse procedure
 
 
 

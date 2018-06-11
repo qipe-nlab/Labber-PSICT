@@ -7,6 +7,8 @@ PHYS_PARAMS = [
                 "w",     # width
                 "v",     # plateau
                 "s",     # spacing
+                "p",     # phase
+                "f",     # Mod. frequency
                 "o",     # output
                 ## etc
               ]
@@ -32,6 +34,8 @@ FULL_NAMES_PULSES = {
         "Width": "w",
         "Plateau": "v",
         "Spacing": "s",
+        "Phase": "p",
+        "Mod. frequency": "f",
         "Output": "o",
     }
 

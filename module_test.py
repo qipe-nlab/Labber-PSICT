@@ -12,6 +12,7 @@ print("PSICT_UIF version is", PSICT_UIF.__version__)
 psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 ## Set script rcfile
 psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
+# psictInterface.set_cwd(os.path.abspath(__file__))
 
 
 ## Manually set Labber executable path

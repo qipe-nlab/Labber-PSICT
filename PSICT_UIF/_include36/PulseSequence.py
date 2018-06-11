@@ -611,6 +611,9 @@ class OutputPulseSeq(PulseSeq):
         ## Add pulses from list
         for pulse in pulse_list:
             self.add_pulse(pulse, verbose = verbose)
+        if verbose >= 4:
+            print("Imported pulse sequence in OutputPulseSeq:")
+            self.print_info(pulse_params = True)
         ## Post-import processing
         self.pulse_post_conversion(verbose = verbose)
         ## debug message

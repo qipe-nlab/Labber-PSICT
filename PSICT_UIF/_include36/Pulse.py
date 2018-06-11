@@ -55,7 +55,6 @@ class Pulse:
         return self.attributes["absolute_time"]
     @property
     def end_time(self):
-        assert self.start_time
         assert "w" in self.attributes
         assert "v" in self.attributes
         return self.start_time + self['w'] + self['v']

@@ -139,9 +139,9 @@ channel_relations = {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ## Set input pulse sequence
-psictInterface.set_point_values(point_values, verbose = 1)
+psictInterface.set_point_values(point_values, verbose = 0)
 psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 1)
-psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 1)
+psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 0)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
 # psictInterface.init_MeasurementObject(verbose = 0)

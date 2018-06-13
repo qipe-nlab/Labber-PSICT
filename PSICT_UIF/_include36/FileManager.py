@@ -239,7 +239,12 @@ class FileManager:
             if verbose >= 0:
                 print("The file", path_in, "already exists.")
             ## Check if user permission to increment is necessary
-            if _rc.INCREMENT_ASK_USER:
+            if self._script_rc.outfile_iter_automatic:
+                ## Check if incrementation is set to be automatic
+                if verbose >= 2:
+                    print("Automatic incrementation enabled.")
+                flag_increment = True
+            elif self._script_rc.outfile_iter_user_check:
                 ## Ask for user input
                 user_response = input("Attempt to increment? [Y/n] ")
                 if user_response == "" or user_response.lower()[0] == "y":
@@ -247,16 +252,9 @@ class FileManager:
                     if verbose >= 3:
                         print("User permitted incrementation.")
                     flag_increment = True
-                else:
-                    ## User incrementation denied; fall back on auto incrementation default
-                    if _rc.INCREMENT_AUTO:
-                        ## Automatic incrementation enabled
-                        if verbose >= 2:
-                            print("Automatic incrementation enabled.")
-                        flag_increment = True
-                    else:
-                        ## Incrementation to not be attempted; raise error as program execution cannot continue
-                        raise RuntimeError("Could not get valid output file: filename incrementation denied.")
+            else:
+                ## Incrementation to not be attempted; raise error as program execution cannot continue
+                raise RuntimeError("Could not get valid output file: filename incrementation denied.")
 
         ## Attempt to increment filename if required
         if flag_increment:

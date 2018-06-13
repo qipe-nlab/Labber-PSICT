@@ -10,6 +10,4 @@ SCRIPT_COPY_POSTFIX = "__copy"  # postfixed to filename of temporary reference f
 SCRIPT_COPY_EXTENSION = "py"  # script file extension - should be .py
 
 ## Output filename incrementation defaults
-INCREMENT_ASK_USER = True    # prompt user before incrementing the filename (overrules _FILEMGR_DEFAULTS_AUTO_INCREMENT)
-INCREMENT_AUTO = False   # automatically increment the filename (overruled by _FILEMGR_DEFAULTS_USER_INCREMENT)
 INCREMENT_MAX_ATTEMPTS = 1000   # emergency break out of incrementation loop

@@ -11,19 +11,19 @@ print("PSICT_UIF version is", PSICT_UIF.__version__)
 ## Initialise PSICT-UIF interface object
 psictInterface = PSICT_UIF.psictUIFInterface(verbose = 1)
 ## Set script rcfile
-psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 1)
+psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 0)
 # psictInterface.set_cwd(os.path.abspath(__file__))
 
 
 ## Manually set Labber executable path
-# psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 1)
+# psictInterface.set_labber_exe_path("foo/bar/baz/quux/", verbose = 0)
 
 ## Set template and output hdf5 files
 template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/06/Data_0604"
 template_file = "K2018-06-04_001"
-psictInterface.set_template_file(template_dir, template_file, verbose = 1)
+psictInterface.set_template_file(template_dir, template_file, verbose = 0)
 output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/05/Data_0501"
-output_file = "K2018-06-04_001"
+output_file = "K2018-04-21_222"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -139,16 +139,16 @@ channel_relations = {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ## Set input pulse sequence
-psictInterface.set_point_values(point_values, verbose = 0)
-psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 0)
-psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 0)
+psictInterface.set_point_values(point_values, verbose = 1)
+psictInterface.set_iteration_values(iteration_values, iteration_order, verbose = 1)
+psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 1)
 
 # Set up Labber MeasurementObject in case we would like to explicitly access it
-psictInterface.init_MeasurementObject(verbose = 0)
+# psictInterface.init_MeasurementObject(verbose = 0)
 ## explicit access to MeasurementObject
-print(psictInterface.MeasurementObject)
+# print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 0)
+psictInterface.perform_measurement(dry_run = True, verbose = 1)
 
 # sys.exit()

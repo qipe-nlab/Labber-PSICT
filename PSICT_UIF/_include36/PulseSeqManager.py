@@ -37,23 +37,23 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence
 
-    def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 0):
+    def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 1):
         '''
         Set the input pulse sequence from a dict of user specifications.
 
         This is passed directly to the InputPulseSeq.
         '''
         if verbose >= 1:
-            print("Importing point value specifications for SQPG...")
+            print("Adding parameter specifications for SQPG...")
         self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
         ## set flag
         self.is_input_seq_populated = True
 
-    def set_iteration_spec(self, iteration_spec_dict, *, verbose = 0):
+    def set_iteration_spec(self, iteration_spec_dict, *, verbose = 1):
         '''
         Set iteration specifications, potentially overriding point values.
         '''
-        if verbose >= 1:
+        if verbose >= 2:
             print("Setting iteration specifications for SQPG...")
         for pulse_name, iter_params in iteration_spec_dict.items():
             for param_name, param_spec in iter_params.items():
@@ -69,26 +69,26 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Channel relations methods
 
-    def add_channel_defs(self, channel_defs_dict, *, verbose = 0):
+    def add_channel_defs(self, channel_defs_dict, *, verbose = 1):
         '''
         Process SQPG channel definitions, and return a format-compliant dict.
         '''
         ## status message
         self.inputPulseSeq.add_channel_defs(channel_defs_dict, verbose = verbose)
 
-    def add_channel_relations(self, channel_relations_dict, *, verbose = 0):
+    def add_channel_relations(self, channel_relations_dict, *, verbose = 1):
         '''
         Process SQPG channel relations, and return a generic-format-compliant dict.
         '''
         self.inputPulseSeq.add_channel_relations(channel_relations_dict, verbose = verbose)
 
-    def get_channel_defs(self, *, verbose = 0):
+    def get_channel_defs(self, *, verbose = 1):
         '''
         Get SQPG channel key definitions (for channel relations), in the format required by the LabberExporter.
         '''
         return self.outputPulseSeq.get_channel_defs(verbose = verbose)
 
-    def get_channel_relations(self, *, verbose = 0):
+    def get_channel_relations(self, *, verbose = 1):
         '''
         Get SQPG channel relations in the format required by the LabberExporter.
         '''
@@ -98,7 +98,7 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Conversion methods
 
-    def convert_seq(self, *, verbose = 0):
+    def convert_seq(self, *, verbose = 1):
         '''
         Convert the input sequence (specified by the user) into an output sequence (suitable for input into Labber).
 
@@ -136,13 +136,13 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Output sequence export
 
-    def get_main_params(self, *, verbose = 0):
+    def get_main_params(self, *, verbose = 1):
         '''
         Docstring
         '''
         return self.outputPulseSeq.main_params
 
-    def export_output(self, *, verbose = 0):
+    def export_output(self, *, verbose = 1):
         '''
         Export the output pulse sequence, in a form that can be parsed by the LabberExporter and applied to the Labber API.
         '''
@@ -151,7 +151,7 @@ class PulseSeqManager:
             print("Exporting output pulse sequence...")
         return self.outputPulseSeq.export(verbose = verbose)
 
-    def export_relations(self, *, verbose = 0):
+    def export_relations(self, *, verbose = 1):
         '''
         Docstring
         '''
@@ -165,7 +165,7 @@ class PulseSeqManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Misc
 
-    def convert_iter_order_pulses(self, iter_order, *, verbose = 0):
+    def convert_iter_order_pulses(self, iter_order, *, verbose = 1):
         '''
         Docstring
         '''

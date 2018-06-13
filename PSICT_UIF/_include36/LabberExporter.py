@@ -15,7 +15,7 @@ class LabberExporter:
     Docstring for LabberExporter class.
     '''
 
-    def __init__(self, *, verbose = 0):
+    def __init__(self, *, verbose = 1):
         ## set object log level
         self.verbose = verbose
         ## Labber MeasurementObject - will be set later
@@ -61,22 +61,22 @@ class LabberExporter:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Import instrument parameter specifications
 
-    def add_point_value_spec(self, instrument_name, instrument_params, *, verbose = 0):
+    def add_point_value_spec(self, instrument_name, instrument_params, *, verbose = 1):
         '''
         Docstring.
         '''
         ## debug message
         if verbose >= 1:
-            print("Importing point value specifications for", instrument_name)
+            print("Adding parameter specifications for ", instrument_name, "...", sep="")
         ## Import parameters
         self._api_values[instrument_name] = instrument_params
 
-    def add_iteration_spec(self, instrument_name, instrument_params, *, verbose = 0):
+    def add_iteration_spec(self, instrument_name, instrument_params, *, verbose = 1):
         '''
         Docstring.
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Importing iteration specifications for:", instrument_name)
         ## Ensure instrument entry exists
         if not instrument_name in self._api_values:
@@ -89,7 +89,7 @@ class LabberExporter:
                                     })
             self._api_values[instrument_name][param_name] = iter_obj
 
-    def set_iteration_order(self, iteration_order_list, *, verbose = 0):
+    def set_iteration_order(self, iteration_order_list, *, verbose = 1):
         '''
         Docstring
         '''
@@ -100,7 +100,7 @@ class LabberExporter:
 
     ## Pulse-sequence-specific methods
 
-    def process_iteration_order(self, *, verbose = 0):
+    def process_iteration_order(self, *, verbose = 1):
         '''
         Carry out any processing operations required on the iteration order specification.
 
@@ -132,22 +132,22 @@ class LabberExporter:
             print("Iteration order specification processed.")
 
 
-    def receive_pulse_sequence(self, exported_pulse_seq, *, verbose = 0):
+    def receive_pulse_sequence(self, exported_pulse_seq, *, verbose = 1):
         '''
         Docstring for receive_pulse_sequence
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("LabberExporter receiving pulse sequence...")
         ## Receive pulse sequence
         self._pulse_sequence = exported_pulse_seq
         ## Update iteration order to final format
         self.process_iteration_order(verbose = verbose)
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Pulse sequence received.")
 
-    def add_channel_defs(self, channel_def_dict, *, verbose = 0):
+    def add_channel_defs(self, channel_def_dict, *, verbose = 1):
         '''
         Store the definitions of the channels which are available for use in relations.
 
@@ -173,7 +173,7 @@ class LabberExporter:
             print("Setting channel definitions completed.")
 
 
-    def set_channel_relations(self, channel_relations_dict, *, verbose = 0):
+    def set_channel_relations(self, channel_relations_dict, *, verbose = 1):
         '''
         Store the channel relations.
 
@@ -192,7 +192,7 @@ class LabberExporter:
                 if verbose >= 3:
                     print("Set channel relation for:", channel_name)
 
-    def receive_pulse_rels(self, pulse_defs, pulse_rels, *, verbose = 0):
+    def receive_pulse_rels(self, pulse_defs, pulse_rels, *, verbose = 1):
         '''
         Docstring
         '''
@@ -222,12 +222,12 @@ class LabberExporter:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
 
-    def init_MeasurementObject(self, reference_path, output_path, *, auto_init = False, verbose = 0):
+    def init_MeasurementObject(self, reference_path, output_path, *, auto_init = False, verbose = 1):
         '''
         Docstring
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Initialising MeasurementObject...")
         ## Check that the MeasurementObject has not already been initialised
         if self.MeasurementObject is not None:
@@ -241,25 +241,25 @@ class LabberExporter:
                                         reference_path,
                                         output_path)
             ## debug message
-            if verbose >= 1:
+            if verbose >= 2:
                 print("MeasurementObject initialised.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Application of instrument parameter specifications
 
-    def apply_all(self, *, verbose = 0):
+    def apply_all(self, *, verbose = 1):
         '''
         Apply all stored parameters to the reference file, either through the Labber API or direct editing.
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Applying all instrument parameters from LabberExporter...")
         ## Apply different parameter sets
         self.apply_api_values(verbose = verbose)
         self.apply_relations(verbose = verbose)
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Instrument parameters applied.")
 
     def swap_items_by_index(self, container, index_1, index_2):
@@ -270,7 +270,7 @@ class LabberExporter:
         container[index_1] = container[index_2]
         container[index_2] = temp
 
-    def sort_iteration_order(self, *, verbose = 0):
+    def sort_iteration_order(self, *, verbose = 1):
         '''
         Docstring
         '''
@@ -290,7 +290,7 @@ class LabberExporter:
         if verbose >= 2:
             print("Iteration order sorted.")
 
-    def apply_api_values(self, *, verbose = 0):
+    def apply_api_values(self, *, verbose = 1):
         '''
         Apply all stored point values (including for SQPG) through the Labber API.
         '''
@@ -320,7 +320,7 @@ class LabberExporter:
         if verbose >= 2:
             print("LabberExporter: Parameter point values applied")
 
-    def update_api_value(self, target_string, param_value, *, verbose = 0):
+    def update_api_value(self, target_string, param_value, *, verbose = 1):
         '''
         Update the value of an instrument parameter through the Labber API
 
@@ -338,7 +338,7 @@ class LabberExporter:
         if verbose >= 2:
             print("Instrument value updated: \"", target_string, "\" to ", param_value, sep="")
 
-    def process_channel_defs(self, *, verbose = 0):
+    def process_channel_defs(self, *, verbose = 1):
         '''
         Convert the stored channel definitions to the format required for application to the hdf5 file.
 
@@ -359,10 +359,10 @@ class LabberExporter:
         ## Convert each of the stored definitions in self._raw_channel_defs to the appropriate format, and store in self._channel_defs
         for channel_key, channel_name in self._raw_channel_defs.items():
             self._channel_defs[channel_key] = np.array([(channel_key, channel_name, False)], dtype = self._hdf5_sl_entry_dtype)
-        if verbose >= 1:
+        if verbose >= 2:
             print("Channel definitions processed.")
 
-    def get_sl_index(self, label_string, *, verbose = 0):
+    def get_sl_index(self, label_string, *, verbose = 1):
         '''
         Gets the index of the entry matching label_string in the config file's 'Step list'.
 
@@ -383,7 +383,7 @@ class LabberExporter:
             print("Step list index extracted.")
         return index
 
-    def apply_equation_string(self, label_string, equation_string, *, verbose = 0):
+    def apply_equation_string(self, label_string, equation_string, *, verbose = 1):
         '''
         Apply the equation string for the given label_string specifying a full channel name.
 
@@ -405,7 +405,7 @@ class LabberExporter:
         if verbose >= 3:
             print("Equation string set for", label_string)
 
-    def apply_step_config(self, label_string, required_channel_keys, *, verbose = 0):
+    def apply_step_config(self, label_string, required_channel_keys, *, verbose = 1):
         '''
         Apply the step config for a given label_string (describing a full channel name).
 
@@ -427,7 +427,7 @@ class LabberExporter:
         if verbose >= 4:
             print("Step config entries applied for", label_string)
 
-    def apply_relation(self, channel_name, channel_relation, *, verbose = 0):
+    def apply_relation(self, channel_name, channel_relation, *, verbose = 1):
         '''
         Apply a single channel relation to the hdf5 database file.
         '''
@@ -445,7 +445,7 @@ class LabberExporter:
         if verbose >= 3:
             print("Relation applied for:", channel_name)
 
-    def apply_relations(self, *, verbose = 0):
+    def apply_relations(self, *, verbose = 1):
         '''
         Apply all channel relations by directly editing the reference hdf5 file.
         '''

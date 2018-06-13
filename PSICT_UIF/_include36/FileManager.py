@@ -23,7 +23,7 @@ class FileManager:
 
     '''
 
-    def __init__(self, *, verbose = 0):
+    def __init__(self, *, verbose = 1):
         ## set object log level
         self.verbose = verbose
         ## set values of attributes constant across multiple methods
@@ -57,7 +57,7 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
 
-    def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
+    def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 1):
         '''
         Set the Labber executable path stored in the FileManager object.
 
@@ -74,7 +74,7 @@ class FileManager:
         if verbose >= 2:
             print("New Labber executable path set.")
 
-    def setdef_labber_exe_path(self, *, verbose = 0):
+    def setdef_labber_exe_path(self, *, verbose = 1):
         '''
         Set the Labber executable path as the system default (os-sensitive).
 
@@ -101,7 +101,7 @@ class FileManager:
         if verbose >= 2:
             print("Labber executable path spec set to system default.")
 
-    def apply_labber_exe_path(self, *, verbose = 0):
+    def apply_labber_exe_path(self, *, verbose = 1):
         '''
         Apply the Labber executable path stored in the FileManager object attributes to ScriptTools, ie "set" externally.
 
@@ -129,14 +129,14 @@ class FileManager:
 
     ## Template and reference file methods
 
-    def set_template_file(self, template_dir, template_file, *, verbose = 0):
+    def set_template_file(self, template_dir, template_file, *, verbose = 1):
         '''
         Set the template database file.
 
         Note that the FileManager will make a temporary copy of this, which will be the "working" reference file, to make direct hdf5 edits, and so the template file will not be modified.
         '''
         ## debug message
-        if verbose >= 2:
+        if verbose >= 1:
             print("Setting template file...")
         ## Set attributes
         self.template_dir = os.path.expanduser(os.path.normpath(template_dir))
@@ -149,7 +149,7 @@ class FileManager:
         self.copy_reference_file(verbose = verbose)
 
 
-    def copy_reference_file(self, *, verbose = 0):
+    def copy_reference_file(self, *, verbose = 1):
         '''
         Copies the template file into a temporary reference file, where direct hdf5 edits will be carried out.
         '''
@@ -170,7 +170,7 @@ class FileManager:
             print("Reference file copied successfully:", self.reference_path)
 
 
-    def clean_reference_file(self, *, verbose = 0):
+    def clean_reference_file(self, *, verbose = 1):
         '''
         Clean up the temporary reference file (ie delete it).
         '''
@@ -190,7 +190,7 @@ class FileManager:
 
     ## Output file methods
 
-    def set_output_file(self, output_dir, output_file, *, verbose = 0):
+    def set_output_file(self, output_dir, output_file, *, verbose = 1):
         '''
         Set the output file for the measurement.
 
@@ -214,7 +214,7 @@ class FileManager:
             print("Output file set as:", self.output_path)
 
 
-    def get_valid_output_file(self, dir_in, file_in, *, verbose = 0):
+    def get_valid_output_file(self, dir_in, file_in, *, verbose = 1):
         '''
         Return the name of a valid output file (ie not existent through incrementation of the passed-in filename).
 
@@ -225,7 +225,7 @@ class FileManager:
         path_in = self.generate_full_path(dir_in, file_in)
         file_new = file_in
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Verifying output file:", path_in)
 
         ## Check if file already exists
@@ -236,7 +236,7 @@ class FileManager:
             ## Keep going past incrementation, return as-is
         else:
             ## File already exists
-            if verbose >= 1:
+            if verbose >= 0:
                 print("The file", path_in, "already exists.")
             ## Check if user permission to increment is necessary
             if _rc.INCREMENT_ASK_USER:
@@ -265,7 +265,7 @@ class FileManager:
             n_incr_attempts = 0   # log number of attempts to prevent loop with no exit condition
             path_new = self.generate_full_path(dir_in, file_new)
             while os.path.isfile(path_new):
-                if verbose >= 1:
+                if verbose >= 2:
                     print("File", path_new, "exists; incrementing...")
                 ## increment filename
                 file_new = self.increment_filename(file_new)
@@ -314,13 +314,13 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
-    def post_measurement_copy(self, *, verbose = 0):
+    def post_measurement_copy(self, *, verbose = 1):
         '''
         Docstring
         '''
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
-            if verbose >= 1:
+            if verbose >= 2:
                 print("Copying script and additional files...")
             ## Create target dir if it does not already exist
             if verbose >= 3:
@@ -333,7 +333,8 @@ class FileManager:
                 print("Setting new filenames...")
             if self._script_rc.script_copy_matches_output:
                 target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
-                print("The target file name is", target_file)
+                if verbose >= 2:
+                    print("The target file name is", target_file)
                 ## Append name to script target path
                 script_target_path = os.path.join(script_target_path, target_file)
             ## Add additional paths as specified in script-rcfile
@@ -354,7 +355,7 @@ class FileManager:
                     print("An additional file has been copied to", add_path_new)
         else:
             ## Copying script not enabled
-            if verbose >= 1:
+            if verbose >= 2:
                 print("Script copying has been disabled in the script-rcfile.")
         ##
 

@@ -16,7 +16,7 @@ class psictUIFInterface:
     Docstring for psictUIFInterface.
     '''
 
-    def __init__(self, *, verbose = 0):
+    def __init__(self, *, verbose = 1):
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## set logging level
         self.verbose = verbose
@@ -52,7 +52,7 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
 
-    def load_script_rcfile(self, script_rcpath, *, verbose = 0):
+    def load_script_rcfile(self, script_rcpath, *, verbose = 1):
         '''
         Set the script-rc file, imported as a module.
         '''
@@ -65,7 +65,7 @@ class psictUIFInterface:
         script_rc_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
         self._script_rc = importlib.util.module_from_spec(script_rc_spec)
         script_rc_spec.loader.exec_module(self._script_rc)
-        if verbose >= 2:
+        if verbose >= 1:
             print("Script rcfile imported.")
         ## assign script rcfile to FileManager
         self.fileManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
@@ -76,19 +76,19 @@ class psictUIFInterface:
         '''
         self.fileManager.set_labber_exe_path(new_labber_exe_path, verbose = verbose)
 
-    def set_template_file(self, template_dir, template_file, *, verbose = 0):
+    def set_template_file(self, template_dir, template_file, *, verbose = 1):
         '''
         Set the template hdf5 file (passed to the FileManager object).
         '''
         self.fileManager.set_template_file(template_dir, template_file, verbose = verbose)
 
-    def set_output_file(self, output_dir, output_file, *, verbose = 0):
+    def set_output_file(self, output_dir, output_file, *, verbose = 1):
         '''
         Set the output hdf5 file (passed to the FileManager object).
         '''
         self.fileManager.set_output_file(output_dir, output_file, verbose = verbose)
 
-    def post_measurement_copy(self, *, verbose = 0):
+    def post_measurement_copy(self, *, verbose = 1):
         '''
         Wraps the FileManager.post_measurement_copy method with some additional pre-copy admin.
 
@@ -99,7 +99,7 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
 
-    def init_MeasurementObject(self, *, auto_init = False, verbose = 0):
+    def init_MeasurementObject(self, *, auto_init = False, verbose = 1):
         '''
         Explicitly initialise the Labber MeasurementObject, so that it can be interacted with directly in the external script.
 
@@ -113,13 +113,13 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Instrument parameter setting methods
 
-    def set_point_values(self, point_values_dict, *, verbose = 0):
+    def set_point_values(self, point_values_dict, *, verbose = 1):
         '''
         Set instrument parameters as point (single) values.
         '''
         ## debug message
         if verbose >= 1:
-            print("Setting point values for instrument parameters...")
+            print("Adding point values for instrument parameters...")
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager.
         for instrument_name, instrument_params in point_values_dict.items():
             if instrument_name == "SQPG":
@@ -128,15 +128,15 @@ class psictUIFInterface:
                 self.labberExporter.add_point_value_spec(instrument_name, instrument_params, verbose = verbose)
         ## debug message
         if verbose >= 1:
-            print("Instrument parameter point values set.")
+            print("Instrument parameter point values added.")
 
-    def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 0):
+    def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 1):
         '''
         Set instrument parameters as (independent) iteration values.
         '''
         ## debug message
         if verbose >= 1:
-            print("Setting iterated values for instrument parameters...")
+            print("Adding iteration values for instrument parameters...")
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
         for instrument_name, instrument_params in iteration_values_dict.items():
             if instrument_name == "SQPG":
@@ -147,7 +147,7 @@ class psictUIFInterface:
         self.labberExporter.set_iteration_order(iteration_order_list)
         ## debug message
         if verbose >= 1:
-            print("Instrument parameter iteration values set.")
+            print("Instrument parameter iteration values added.")
 
     def set_channel_relations(self, channel_defs_dict, channel_relations_dict, *, verbose = 1):
         '''
@@ -157,7 +157,7 @@ class psictUIFInterface:
         '''
         ## status message
         if verbose >= 1:
-            print("Setting channel relations...")
+            print("Adding channel relations...")
         ## Peel off SQPG specifications
         if "SQPG" in channel_defs_dict:
             SQPG_defs = channel_defs_dict["SQPG"]
@@ -175,19 +175,19 @@ class psictUIFInterface:
         self.labberExporter.set_channel_relations(channel_relations_dict, verbose = verbose)
         ## status message
         if verbose >= 1:
-            print("Channel relations set.")
+            print("Channel relations added.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 
-    def perform_measurement(self, *, dry_run = False, verbose = 0):
+    def perform_measurement(self, *, dry_run = False, verbose = 1):
         '''
         Calls Labber to perform the measurement.
 
         Note that a final few pre-processing actions are taken before Labber is actually called.
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Carrying out measurement pre-processing...")
         ##### measurement pre-processing
         ## set ScriptTools executable path
@@ -197,7 +197,7 @@ class psictUIFInterface:
         ## convert stored input pulse sequence to output pulse sequence
         self.pulseSeqManager.convert_seq(verbose = verbose)
         ## Export output pulse sequence and main SQPG params to LabberExporter
-        self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose))
+        self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose), verbose = verbose-1)
         self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
         ## Pulse sequence relations
         self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
@@ -205,7 +205,7 @@ class psictUIFInterface:
         self.labberExporter.apply_all(verbose = verbose)
         ####
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Measurement pre-processing completed.")
         if verbose >= 1:
             print("Calling Labber to perform measurement...")
@@ -222,13 +222,15 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Measurement completed.")
         #### Post-measurement operations
-        if verbose >= 1:
+        if verbose >= 2:
             print("Carrying out post-measurement operations...")
         ## Copy files (script, rcfile, etc) for reproducability
         self.post_measurement_copy(verbose = verbose)
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Post-measurement operations completed.")
+        if verbose >= 1:
+            print("Labber-PSICT execution finished.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

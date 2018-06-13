@@ -3,6 +3,7 @@
 ##  and output (used to set Labber parameters).
 
 from operator import attrgetter
+import warnings
 
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
@@ -29,6 +30,13 @@ class PulseSeq:
         ## debug message
         if self.verbose >= 4:
             print("Called PulseSeq destructor.")
+
+    def assign_script_rcmodule(self, rcmodule, rcpath):
+        '''
+        Assign the passed script rcmodule (already-imported rcfile) to the PulseSeq object.
+        '''
+        self._script_rc = rcmodule
+        self._script_rcpath = rcpath
 
     ###########################################################################
     ## Sequence main parameter methods
@@ -161,6 +169,9 @@ class InputPulseSeq(PulseSeq):
         '''
         Carry out all required pre-export operations on the main parameters.
         '''
+        if "SQPG" in self._script_rc.parameter_pre_process:
+            if "main" in self._script_rc.parameter_pre_process["SQPG"]:
+                warnings.warn("SQPG main parameter pre-calculation has not yet been implemented!")
         return self.main_params
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -264,7 +275,6 @@ class InputPulseSeq(PulseSeq):
 
         Most notably, this involves parameter value adjustment (eg converting to ns), as well as working out the timing/ordering of the entire pulse sequence.
         '''
-        ## TODO Implement all the stuff mentioned in the docstring!
         ## debug message
         if verbose >= 2:
             print("Carrying out pulse sequence pre-conversion...")
@@ -295,6 +305,40 @@ class InputPulseSeq(PulseSeq):
                 pulse.set_attributes(self.inverted_params)
         if verbose >= 3:
             print("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
+
+        ##############################################
+        ## Converting values based on script-rcfile ##
+        ##############################################
+
+        if verbose >= 3:
+            print("SQPG values undergoing pre-calculation (based on script-rcfile specification)...")
+        ## Fetch the appropriate specifications
+        try:
+            SQPG_spec = self._script_rc.parameter_pre_process["SQPG"]
+        except KeyError:
+            if verbose >= 3:
+                print("SQPG pre-calculation spec not found.")
+        else:
+            try:
+                pulse_spec = SQPG_spec["pulse"]
+            except KeyError:
+                if verbose >= 3:
+                    print("SQPG pre-calculation pulse spec not found.")
+            else:
+                for param_name, param_converter in pulse_spec.items():
+                    ## Status message
+                    if verbose >= 3:
+                        print("Carrying out pre-calculation conversion for", param_name)
+                    ## Cycle through each pulse and apply the desired pre-calculations
+                    if isinstance(param_converter, dict):
+                        for pulse in self.pulse_list:
+                            pulse[param_name] = param_converter[pulse[param_name]]
+                    ## Leave skeleton for potentially adding different conversion objects
+                    else:
+                        pass
+        ## Status message
+        if verbose >= 3:
+            print("Pre-calculation completed for SQPG values")
 
         ####################################
         #### Absolute time calculations ####

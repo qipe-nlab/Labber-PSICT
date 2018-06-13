@@ -5,7 +5,6 @@
 import os
 import importlib.util
 from pathlib import Path
-import warnings
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
@@ -67,8 +66,10 @@ class psictUIFInterface:
         script_rc_spec.loader.exec_module(self._script_rc)
         if verbose >= 1:
             print("Script rcfile imported.")
-        ## assign script rcfile to FileManager
+        ## Assign script-rcfile to FileManager
         self.fileManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
+        ## Assign script-rcfile to PulseSeqManager
+        self.pulseSeqManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''

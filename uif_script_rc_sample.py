@@ -13,6 +13,21 @@ This file may be copied alongside the script in future PSICT releases.
 
 '''
 
+## Parameter value pre-processing and conversion
+parameter_pre_process = {
+        "SQPG": {
+            "pulse": {
+                "o": { # Actual channel number is 1 more than the Labber lookup table specification
+                    1: 0,
+                    2: 1,
+                    3: 2,
+                    4: 3,
+                }, # end o (Output)
+            }, # end pulse
+            "main": {},
+        }, # end SQPG
+    }
+
 ## Iteration-permission options
 outfile_iter_automatic = True   # Filename iteration will be carried out automatically
 outfile_iter_user_check = True   # User will always be prompted to allow filename iteration

@@ -33,6 +33,16 @@ class PulseSeqManager:
         if self.verbose >= 4:
             print("Called PulseSeqManager destructor.")
 
+    def assign_script_rcmodule(self, rcmodule, rcpath):
+        '''
+        Assign the passed script rcmodule (already-imported rcfile) to the PulseSeqManager object, as well as its constituent PulseSeq objects.
+        '''
+        ## Assign to self
+        self._script_rc = rcmodule
+        self._script_rcpath = rcpath
+        ## Assign to constituents
+        self.inputPulseSeq.assign_script_rcmodule(rcmodule, rcpath)
+        self.outputPulseSeq.assign_script_rcmodule(rcmodule, rcpath)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence

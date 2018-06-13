@@ -113,11 +113,15 @@ class LabberExporter:
         new_iteration_order = []
         for iter_item in self._iteration_order:
             instrument_name = iter_item[0]
-            if instrument_name == "SQPG" and not iter_item == "main":
+            if instrument_name == "SQPG" and iter_item[0] == "main":
+                param_name = iter_item[1][1]
+                ## Construct channel name
+                channel_name = " - ".join([instrument_name, param_name])
+            elif instrument_name == "SQPG":
                 pulse_name = iter_item[1][0]
                 param_name = iter_item[1][1]
                 ## Get pulse number corresponding to given name
-                pulse_number = [pulse["pulse_number"] for pulse in self._pulse_sequence][0]
+                pulse_number = [pulse["pulse_number"] for pulse in self._pulse_sequence if pulse.name == pulse_name][0]
                 ## Construct channel name
                 channel_name = "".join([instrument_name, " - ", param_name, " #", str(pulse_number)])
             else:

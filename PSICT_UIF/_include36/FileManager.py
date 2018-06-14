@@ -44,6 +44,13 @@ class FileManager:
         if self.verbose >= 4:
             print("FileManager destructor finished.")
 
+    def set_original_wd(self, original_wd, script_inv):
+        '''
+        Set the original working directory (original_wd) and sys.argv[0] script invocation (script_inv), such that they can be used for file copying etc.
+        '''
+        self._original_wd = original_wd
+        self._script_inv = script_inv
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## rcfile methods
 
@@ -334,13 +341,13 @@ class FileManager:
                 if verbose >= 2:
                     print("The target file name is", target_file)
                 ## Append name to script target path
-                script_target_path = os.path.join(script_target_path, target_file)
+                script_target_path = os.path.abspath(os.path.join(script_target_path, target_file))
             ## Add additional paths as specified in script-rcfile
             additional_paths = []
             if self._script_rc.script_rc_copy_enabled:
                 additional_paths.append(self._script_rcpath)
             ## Copy external script (the one which runs the whole thing)
-            script_path_original = os.path.abspath(os.path.join(os.getcwd(), sys.argv[0]))
+            script_path_original = os.path.join(self._original_wd, self._script_inv)
             if verbose >= 3:
                 print("The original script is at", script_path_original)
             script_path_new = shutil.copy(script_path_original, script_target_path)
@@ -348,7 +355,10 @@ class FileManager:
                 print("The script file has been copied to", script_path_new)
             ## Copy additional files as passed to method, eg script-rc
             for add_path in additional_paths:
-                add_path_new = shutil.copy(add_path, target_path)
+                try:
+                    add_path_new = shutil.copy(add_path, target_path)
+                except shutil.SameFileError:
+                    pass # there are no changes to the file so it does not need to be copied
                 if verbose >= 3:
                     print("An additional file has been copied to", add_path_new)
         else:

@@ -3,6 +3,7 @@
 ##  the the user directly interfaces with in the external script.
 
 import os
+import sys
 import importlib.util
 from pathlib import Path
 
@@ -19,6 +20,9 @@ class psictUIFInterface:
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## set logging level
         self.verbose = verbose
+        ## Save original working directory
+        self._original_wd = os.getcwd()
+        self._script_inv = sys.argv[0]
         ## change working directory to the enclosing folder of this script
         if verbose >= 4:
             print("Changing working directory...")
@@ -29,6 +33,8 @@ class psictUIFInterface:
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
         self.labberExporter = LabberExporter(verbose = self.verbose)
+        ## Add attributes for constituent objects
+        self.fileManager.set_original_wd(self._original_wd, self._script_inv)
         ## debug message
         if self.verbose >= 4:
             print("Called psictUIFInterface constructor.")
@@ -43,6 +49,8 @@ class psictUIFInterface:
         ## delete object attributes
         del self.fileManager      # FileManager destructor deletes temp files
         del self.pulseSeqManager
+        ## Change working directory back to original
+        os.chdir(self._original_wd)
         ## debug message
         if self.verbose >= 4:
             print("Called psictUIFInterface destructor.")
@@ -55,8 +63,10 @@ class psictUIFInterface:
         '''
         Set the script-rc file, imported as a module.
         '''
+        ## Expand path properly - take cwd into account
+        script_rcpath_full = os.path.join(self._original_wd, os.path.dirname(self._script_inv), script_rcpath)
         ## normalize path
-        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(script_rcpath)))
+        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(script_rcpath_full)))
         ## debug message
         if verbose >= 1:
             print("Reading from script rcfile:", self.script_rcpath)
@@ -230,6 +240,9 @@ class psictUIFInterface:
         ## debug message
         if verbose >= 2:
             print("Post-measurement operations completed.")
+        ## Change working directory back to original - this is here so Dany will be happy (it also exists in the destructor, but that is not run until ipython exits!)
+        os.chdir(self._original_wd)
+        ## Final status message - this indicates the user can continue with other things!
         if verbose >= 1:
             print("Labber-PSICT execution finished.")
 

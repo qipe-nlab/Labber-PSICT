@@ -24,11 +24,11 @@ class psictUIFInterface:
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
         ## change working directory to the enclosing folder of this script
-        if verbose >= 4:
-            print("Changing working directory...")
-        os.chdir(Path(__file__).parents[2]) # trim to enclosing folder of PSICT_UIF
-        if verbose >= 4:
-            print("New working directory is", os.getcwd())
+        # if verbose >= 4:
+            # print("Changing working directory...")
+        # os.chdir(Path(__file__).parents[2]) # trim to enclosing folder of PSICT_UIF
+        # if verbose >= 4:
+            # print("New working directory is", os.getcwd())
         ## Add constituent objects
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)

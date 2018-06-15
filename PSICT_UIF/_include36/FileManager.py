@@ -217,7 +217,9 @@ class FileManager:
         self.output_file = valid_output_file
         self.output_path = self.generate_full_path(self.output_dir, self.output_file)
         ## debug message
-        if verbose >= 1:
+        if verbose == 1:
+            print("Output file:", self.output_file)
+        elif verbose >= 1:
             print("Output file set as:", self.output_path)
 
 

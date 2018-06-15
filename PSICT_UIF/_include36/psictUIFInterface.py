@@ -146,7 +146,7 @@ class psictUIFInterface:
         Set instrument parameters as (independent) iteration values.
         '''
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Adding iteration values for instrument parameters...")
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
         for instrument_name, instrument_params in iteration_values_dict.items():
@@ -157,7 +157,7 @@ class psictUIFInterface:
         ## Set iteration order
         self.labberExporter.set_iteration_order(iteration_order_list)
         ## debug message
-        if verbose >= 1:
+        if verbose >= 2:
             print("Instrument parameter iteration values added.")
 
     def set_channel_relations(self, channel_defs_dict, channel_relations_dict, *, verbose = 1):

@@ -6,8 +6,9 @@ EXE_PATH_WIN = "C:/Program Files (x86)/Labber/Program"
 
 ## Dataset file defaults
 FILE_DATABASE_EXT = "hdf5"  # file extension of Labber database files
-SCRIPT_COPY_POSTFIX = "__copy"  # postfixed to filename of temporary reference file
+REF_COPY_POSTFIX = "__copy"  # postfixed to filename of temporary reference file
 SCRIPT_COPY_EXTENSION = "py"  # script file extension - should be .py
+SCRIPTRC_COPY_EXTENSION = "py" # script rcfile extension - should be .py
 
 ## Output filename incrementation defaults
 INCREMENT_MAX_ATTEMPTS = 1000   # emergency break out of incrementation loop

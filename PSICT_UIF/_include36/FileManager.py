@@ -27,7 +27,7 @@ class FileManager:
         ## set object log level
         self.verbose = verbose
         ## set values of attributes constant across multiple methods
-        self._REF_COPY_POSTFIX = _rc.SCRIPT_COPY_POSTFIX
+        self._REF_COPY_POSTFIX = _rc.REF_COPY_POSTFIX
         ## set Labber exe path to system default
         self.setdef_labber_exe_path(verbose = self.verbose)
         ## debug message
@@ -333,7 +333,7 @@ class FileManager:
             if verbose >= 3:
                 print("Creating target directory (if it does not exist)...")
             pathlib.Path(self._script_rc.script_copy_target_dir).mkdir(parents = True, exist_ok = True)
-            script_target_path = self._script_rc.script_copy_target_dir  # will have custom filename appended if necessary
+            script_target_dir = self._script_rc.script_copy_target_dir  # will have custom filename appended if necessary
             target_path = self._script_rc.script_copy_target_dir         # path used for additional files
             ## Set target file names (eg renaming to match output file)
             if verbose >= 3:
@@ -343,11 +343,14 @@ class FileManager:
                 if verbose >= 2:
                     print("The target file name is", target_file)
                 ## Append name to script target path
-                script_target_path = os.path.abspath(os.path.join(script_target_path, target_file))
+                script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
             ## Add additional paths as specified in script-rcfile
             additional_paths = []
             if self._script_rc.script_rc_copy_enabled:
-                additional_paths.append(self._script_rcpath)
+                rc_path_original = self._script_rcpath
+                new_rc_file = "".join([self.output_file, self._script_rc.script_rc_copy_postfix, ".", _rc.SCRIPTRC_COPY_EXTENSION])
+                new_rc_path = os.path.abspath(os.path.join(script_target_dir, new_rc_file))
+                additional_paths.append([rc_path_original, new_rc_path])
             ## Copy external script (the one which runs the whole thing)
             script_path_original = os.path.join(self._original_wd, self._script_inv)
             if verbose >= 3:
@@ -356,9 +359,9 @@ class FileManager:
             if verbose >= 3:
                 print("The script file has been copied to", script_path_new)
             ## Copy additional files as passed to method, eg script-rc
-            for add_path in additional_paths:
+            for source_path, target_path in additional_paths:
                 try:
-                    add_path_new = shutil.copy(add_path, target_path)
+                    add_path_new = shutil.copy(source_path, target_path)
                 except shutil.SameFileError:
                     pass # there are no changes to the file so it does not need to be copied
                 if verbose >= 3:

@@ -38,5 +38,6 @@ script_copy_target_dir = "/Users/sam/Google-Drive/Tokyo_research/labber_scripts/
 script_rc_copy_enabled = True  # option to copy this file (the script rcfile) - will be copied into the same directory as the script
 script_copy_matches_output = True     # if set, the script copy will be renamed to match the output file name
 script_copy_postfix = "_script"       # the postfix applied to the script name if it is set to match the output file by script_copy_matches_output
+script_rc_copy_postfix = "_rc"
 
 ##

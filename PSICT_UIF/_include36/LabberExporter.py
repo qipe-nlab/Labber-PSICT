@@ -88,6 +88,8 @@ class LabberExporter:
                                       "n_pts": iter_list[2],
                                     })
             self._api_values[instrument_name][param_name] = iter_obj
+            if verbose >= 1:
+                print("Set", instrument_name, "-", param_name, "to", iter_obj)
 
     def set_iteration_order(self, iteration_order_list, *, verbose = 1):
         '''

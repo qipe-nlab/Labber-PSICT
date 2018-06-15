@@ -24,7 +24,7 @@ parameter_pre_process = {
                     4: 3,
                 }, # end o (Output)
             }, # end pulse
-            "main": {},
+            # "main": {}, # currently not implemented
         }, # end SQPG
     }
 

@@ -29,7 +29,7 @@ psictInterface.set_output_file(output_dir, output_file, verbose = 1)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #### Instrument settings
 
-pulse_sequence = "evaluate_SNR"
+pulse_sequence = "foo"
 
 if pulse_sequence == "evaluate_SNR":
 
@@ -158,6 +158,7 @@ if pulse_sequence == "evaluate_SNR":
                 }, # end SQPG
         } # end channel relations
     ## end Rabi width
+##
 else:
     ## Point values
     point_values = {
@@ -173,23 +174,23 @@ else:
                         {
                             "a": 2, "v": 200e-9,
                             "time_offset": 450e-9, "time_reference": "previous", "relative_to": "second", "pulse_number": 2, "relative_marker": "start",
-                            "is_inverted": True,
+                            'o': 1,
                         },
                     "BBB": \
                         {
                             "a": 5, "w": 95e-9,
-                            "time_offset": 650e-9, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end",
+                            "time_offset": 650e-9, "time_reference": "relative", "relative_to": "CCC", "relative_marker": "end", 'o': 1,
                         },
                     "CCC": \
                         {
                             "a": 5,
-                            "time_offset": 400e-9, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1,
+                            "time_offset": 400e-9, "time_reference": "absolute", "relative_to": "AAA", "pulse_number": 1, 'o': 1,
                         },
                     "dead": \
                         {
                             "a": 0, "w": 0, "v": 1e-6,
                             "time_offset": 200e-9, "time_reference": "previous",
-                            "pulse_number": 99,
+                            "pulse_number": 99, 'o': 1,
                         },
                 }, # end SQPG
             "Signal demodulation":
@@ -224,7 +225,7 @@ else:
         } # end iteration values
 
     iteration_order = [
-            ("SQPG", ("AA", "Mod. frequency")),
+            ("SQPG", ("AAA", "Mod. frequency")),
             ("Digitizer", "Number of samples"),
             ("Manual", "Value 1"),
             ("SQPG", ("CCC", "Width")),
@@ -234,10 +235,10 @@ else:
     channel_defs = {
             "SQPG":
                 {
-                    "main":
-                        {
-                            "delay": "First pulse delay",
-                        },
+                    # "main":
+                    #     {
+                    #         "delay": "First pulse delay",
+                    #     },
                     "CCC":
                         {
                             "a_CCC": "Amplitude",

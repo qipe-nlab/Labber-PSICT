@@ -686,7 +686,13 @@ class OutputPulseSeq(PulseSeq):
         self.main_params["First pulse delay"] = self.pulse_list[0]["absolute_time"]
         ## Iterate through pulses, setting previous pulse's spacing based on next pulse's absolute_time
         for current_pulse, next_pulse in zip(self.pulse_list[:-1], self.pulse_list[1:]):
-            current_pulse["Spacing"] = next_pulse["absolute_time"] - current_pulse.end_time
+            if verbose >= 4:
+                print("Calculating pulse spacing between", current_pulse, "and", next_pulse)
+            current_pulse["s"] = next_pulse["absolute_time"] - current_pulse.end_time
+            if verbose >= 4:
+                print("\tNext pulse absolute time:", next_pulse['absolute_time'])
+                print("\tCurrent pulse end time:", current_pulse.end_time)
+                print("\tCurrent pulse spacing:", current_pulse['s'])
         ## Set SQPG number of points (based on total time)
         self.main_params["Number of points"] = self.main_params["Sample rate"]*self.total_time
         ##
@@ -694,8 +700,17 @@ class OutputPulseSeq(PulseSeq):
         if "ComplementFinal" in self.pulse_names:
             self["ComplementFinal"]["v"] = self.total_time + _rc.SQPG_CONSTS["end_buffer_time"] - self["ComplementFinal"].start_time - self["ComplementFinal"]["w"]*(self.main_params["Truncation range"] - 1)
         ####
+        if verbose >= 4:
+            print("Pulse parameters after pre-export timing conversions:")
+            self.print_info(pulse_params = True)
+
+        ####
         ## Convert all physical parameter pulse shortcodes to full names
+        if verbose >= 3:
+            print("Converting parameter shortcodes...")
         for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
+            if verbose >= 4:
+                print("Converting ", param_short_name, " into ", param_full_name, "...", sep="")
             for pulse in self.pulse_list:
                 try:
                     param_value = pulse[param_short_name]
@@ -704,6 +719,9 @@ class OutputPulseSeq(PulseSeq):
                 else:
                     del pulse[param_short_name]
                     pulse[param_full_name] = param_value
+        if verbose >= 3:
+            print("Parameter shortcodes converted.")
+
         ## set flag
         self.is_exportable = True
         ## debug message

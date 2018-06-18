@@ -245,7 +245,7 @@ class FileManager:
             ## Keep going past incrementation, return as-is
         else:
             ## File already exists
-            if verbose >= 0:
+            if verbose >= 2:
                 print("The file", path_in, "already exists.")
             ## Check if user permission to increment is necessary
             if self._script_rc.outfile_iter_automatic:
@@ -267,7 +267,7 @@ class FileManager:
 
         ## Attempt to increment filename if required
         if flag_increment:
-            if verbose >= 1:
+            if verbose >= 2:
                 print("Attempting to increment file name...")
             n_incr_attempts = 0   # log number of attempts to prevent loop with no exit condition
             path_new = self.generate_full_path(dir_in, file_new)

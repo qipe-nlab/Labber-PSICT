@@ -5,7 +5,6 @@ import sys
 import PSICT_UIF
 
 print("------------------------------------------------")
-print("PSICT_UIF appears to have imported successfully.")
 print("PSICT_UIF version is", PSICT_UIF.__version__)
 
 ## Initialise PSICT-UIF interface object
@@ -21,7 +20,7 @@ psictInterface.load_script_rcfile("uif_script_rc_sample.py", verbose = 0)
 ## Set template and output hdf5 files
 template_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/06/Data_0613"
 template_file = "K2018-06-13_030"
-psictInterface.set_template_file(template_dir, template_file, verbose = 3)
+psictInterface.set_template_file(template_dir, template_file, verbose = 0)
 output_dir = "~/Google-Drive/Tokyo_research/labber_scripts/2018/06/Data_0613"
 output_file = "K2018-06-13_iteration_001"
 psictInterface.set_output_file(output_dir, output_file, verbose = 1)
@@ -285,6 +284,6 @@ psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 
 # print(psictInterface.MeasurementObject)
 
 ## Run measurement
-psictInterface.perform_measurement(dry_run = True, verbose = 1)
+psictInterface.perform_measurement(dry_run = True, verbose = 0)
 
 # sys.exit()

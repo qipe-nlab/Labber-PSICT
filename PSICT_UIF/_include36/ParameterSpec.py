@@ -14,7 +14,7 @@ class IterationSpec:
 
     def __add__(self, other):
         if isinstance(other, Number):
-            return self.start_value + other
+            return self.max_value + other
             # return IterationSpec({
             #             "start_value": self.start_value + other,
             #             "stop_value": self.stop_value + other,
@@ -28,7 +28,7 @@ class IterationSpec:
 
     def __sub__(self, other):
         if isinstance(other, Number):
-            return self.start_value - number
+            return self.max_value - number
             # return IterationSpec({
             #             "start_value": self.start_value - other,
             #             "stop_value": self.stop_value - other,
@@ -39,18 +39,22 @@ class IterationSpec:
 
     def __lt__(self, other):
         if isinstance(other, Number):
-            return self.start_value < other
+            return self.max_value < other
         else:
             raise NotImplementedError("Only numeric types can be compared to an IterationSpec instance.")
     def __gt__(self, other):
         if isinstance(other, Number):
-            return self.start_value > other
+            return self.max_value > other
         else:
             raise NotImplementedError("Only numeric types can be compared to an IterationSpec instance.")
     def __rlt__(self, other):
         return self > other
     def __rgt__(self, other):
         return self < other
+
+    @property
+    def max_value(self):
+        return max(self.start_value, self.stop_value)
 
 
     def set_iteration_spec(self, spec_dict):

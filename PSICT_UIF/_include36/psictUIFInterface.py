@@ -99,7 +99,7 @@ class psictUIFInterface:
         '''
         self.fileManager.set_output_file(output_dir, output_file, verbose = verbose)
 
-    def post_measurement_copy(self, *, verbose = 1):
+    def pre_measurement_copy(self, *, verbose = 1):
         '''
         Wraps the FileManager.post_measurement_copy method with some additional pre-copy admin.
 
@@ -215,6 +215,8 @@ class psictUIFInterface:
         ## Apply all parameters stored in LabberExporter
         self.labberExporter.apply_all(verbose = verbose)
         ####
+        ## Copy script - carried out before measurement to allow editing the script file while the measurement is running in Labber
+        self.pre_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 2:
             print("Measurement pre-processing completed.")
@@ -236,7 +238,7 @@ class psictUIFInterface:
         if verbose >= 2:
             print("Carrying out post-measurement operations...")
         ## Copy files (script, rcfile, etc) for reproducability
-        self.post_measurement_copy(verbose = verbose)
+        # self.post_measurement_copy(verbose = verbose)
         ## debug message
         if verbose >= 2:
             print("Post-measurement operations completed.")

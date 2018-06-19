@@ -627,7 +627,7 @@ class OutputPulseSeq(PulseSeq):
         return max(self.pulse_list, key = attrgetter('end_time'))
     @property
     def total_time(self):
-        return self.end_pulse.end_time + self.end_pulse["w"]*(self.main_params["Truncation range"] - 1)
+        return self.end_pulse.end_time + self.end_pulse["w"]*(self.main_params["Truncation range"] - 1)/2
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse import methods (post-conversion)

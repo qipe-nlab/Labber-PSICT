@@ -55,9 +55,19 @@ class Pulse:
         return self.attributes["absolute_time"]
     @property
     def end_time(self):
-        assert "w" in self.attributes
-        assert "v" in self.attributes
-        return self.start_time + self['w'] + self['v']
+        try:
+            assert "Width" in self.attributes
+            assert "Plateau" in self.attributes
+        except AssertionError:
+            try:
+                assert "w" in self.attributes
+                assert "v" in self.attributes
+            except AsserionError as AssE:
+                raise AssE
+            else:
+                return self.start_time + self['w'] + self['v']
+        else:
+            return self.start_time + self["Width"] + self["Plateau"]
 
     def __getitem__(self, key):
         return self.attributes[key]

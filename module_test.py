@@ -62,6 +62,7 @@ if pulse_sequence == "evaluate_SNR":
                     ## Parameters for overall pulse sequence - general SGPQ parameters
                     "main": {
                             "Truncation range": SQPG_tr, "Sample rate": 1E9,
+                            "dead_time": 1000.0,
                         },
                     ## Parameters which apply to all inverted pulses
                     "inverted": {"w": 0.0},
@@ -165,6 +166,7 @@ else:
                 {
                     "main": {       # parameters for overall pulse sequence - general SGPQ parameters
                             "Truncation range": 5, "Sample rate": 1e9,
+                            "dead_time": 1000.0e-9,
                         },
                     "inverted": {   # physical parameters that will be applied to all inverted pulses - the inverted pulse entries should not specify these, otherwise they will be overwritten
                             "a": 200, "w": 100e-9,
@@ -285,5 +287,7 @@ psictInterface.set_channel_relations(channel_defs, channel_relations, verbose = 
 
 ## Run measurement
 psictInterface.perform_measurement(dry_run = True, verbose = 0)
+
+# print("Total number of points:", psictInterface.pulseSeqManager.outputPulseSeq.main_params["Number of points"])
 
 # sys.exit()

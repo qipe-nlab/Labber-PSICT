@@ -693,8 +693,11 @@ class OutputPulseSeq(PulseSeq):
                 print("\tNext pulse absolute time:", next_pulse['absolute_time'])
                 print("\tCurrent pulse end time:", current_pulse.end_time)
                 print("\tCurrent pulse spacing:", current_pulse['s'])
-        ## Set SQPG number of points (based on total time)
-        self.main_params["Number of points"] = self.main_params["Sample rate"]*self.total_time
+        ## Set SQPG number of points (based on total time) - include optional dead time parameter (defaults to 0 if not specified)
+        if not "dead_time" in self.main_params:
+            self.main_params["dead_time"] = 0.0
+        self.main_params["Number of points"] = self.main_params["Sample rate"]*(self.total_time + self.main_params["dead_time"])
+        del self.main_params["dead_time"] # delete so that it is not applied to Labber
         ##
         ## Stretch final inverted pulse (this will always be called 'ComplementFinal') based on total time
         if "ComplementFinal" in self.pulse_names:

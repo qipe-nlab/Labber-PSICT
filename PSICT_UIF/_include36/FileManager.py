@@ -14,39 +14,39 @@ from Labber import ScriptTools
 
 import PSICT_UIF._include36._FileManager_rc as _rc
 
-
 class FileManager:
     '''
-    A class to store and handle the paths and names of files associated with a PSICT-initialised Labber experiment.
+    Stores and handles the paths and names of files associated with a PSICT-initialised Labber experiment.
 
-    Includes methods to set (either manually or through defaults in the _FileManager_rc file) the script-specific rcfile and the Labber executable path. In addition, stores and handles the paths and filenames of the template, reference, and output database files; the resource database file is a temporary copy of the template file, where the hdf5 entries are directly modified by the PSICT-UIF package, and is deleted after the script has been run.
-
+    Includes methods to set (either manually or through defaults in the _FileManager_rc file) the script-specific rcfile and the Labber executable path. In addition, stores and handles the paths and filenames of the template, reference, and output database files. The resource database file is a temporary copy of the template file, where the hdf5 entries are directly modified by the PSICT-UIF package, and is deleted after the script has been run.
     '''
 
     def __init__(self, *, verbose = 1):
-        ## set object log level
+        ## Set object log level
         self.verbose = verbose
-        ## set values of attributes constant across multiple methods
+        ## Set values of attributes constant across multiple methods
         self._REF_COPY_POSTFIX = _rc.REF_COPY_POSTFIX
-        ## set Labber exe path to system default
+        ## Set Labber exe path to system default - can be overwritten by user in external script later
         self.setdef_labber_exe_path(verbose = self.verbose)
-        ## debug message
+        ## Status message
         if self.verbose >= 4:
             print("Called FileManager constructor.")
 
     def __del__(self):
-        ## debug message
+        ## Status message
         if self.verbose >= 4:
             print("Calling FileManager destructor.")
         ## Delete reference file (temporary copy of template file)
         self.clean_reference_file(verbose = self.verbose)
-        ## debug message
+        ## Status message
         if self.verbose >= 4:
             print("FileManager destructor finished.")
 
     def set_original_wd(self, original_wd, script_inv):
         '''
-        Set the original working directory (original_wd) and sys.argv[0] script invocation (script_inv), such that they can be used for file copying etc.
+        Store the original working directory (original_wd) and sys.argv[0] script invocation (script_inv).
+
+        These are necessary for copying scripts etc. correctly in full generality.
         '''
         self._original_wd = original_wd
         self._script_inv = script_inv
@@ -70,14 +70,14 @@ class FileManager:
 
         Note that the path will only be applied immediately before the measurement is performed; validity checks are not carried out!
         '''
-        ## normalize path
+        ## Normalize path
         new_labber_exe_path = os.path.normpath(new_labber_exe_path)
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("New Labber executable path:", new_labber_exe_path)
-        ## change attribute
+        ## Change attribute
         self.labber_exe_path = new_labber_exe_path
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("New Labber executable path set.")
 
@@ -87,24 +87,24 @@ class FileManager:
 
         Currently supports Windows and Darwin (macOS); other operating systems will raise a RuntimeError.
         '''
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Setting Labber executable path spec to system default...")
-        ## check os
+        ## Check os
         _SYSTEM = platform.system()
-        if _SYSTEM == "Windows":
+        if _SYSTEM == "Windows":  # Windows
             if verbose >= 3:
                 print("System identified as Windows; default executable path is", _rc.EXE_PATH_WIN)
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_WIN
-        elif _SYSTEM == "Darwin":
+        elif _SYSTEM == "Darwin": # macOS
             if verbose >= 3:
                 print("System identified as macOS; default executable path is", _rc.EXE_PATH_MAC)
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_MAC
-        else:
+        else:                     # Other OSes are currently not supported
             raise RuntimeError("System could not be identified, or is not supported.\nplatform.system() returned:", _SYSTEM)
-        ## change path stored in FileManager attributes
+        ## Change path stored in FileManager attributes
         self.set_labber_exe_path(_SYSDEF_LABBER_EXE_PATH, verbose = verbose)
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Labber executable path spec set to system default.")
 
@@ -114,12 +114,12 @@ class FileManager:
 
         NB: This method should not be used explicitly in the external script; it will be called as part of measurement pre-processing anyway.
         '''
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Applying Labber executable path...")
-        ## set ScriptTools path
+        ## Set ScriptTools path
         ScriptTools.setExePath(self.labber_exe_path)
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Labber executable path applied.")
 
@@ -140,30 +140,31 @@ class FileManager:
         '''
         Set the template database file.
 
-        Note that the FileManager will make a temporary copy of this, which will be the "working" reference file, to make direct hdf5 edits, and so the template file will not be modified.
+        This template file will never be modified by PSICT. Where it is necessary to edit the hdf5 files directly (eg setting channel relations), such edits will be applied to the temporary copy (the "reference file").
         '''
-        ## debug message
+        ## Status message
         if verbose >= 1:
             print("Setting template file...")
         ## Set attributes
         self.template_dir = os.path.expanduser(os.path.normpath(template_dir))
         self.template_file = template_file
         self.template_path = self.generate_full_path(self.template_dir, self.template_file)
-        ## debug message
+        ## Status message
         if verbose >= 1:
             print("Template file set as:", self.template_path)
         ## Copy template file to create reference file
         self.copy_reference_file(verbose = verbose)
 
-
     def copy_reference_file(self, *, verbose = 1):
         '''
-        Copies the template file into a temporary reference file, where direct hdf5 edits will be carried out.
+        Copies the template file into a temporary reference file.
+
+        The temporary reference file will have all direct hdf5 edits applied to it, and the measurement will be run from it as well.
         '''
-        ## debug message
+        ## Status message
         if verbose >= 3:
             print("Copying reference file...")
-        ## Set names
+        ## Set reference file target names
         try:
             self.reference_dir = self.template_dir
             self.reference_file = "".join([self.template_file, self._REF_COPY_POSTFIX])
@@ -172,7 +173,7 @@ class FileManager:
         self.reference_path = self.generate_full_path(self.reference_dir, self.reference_file)
         ## Copy file
         shutil.copy(self.template_path, self.reference_path)
-        ## debug message
+        ## Status message
         if verbose >= 3:
             print("Reference file copied successfully:", self.reference_path)
 
@@ -181,7 +182,7 @@ class FileManager:
         '''
         Clean up the temporary reference file (ie delete it).
         '''
-        ## debug message
+        ## Status message
         if verbose >= 3:
             print("Deleting temporary copy of reference file...")
         ## Delete temporary copy of reference file
@@ -190,7 +191,7 @@ class FileManager:
         except (AttributeError, FileNotFoundError):
             pass
         else:
-            ## debug message
+            ## Status message
             if verbose >= 3:
                 print("Deleted reference file", self.reference_path)
 
@@ -206,7 +207,7 @@ class FileManager:
          - If disallowed, or if allowed and unable to parse a sequential integer from the file name, a RuntimeError will be raised.
         Basically, the PSICT-UIF will never overwrite an existing output file.
         '''
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Setting output file...")
         ## Set output dir (will not change)
@@ -216,7 +217,7 @@ class FileManager:
         ## Set attributes
         self.output_file = valid_output_file
         self.output_path = self.generate_full_path(self.output_dir, self.output_file)
-        ## debug message
+        ## Status message
         if verbose == 1:
             print("Output file:", self.output_file)
         elif verbose >= 1:
@@ -225,15 +226,15 @@ class FileManager:
 
     def get_valid_output_file(self, dir_in, file_in, *, verbose = 1):
         '''
-        Return the name of a valid output file (ie not existent through incrementation of the passed-in filename).
+        Return the name of a valid output file.
 
-        If this cannot be done, will raise a RuntimeError.
+        If the specified file does not already exist, it will be returned as-is. If the file already exists, incrementation of the file name (see the FileManager.increment_filename method) will be attempted. If this cannot be done, a RuntimeError will be raised.
         '''
         ## preparation
         flag_increment = False   # set if incrementation attempt is to be attempted
         path_in = self.generate_full_path(dir_in, file_in)
         file_new = file_in
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Verifying output file:", path_in)
 
@@ -286,6 +287,7 @@ class FileManager:
 
         ## Return new file name (can be unchanged)
         path_new = self.generate_full_path(dir_in, file_new)
+        ## Status message
         if verbose >= 2:
             print("The file", path_new, "is a valid output file.")
         return file_new
@@ -294,19 +296,16 @@ class FileManager:
         '''
         Attempt to increment a filename by increasing a sequential id integer at the end of the filename string by 1, and returning the new filename.
         '''
-        ## split the file name into a head and sequential id
+        ## Split the file name into a head and sequential id
         fname_split = re.split(r'(\d+$)', fname_in)    # split by int searching from back
         if len(fname_split) < 2:                         # could not split properly
             raise RuntimeError("Could not identify sequential ID in filename:", fname_in)
         fname_head = fname_split[0]
         fname_id = fname_split[1]
-
-        ## increment the id
+        ## Increment the id
         new_id = self.increment_string(fname_id)
-
-        ## put path back together
+        ## Put path back together
         new_fname = "".join([fname_head, new_id])
-
         return new_fname
 
     def increment_string(self, str_in):
@@ -323,7 +322,9 @@ class FileManager:
 
     def post_measurement_copy(self, *, verbose = 1):
         '''
-        Docstring
+        Copies files associated with the measurement to a target folder for reproducability/storage.
+
+        Which files are copied, and if any special rules such as renaming to match the measurement file name are applied, are determined by the flags and parameters in the script-rcfile.
         '''
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:

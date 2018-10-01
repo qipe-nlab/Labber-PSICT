@@ -12,11 +12,15 @@ from PSICT_UIF._include36.ParameterSpec import IterationSpec
 
 class LabberExporter:
     '''
-    Docstring for LabberExporter class.
+    Stores and prepares all parameter settings before applying them to the measurement.
+
+    The LabberExporter uses both the Labber ScriptTools API as well as direct editing of the reference hdf5 database file to accomplish this.
+
+    Parameters should in general be passed to the LabberExporter in their "final form", ie with no further calculations to be carried out (note that the LabberExporter class does implement several methods to expand channel names in full etc.).
     '''
 
     def __init__(self, *, verbose = 1):
-        ## set object log level
+        ## Set object log level
         self.verbose = verbose
         ## Labber MeasurementObject - will be set later
         self.MeasurementObject = None
@@ -29,22 +33,22 @@ class LabberExporter:
         self._channel_relations = {} # Actual channel relations
         ## Other attributes
         self._hdf5_sl_entry_dtype = None # Stores the dtype of the hdf5 step list entries (this can't be auto-generated for some reason...)
-        ## debug message
+        ## Status message
         if verbose >= 4:
             print("LabberExporter constructor called.")
 
     def __del__(self):
-        ## debug message
+        ## Status message
         if self.verbose >= 4:
             print("Calling LabberExporter destructor.")
-        ## delete objects here...
-        ## debug message
+        ## Delete objects here
+        ## Status message
         if self.verbose >= 4:
             print("LabberExporter destructor finished.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## Convenience methods
+    ## Misc methods
 
     def get_full_label(self, instrument_name, param_name, pulse_number = 0):
         '''
@@ -63,9 +67,11 @@ class LabberExporter:
 
     def add_point_value_spec(self, instrument_name, instrument_params, *, verbose = 1):
         '''
-        Docstring.
+        Add point-value specifications, specified per-instrument.
+
+        TODO: show sample dict structure here
         '''
-        ## debug message
+        ## Status message
         if verbose >= 1:
             print("Adding parameter specifications for ", instrument_name, "...", sep="")
         ## Import parameters
@@ -73,9 +79,11 @@ class LabberExporter:
 
     def add_iteration_spec(self, instrument_name, instrument_params, *, verbose = 1):
         '''
-        Docstring.
+        Add iteration specifications, specified per-instrument.
+
+        TODO: show sample dict structure here
         '''
-        ## debug message
+        ## Status message
         if verbose >= 2:
             print("Importing iteration specifications for:", instrument_name)
         ## Ensure instrument entry exists
@@ -93,9 +101,11 @@ class LabberExporter:
 
     def set_iteration_order(self, iteration_order_list, *, verbose = 1):
         '''
-        Docstring
+        Set the order of iteration for iteration variables.
+
+        If this is not specified, Labber will default to using the order in which they appear on the LHS in the measurement editor.
         '''
-        ## status message
+        ## Status message
         if verbose >= 2:
             print("Setting iteration order...")
         self._iteration_order = iteration_order_list

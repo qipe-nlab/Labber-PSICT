@@ -52,7 +52,13 @@ class FileManager:
         self._script_inv = script_inv
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    ## rcfile methods
+    ## Config/rcfile methods
+
+    def set_script_copy_target_dir(self, script_copy_target_dir):
+        '''
+        Assign the target directory to which the script will be copied.
+        '''
+        self._script_copy_target_dir = os.path.normpath(script_copy_target_dir)
 
     def assign_script_rcmodule(self, rcmodule, rcpath):
         '''
@@ -324,34 +330,31 @@ class FileManager:
         '''
         Copies files associated with the measurement to a target folder for reproducability/storage.
 
-        Which files are copied, and if any special rules such as renaming to match the measurement file name are applied, are determined by the flags and parameters in the script-rcfile.
+        Which files are copied, and if any special rules such as renaming to match the measurement file name are applied, are determined
+        by the flags and parameters in the config file (previously, the script-rcfile).
         '''
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
             if verbose >= 2:
                 print("Copying script and additional files...")
+            ## Check if target directory has been specified
+            try:
+                assert self._script_copy_target_dir
+            except AssertionError:
+                raise RuntimeError('The script copy target directory has not been specified.')
             ## Create target dir if it does not already exist
             if verbose >= 3:
                 print("Creating target directory (if it does not exist)...")
-            pathlib.Path(self._script_rc.script_copy_target_dir).mkdir(parents = True, exist_ok = True)
-            script_target_dir = self._script_rc.script_copy_target_dir  # will have custom filename appended if necessary
-            target_path = self._script_rc.script_copy_target_dir         # path used for additional files
+            pathlib.Path(self._script_copy_target_dir).mkdir(parents = True, exist_ok = True)
+            script_target_dir = self._script_copy_target_dir  # will have custom filename appended if necessary
             ## Set target file names (eg renaming to match output file)
             if verbose >= 3:
                 print("Setting new filenames...")
-            if self._script_rc.script_copy_matches_output:
-                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
-                if verbose >= 2:
-                    print("The target file name is", target_file)
-                ## Append name to script target path
-                script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
-            ## Add additional paths as specified in script-rcfile
-            additional_paths = []
-            if self._script_rc.script_rc_copy_enabled:
-                rc_path_original = self._script_rcpath
-                new_rc_file = "".join([self.output_file, self._script_rc.script_rc_copy_postfix, ".", _rc.SCRIPTRC_COPY_EXTENSION])
-                new_rc_path = os.path.abspath(os.path.join(script_target_dir, new_rc_file))
-                additional_paths.append([rc_path_original, new_rc_path])
+            target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
+            if verbose >= 2:
+                print("The target file name is", target_file)
+            ## Append name to script target path
+            script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
             ## Copy external script (the one which runs the whole thing)
             script_path_original = os.path.join(self._original_wd, self._script_inv)
             if verbose >= 3:
@@ -359,18 +362,10 @@ class FileManager:
             script_path_new = shutil.copy(script_path_original, script_target_path)
             if verbose >= 3:
                 print("The script file has been copied to", script_path_new)
-            ## Copy additional files as passed to method, eg script-rc
-            for source_path, target_path in additional_paths:
-                try:
-                    add_path_new = shutil.copy(source_path, target_path)
-                except shutil.SameFileError:
-                    pass # there are no changes to the file so it does not need to be copied
-                if verbose >= 3:
-                    print("An additional file has been copied to", add_path_new)
         else:
             ## Copying script not enabled
             if verbose >= 2:
-                print("Script copying has been disabled in the script-rcfile.")
+                print("Script copying has been disabled in the PSICT config file.")
         ##
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

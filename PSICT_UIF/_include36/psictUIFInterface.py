@@ -61,27 +61,34 @@ class psictUIFInterface:
 
     def load_script_rcfile(self, script_rcpath, *, verbose = 1):
         '''
-        Set the script-rc file, imported as a module.
+        DEPRECATED. Set the script-rc file, imported as a module.
 
         If script_rc_copy_enabled is set to True in the script-rcfile, this file (the script-rcfile) will be copied alongside the external script. More options (such as matching the output file name) are available through the script-rcfile variables.
         '''
-        ## Expand path properly - take cwd into account
-        script_rcpath_full = os.path.join(self._original_wd, os.path.dirname(self._script_inv), script_rcpath)
-        ## Normalize path
-        self.script_rcpath = os.path.abspath(os.path.expanduser(os.path.normpath(script_rcpath_full)))
+        raise DeprecationWarning('The script-rcfile is deprecated as of version 1.0.7.1')
+
+    def load_config_file(self, config_path, *, verbose = 0):
+        '''
+        Load the PSICT config file from the specified path.
+
+        The config_path provided must be an absolute path.
+        Prior to version 1.0.7, these configuration settings were stored in the script rc-file.
+        '''
         ## Status message
-        if verbose >= 1:
-            print("Reading from script rcfile:", self.script_rcpath)
-        ## Import script rcfile as module
-        script_rc_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
-        self._script_rc = importlib.util.module_from_spec(script_rc_spec)
-        script_rc_spec.loader.exec_module(self._script_rc)
-        if verbose >= 1:
-            print("Script rcfile imported.")
-        ## Assign script-rcfile to FileManager
+        if verbose > 2:
+            print('Loading config file from path:', config_path)
+        ## Set config path
+        self.script_rcpath = os.path.normpath(config_path)
+        ## Import config file as module - preserve old names from rc-file
+        config_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
+        self._script_rc = importlib.util.module_from_spec(config_spec)
+        config_spec.loader.exec_module(self._script_rc)
+        ## Assign to delegates
         self.fileManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
-        ## Assign script-rcfile to PulseSeqManager
         self.pulseSeqManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
+        ## Status message
+        if verbose >= 3:
+            print('Config file loaded and assigned to delegates.')
 
     def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 0):
         '''
@@ -108,6 +115,15 @@ class psictUIFInterface:
         Wraps the FileManager.set_output_file method.
         '''
         self.fileManager.set_output_file(output_dir, output_file, verbose = verbose)
+
+    def set_script_copy_target_dir(self, script_copy_target_dir, *, verbose = 0):
+        '''
+        Sets the target directory to which the script will be copied.
+
+        NB At present, this should be specified as an absolute path.
+        Prior to version 1.0.7.1, this was specified in the script-rcfile.
+        '''
+        self.fileManager.set_script_copy_target_dir(script_copy_target_dir)
 
     def pre_measurement_copy(self, *, verbose = 1):
         '''

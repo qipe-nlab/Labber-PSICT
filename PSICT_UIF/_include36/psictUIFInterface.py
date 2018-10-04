@@ -22,7 +22,7 @@ class psictUIFInterface:
     All settings that are liable to change between experiments or even potentially across individual scripts are stored in the so-called "script-rcfile", which must be specified through the load_script_rcfile method.
     '''
 
-    def __init__(self, *, verbose = 1):
+    def __init__(self, *, is_slave = False, verbose = 1):
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## Set object logging level
         self.verbose = verbose
@@ -35,6 +35,8 @@ class psictUIFInterface:
         self.labberExporter = LabberExporter(verbose = self.verbose)
         ## Add attributes for constituent objects
         self.fileManager.set_original_wd(self._original_wd, self._script_inv)
+        ## Set slave status as standalone script by default
+        self.set_slave_status(is_slave, verbose = self.verbose)
         ## Status message
         if self.verbose >= 4:
             print("Called psictUIFInterface constructor.")
@@ -58,6 +60,12 @@ class psictUIFInterface:
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
+
+    def set_slave_status(self, is_slave, *, verbose = 1):
+        '''
+        Passes slave status to the FileManager object.
+        '''
+        self.fileManager.set_slave_status(is_slave, verbose = verbose)
 
     def load_script_rcfile(self, script_rcpath, *, verbose = 1):
         '''

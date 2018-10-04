@@ -326,6 +326,16 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
+    def set_slave_status(self, is_slave, *, verbose = 1):
+        '''
+        Set whether or not the script is running as a slave (ie not a standalone).
+
+        Affects whether or not the integrated script copying methods are invoked.
+        '''
+        self._is_slave = is_slave
+        if verbose >= 2:
+            print('Slave status set to:', self._is_slave)
+
     def post_measurement_copy(self, *, verbose = 1):
         '''
         Copies files associated with the measurement to a target folder for reproducability/storage.
@@ -335,33 +345,37 @@ class FileManager:
         '''
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
-            if verbose >= 2:
-                print("Copying script and additional files...")
-            ## Check if target directory has been specified
-            try:
-                assert self._script_copy_target_dir
-            except AssertionError:
-                raise RuntimeError('The script copy target directory has not been specified.')
-            ## Create target dir if it does not already exist
-            if verbose >= 3:
-                print("Creating target directory (if it does not exist)...")
-            pathlib.Path(self._script_copy_target_dir).mkdir(parents = True, exist_ok = True)
-            script_target_dir = self._script_copy_target_dir  # will have custom filename appended if necessary
-            ## Set target file names (eg renaming to match output file)
-            if verbose >= 3:
-                print("Setting new filenames...")
-            target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
-            if verbose >= 2:
-                print("The target file name is", target_file)
-            ## Append name to script target path
-            script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
-            ## Copy external script (the one which runs the whole thing)
-            script_path_original = os.path.join(self._original_wd, self._script_inv)
-            if verbose >= 3:
-                print("The original script is at", script_path_original)
-            script_path_new = shutil.copy(script_path_original, script_target_path)
-            if verbose >= 3:
-                print("The script file has been copied to", script_path_new)
+            if self._is_slave:
+                if verbose >= 2:
+                    print('Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
+            else: # Script copying is enabled and the script is running as a standalone
+                if verbose >= 2:
+                    print("Copying script and additional files...")
+                ## Check if target directory has been specified
+                try:
+                    assert self._script_copy_target_dir
+                except AssertionError:
+                    raise RuntimeError('The script copy target directory has not been specified.')
+                ## Create target dir if it does not already exist
+                if verbose >= 3:
+                    print("Creating target directory (if it does not exist)...")
+                pathlib.Path(self._script_copy_target_dir).mkdir(parents = True, exist_ok = True)
+                script_target_dir = self._script_copy_target_dir  # will have custom filename appended if necessary
+                ## Set target file names (eg renaming to match output file)
+                if verbose >= 3:
+                    print("Setting new filenames...")
+                target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
+                if verbose >= 2:
+                    print("The target file name is", target_file)
+                ## Append name to script target path
+                script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
+                ## Copy external script (the one which runs the whole thing)
+                script_path_original = os.path.join(self._original_wd, self._script_inv)
+                if verbose >= 3:
+                    print("The original script is at", script_path_original)
+                script_path_new = shutil.copy(script_path_original, script_target_path)
+                if verbose >= 3:
+                    print("The script file has been copied to", script_path_new)
         else:
             ## Copying script not enabled
             if verbose >= 2:

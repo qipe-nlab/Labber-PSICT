@@ -611,6 +611,8 @@ class OutputPulseSeq(PulseSeq):
                     print('SQPG Sample rate not specified; cannot calculate Number of points based on given parameters.')
             else:
                 self.main_params['Number of points'] = SQPG_sequence_duration*SQPG_sample_rate
+            ## Remove sequence_duration (there is no corresponding SQPG parameter)
+            del self.main_params['sequence_duration']    
 
         ## TODO unit processing on values?
 

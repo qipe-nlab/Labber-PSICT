@@ -217,7 +217,10 @@ class FileManager:
         if verbose >= 2:
             print("Setting output file...")
         ## Set output dir (will not change)
-        self.output_dir = os.path.expanduser(os.path.normpath(output_dir))
+        self.output_dir = os.path.abspath(os.path.normpath(output_dir))
+        ## Create output dir if it does not exist
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
         ## Get valid output filename, checking for existence, incrementing if nececssary, etc
         valid_output_file = self.get_valid_output_file(self.output_dir, output_file, verbose = verbose)
         ## Set attributes

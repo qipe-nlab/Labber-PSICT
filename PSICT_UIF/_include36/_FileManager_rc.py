@@ -11,4 +11,4 @@ SCRIPT_COPY_EXTENSION = "py"  # script file extension - should be .py
 SCRIPTRC_COPY_EXTENSION = "py" # script rcfile extension - should be .py
 
 ## Output filename incrementation defaults
-INCREMENT_MAX_ATTEMPTS = 1000   # emergency break out of incrementation loop
+INCREMENT_MAX_ATTEMPTS = 10000   # emergency break out of incrementation loop

@@ -150,7 +150,7 @@ class LabberExporter:
 
     def receive_pulse_sequence(self, exported_pulse_seq, *, verbose = 1):
         '''
-        Docstring for receive_pulse_sequence
+        Receive an exported pulse sequence (from a PulseSequence object) and store it.
         '''
         ## debug message
         if verbose >= 2:
@@ -210,7 +210,7 @@ class LabberExporter:
 
     def receive_pulse_rels(self, pulse_defs, pulse_rels, *, verbose = 1):
         '''
-        Docstring
+        Receive pulse relations (from a PulseSequence object) and store them.
         '''
         ## status message
         if verbose >= 2:
@@ -240,7 +240,9 @@ class LabberExporter:
 
     def init_MeasurementObject(self, reference_path, output_path, *, auto_init = False, verbose = 1):
         '''
-        Docstring
+        Initialise a Labber MeasurementObject instance.
+
+        For more information on the MeasurementObject, see the Labber API docs.
         '''
         ## debug message
         if verbose >= 2:
@@ -288,7 +290,7 @@ class LabberExporter:
 
     def sort_iteration_order(self, *, verbose = 1):
         '''
-        Docstring
+        Re-order the iteration items list in the reference hdf5 file, based on the specified iteration order.
         '''
         ## status message
         if verbose >= 2:

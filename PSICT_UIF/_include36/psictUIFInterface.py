@@ -19,7 +19,9 @@ class psictUIFInterface:
 
     The Labber ScriptTools MeasurementObject instance can be accessed directly in the external script once both input and output files have been set for the psictUIFInterface object by accessing the "MeasurementObject" attribute.
 
-    All settings that are liable to change between experiments or even potentially across individual scripts are stored in the so-called "script-rcfile", which must be specified through the load_script_rcfile method.
+    Some settings and attributes which may change with time are stored in the PSICT_config.py file. This must be loaded into the PSICT interface object using the load_config_file method. Prior to version 1.0.7.1, these parameters were stored in the script-rcfile.
+
+    Since version 1.0.7.2, it is possible to specify the is_slave parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the slave setting is False, this is fully backwards-compatible with scripts from previous versions.
     '''
 
     def __init__(self, *, is_slave = False, verbose = 1):
@@ -67,20 +69,12 @@ class psictUIFInterface:
         '''
         self.fileManager.set_slave_status(is_slave, verbose = verbose)
 
-    def load_script_rcfile(self, script_rcpath, *, verbose = 1):
-        '''
-        DEPRECATED. Set the script-rc file, imported as a module.
-
-        If script_rc_copy_enabled is set to True in the script-rcfile, this file (the script-rcfile) will be copied alongside the external script. More options (such as matching the output file name) are available through the script-rcfile variables.
-        '''
-        raise DeprecationWarning('The script-rcfile is deprecated as of version 1.0.7.1')
-
     def load_config_file(self, config_path, *, verbose = 0):
         '''
         Load the PSICT config file from the specified path.
 
-        The config_path provided must be an absolute path.
-        Prior to version 1.0.7, these configuration settings were stored in the script rc-file.
+        The config_path provided should be an absolute path (behaviour is not guaranteed if it is relative).
+        Prior to version 1.0.7.1, these configuration settings were stored in the script rc-file.
         '''
         ## Status message
         if verbose > 2:
@@ -128,7 +122,6 @@ class psictUIFInterface:
         '''
         Sets the target directory to which the script will be copied.
 
-        NB At present, this should be specified as an absolute path.
         Prior to version 1.0.7.1, this was specified in the script-rcfile.
         '''
         self.fileManager.set_script_copy_target_dir(script_copy_target_dir)
@@ -137,9 +130,9 @@ class psictUIFInterface:
         '''
         Copy all specified files (eg external script, script-rcfile) for reproducability.
 
-        Wraps the FileManager.post_measurement_copy method (the copy used to be carried out after the measurement; however, this interfered with editing of external scripts while the measurement was running).
+        Wraps the FileManager.pre_measurement_copy method (the copy used to be carried out after the measurement; however, this interfered with editing of external scripts while the measurement was running).
         '''
-        self.fileManager.post_measurement_copy(verbose = verbose)
+        self.fileManager.pre_measurement_copy(verbose = verbose)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
@@ -202,7 +195,7 @@ class psictUIFInterface:
         '''
         Set the channel relations.
 
-        Pulse names should be used to specify pulse parameters. In addition, the pulse parameters should be specified using their full names and *not* their shortcodes! (This may be fixed in future versions).
+        Pulse names should be used to specify pulse parameters. In addition, the pulse parameters should be specified using their full names and *not* their shortcodes! (This may be changed/fixed in future versions).
 
         channel_defs_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
         '''
@@ -240,7 +233,9 @@ class psictUIFInterface:
         - The Labber MeasurementObject is initialised (if this has not already occurred explicitly)
         - The pulse sequence is processed
         - All stored parameter values are actually applied to the Labber reference database file
-        - Specified files (eg external script, script-rcfile) are copied to their target destinations
+        - When not in slave mode, the measurement script is copied to its target destination
+
+        Following the pre-processing, Labber is called to carry out the measurement using the Labber MeasurementObject's performMeasurement() method.
 
         There are currently no post-measurement operations (beyond changing the working directory back to the original one, which is probably redundant anyway...)
         '''

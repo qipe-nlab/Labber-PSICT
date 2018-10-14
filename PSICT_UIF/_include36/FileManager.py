@@ -339,7 +339,7 @@ class FileManager:
         if verbose >= 2:
             print('Slave status set to:', self._is_slave)
 
-    def post_measurement_copy(self, *, verbose = 1):
+    def pre_measurement_copy(self, *, verbose = 1):
         '''
         Copies files associated with the measurement to a target folder for reproducability/storage.
 

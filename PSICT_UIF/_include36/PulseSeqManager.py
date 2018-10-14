@@ -148,7 +148,7 @@ class PulseSeqManager:
 
     def get_main_params(self, *, verbose = 1):
         '''
-        Docstring
+        Get 'main' parameters of the stored pulse sequence (those associated with the SQPG instrument as a whole).
         '''
         return self.outputPulseSeq.main_params
 
@@ -163,7 +163,7 @@ class PulseSeqManager:
 
     def export_relations(self, *, verbose = 1):
         '''
-        Docstring
+        Export the definitions and relations which define relations between the channels in a format ready to be received by a LabberExporter instance.
         '''
         ## status message
         if verbose >= 2:
@@ -177,7 +177,7 @@ class PulseSeqManager:
 
     def convert_iter_order_pulses(self, iter_order, *, verbose = 1):
         '''
-        Docstring
+        IN PROGRESS; convert pulse names to numbers.
         '''
         ## status message
         if verbose >= 3:

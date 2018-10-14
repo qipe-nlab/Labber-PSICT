@@ -15,11 +15,6 @@ class IterationSpec:
     def __add__(self, other):
         if isinstance(other, Number):
             return self.max_value + other
-            # return IterationSpec({
-            #             "start_value": self.start_value + other,
-            #             "stop_value": self.stop_value + other,
-            #             "n_pts": self.n_pts,
-            #         })
         else:
             raise NotImplementedError("Only numeric types can be added to an IterationSpec instance.")
 
@@ -29,11 +24,6 @@ class IterationSpec:
     def __sub__(self, other):
         if isinstance(other, Number):
             return self.max_value - number
-            # return IterationSpec({
-            #             "start_value": self.start_value - other,
-            #             "stop_value": self.stop_value - other,
-            #             "n_pts": self.n_pts,
-            #         })
         else:
             raise NotImplementedError("Only numeric types can be subtracted from an IterationSpec instance.")
 

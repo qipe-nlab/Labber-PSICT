@@ -678,7 +678,23 @@ class OutputPulseSeq(PulseSeq):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
         ## Set number of pulses
         self.main_params["# of pulses"] = len(self.pulse_list)
+        ## Set pulse sequence length (number of points)
+        try:
+            SQPG_sequence_duration = self.main_params['sequence_duration']
+        except KeyError:
+            if verbose >= 2:
+                print('SQPG sequence_duration not specified; cannot calculate Number of points based on given parameters.')
+        else:
+            try:
+                SQPG_sample_rate = self.main_params['Sample rate']
+            except KeyError:
+                if verbose >= 2:
+                    print('SQPG Sample rate not specified; cannot calculate Number of points based on given parameters.')
+            else:
+                self.main_params['Number of points'] = SQPG_sequence_duration*SQPG_sample_rate
+
         ## TODO unit processing on values?
+
         ###################
         ## Set up timing ##
         ###################

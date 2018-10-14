@@ -597,22 +597,6 @@ class OutputPulseSeq(PulseSeq):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
         ## Set number of pulses
         self.main_params["# of pulses"] = len(self.pulse_list)
-        ## Set pulse sequence length (number of points)
-        try:
-            SQPG_sequence_duration = self.main_params['sequence_duration']
-        except KeyError:
-            if verbose >= 2:
-                print('SQPG sequence_duration not specified; cannot calculate Number of points based on given parameters.')
-        else:
-            try:
-                SQPG_sample_rate = self.main_params['Sample rate']
-            except KeyError:
-                if verbose >= 2:
-                    print('SQPG Sample rate not specified; cannot calculate Number of points based on given parameters.')
-            else:
-                self.main_params['Number of points'] = SQPG_sequence_duration*SQPG_sample_rate
-            ## Remove sequence_duration (there is no corresponding SQPG parameter)
-            del self.main_params['sequence_duration']    
 
         ## TODO unit processing on values?
 
@@ -630,15 +614,11 @@ class OutputPulseSeq(PulseSeq):
                 print("\tNext pulse absolute time:", next_pulse['absolute_time'])
                 print("\tCurrent pulse end time:", current_pulse.end_time)
                 print("\tCurrent pulse spacing:", current_pulse['s'])
-        ## Set SQPG number of points (based on total time) - include optional dead time parameter (defaults to 0 if not specified)
-        if not "dead_time" in self.main_params:
-            self.main_params["dead_time"] = 0.0
-        self.main_params["Number of points"] = self.main_params["Sample rate"]*(self.total_time + self.main_params["dead_time"])
-        del self.main_params["dead_time"] # delete so that it is not applied to Labber
-        ##
-        ## Stretch final inverted pulse (this will always be called 'ComplementFinal') based on total time
-        if "ComplementFinal" in self.pulse_names:
-            self["ComplementFinal"]["v"] = self.total_time + _rc.SQPG_CONSTS["end_buffer_time"] - self["ComplementFinal"].start_time - self["ComplementFinal"]["w"]*(self.main_params["Truncation range"] - 1)
+        ## Set pulse sequence length (number of points)
+        if 'sequence_duration' in self.main_params and 'Sample rate' in self.main_params:
+            self.main_params['Number of points'] = int(self.main_params['sequence_duration']*self.main_params['Sample rate'])
+        if 'sequence_duration' in self.main_params:
+            del self.main_params['sequence_duration']
         ####
         if verbose >= 4:
             print("Pulse parameters after pre-export timing conversions:")

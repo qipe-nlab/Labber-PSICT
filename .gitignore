@@ -1,4 +1,10 @@
 .ipynb_checkpoints
 .ipynb_checkpoints/
 string_parser_scratch.ipynb
+**.pyc
+<<<<<<< HEAD
+**/__pycache__/
+*.ipynb
+=======
 __pycache__
+>>>>>>> 1126416ca2323cc93aa31c6b46b9c79d72ace4e0

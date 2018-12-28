@@ -14,7 +14,18 @@ class Driver(InstrumentDriver.InstrumentWorker):
         return value
 
     def performGetValue(self, quant, options = {}):
-        return 0
+        ## Potentially have to do something special for vector waveforms
+        if quant.isVector():
+            vData = self.getWaveformFromMemory(quant)
+            dt = 1E-9
+            value = quant.getTraceDict(vData, dt=dt)
+        else:
+            value = quant.getValue()
+        return value
+
+    def getWaveformFromMemory(self, quant):
+        vData = np.array([], dtype = float)
+        return vData
 
 if __name__ == '__main__':
     pass

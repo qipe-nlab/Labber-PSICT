@@ -19,6 +19,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Waveform and time containers
         self.lWaveforms = [np.array([], dtype=float)] * self.nTrace
         self.vTime = np.array([], dtype=float)
+        ## Log completion of opening operation
+        self._logger.info('Instrument opened successfully.')
 
     def initLogger(self):
         ## Dir and file setup
@@ -42,6 +44,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
         Should return the actual value set by the instrument.
         '''
+        self._logger.debug('SetValue: {} {} {}'.format(quant.name, value, type(value)))
         ## Do nothing, just return value
         return value
 
@@ -50,7 +53,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Get the value of the specified quantity from the instrument
         '''
         ## Potentially have to do something special for vector waveforms
-        if quant.isVector():
+        if quant.name == 'Pulse definitions':
+            value = quant.getValue()
+            self._logger.debug('## Pulse definitions path')
+        elif quant.name == 'Pulse sequence':
+            value = quant.getValue()
+            self._logger.debug('## Pulse sequence path')
+        elif quant.isVector():
             ## Recalculate waveform if necessary
             if self.isConfigUpdated():
                 self.calculateWaveform()
@@ -59,12 +68,16 @@ class Driver(InstrumentDriver.InstrumentWorker):
             value = quant.getTraceDict(vData, dt=dt)
         else:
             value = quant.getValue()
+        ## Log GetValue operation
+        self._logger.debug('GetValue: {} {} {}'.format(quant.name, value, type(value)))
         return value
 
     def getWaveformFromMemory(self, quant):
         '''Return data from calculated waveforms'''
         vData = np.zeros((self.getValue('Number of points')))
-        if quant.name[-1] == '1':
+        if quant.name == 'Trace 1':
+            vData[2000:4000] = -0.1
+        elif quant.name[-1] == '1':
             vData[100:2000] = 0.7
         elif quant.name[-1] == '2':
             vData[1500:2500] = 1.0
@@ -74,6 +87,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
     def calculateWaveform(self):
         '''Generate waveform'''
+        self._logger.info('Generating waveform...')
+
+        ## Check what value is currently stored in the pulse definitions
+        pulseDef = self.getValue('Pulse definitions')
+        self._logger.debug('Pulse defs: {}'.format(pulseDef))
+        pulseSeq = self.getValue('Pulse sequence')
+        self._logger.debug('Pulse sequence: {}'.format(pulseSeq))
 
         ## Get config values
         sampleRate = self.getValue('Sample rate')
@@ -85,6 +105,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
         ## Allocate time vector
         self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
+        ##
+        self._logger.info('Waveform generation completed.')
 
 if __name__ == '__main__':
     pass

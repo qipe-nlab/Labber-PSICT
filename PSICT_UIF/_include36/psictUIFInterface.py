@@ -170,6 +170,27 @@ class psictUIFInterface:
         if verbose >= 1:
             print("Instrument parameter point values added.")
 
+    def set_api_client_values(self, api_client_values_dict, hardware_names, server_name = 'localhost', *, verbose = 1):
+        '''
+        Set values through the Labber API InstrumentClient object.
+
+        In principle, this can be used for all point values, but is only strictly necessary for setting values as lists/arrays (presently, this is possible neither through the direct scripting API nor by direct HDF5 editing).
+        '''
+        ## Status message
+        if verbose >= 1:
+            print('Adding API client values for instrument parameters...')
+        ## Set server name in LabberExporter
+        self.labberExporter.set_server_name(server_name)
+        ## Iterate through instrument specifications, and pass to the LabberExporter
+        for instrument_name in api_client_values_dict.keys():
+            instrument_params = api_client_values_dict[instrument_name]
+            hardware_name = hardware_names[instrument_name]
+            self.labberExporter.add_client_value_spec(instrument_name, instrument_params, \
+                        hardware_name, verbose = verbose)
+        ## Status message
+        if verbose >= 1:
+            print('Instrument parameter API client values added.')
+
     def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 1):
         '''
         Set instrument parameters as (independent) iteration values.

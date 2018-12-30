@@ -59,6 +59,9 @@ class Driver(InstrumentDriver.InstrumentWorker):
         elif quant.name == 'Pulse sequence':
             value = quant.getValue()
             self._logger.debug('## Pulse sequence path')
+        elif quant.name == 'Pulse sequence string':
+            value = quant.getValue()
+            self._logger.debug('## Pulse seq str path')
         elif quant.isVector():
             ## Recalculate waveform if necessary
             if self.isConfigUpdated():
@@ -91,9 +94,11 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
         ## Check what value is currently stored in the pulse definitions
         pulseDef = self.getValue('Pulse definitions')
-        self._logger.debug('Pulse defs: {}'.format(pulseDef))
+        self._logger.debug('## Pulse defs: {}'.format(pulseDef))
         pulseSeq = self.getValue('Pulse sequence')
-        self._logger.debug('Pulse sequence: {}'.format(pulseSeq))
+        self._logger.debug('## Pulse sequence: {}'.format(pulseSeq))
+        pulseSeqStr = self.getValue('Pulse sequence string')
+        self._logger.debug('## Pulse sequence string: {}'.format(pulseSeqStr))
 
         ## Get config values
         sampleRate = self.getValue('Sample rate')

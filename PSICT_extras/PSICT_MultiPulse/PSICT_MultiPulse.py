@@ -53,16 +53,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Get the value of the specified quantity from the instrument
         '''
         ## Potentially have to do something special for vector waveforms
-        if quant.name == 'Pulse definitions':
-            value = quant.getValue()
-            self._logger.debug('## Pulse definitions path')
-        elif quant.name == 'Pulse sequence':
-            value = quant.getValue()
-            self._logger.debug('## Pulse sequence path')
-        elif quant.name == 'Pulse sequence string':
-            value = quant.getValue()
-            self._logger.debug('## Pulse seq str path')
-        elif quant.isVector():
+        if quant.isVector():
             ## Recalculate waveform if necessary
             if self.isConfigUpdated():
                 self.calculateWaveform()
@@ -92,13 +83,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
         '''Generate waveform'''
         self._logger.info('Generating waveform...')
 
-        ## Check what value is currently stored in the pulse definitions
-        pulseDef = self.getValue('Pulse definitions')
-        self._logger.debug('## Pulse defs: {}'.format(pulseDef))
-        pulseSeq = self.getValue('Pulse sequence')
-        self._logger.debug('## Pulse sequence: {}'.format(pulseSeq))
-        pulseSeqStr = self.getValue('Pulse sequence string')
-        self._logger.debug('## Pulse sequence string: {}'.format(pulseSeqStr))
+        ## Verify stored values for pulse definition and sequence paths
+        pulseDefFile = self.getValue('Pulse definitions file')
+        self._logger.debug('## Pulse definitions file: {}'.format(pulseDefFile))
+        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pulseDefFile)))
+        pulseSeqFile = self.getValue('Pulse sequences file')
+        self._logger.debug('## Pulse sequences file: {}'.format(pulseSeqFile))
+        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pulseSeqFile)))
 
         ## Get config values
         sampleRate = self.getValue('Sample rate')

@@ -28,6 +28,7 @@ class LabberExporter:
         ## Parameter containers
         self._api_values = {}     # parameter values which will be set through the Labber API
         self._client_values = {}  # parameter values which will be set through the InstrumentClient interface
+        self._instr_config_values = {} # parameter values which will be set through direct editing of the hdf5 file Instrument Config attributes
         self._hardware_names = {} # 'hardware' names of instruments (ie full driver names)
         self._pulse_sequence = {} # parameter values specific to the pulse sequence (not including main SQPG parameters)
         self._iteration_order = [] # list specifying order of iteration quantities
@@ -99,6 +100,17 @@ class LabberExporter:
             print('Importing InstrumentClient specifications for: {}'.format(instrument_name))
         ## Import parameter values
         self._client_values[instrument_name] = instrument_params
+        self._hardware_names[instrument_name] = hardware_name
+
+    def add_instr_config_spec(self, instrument_name, instrument_params, hardware_name, *, verbose = 1):
+        '''
+        Add specifications to be set via Instrument Config attributes in the reference HDF5 file.
+        '''
+        ## Status message
+        if verbose >= 2:
+            print('Importing Instrument Config specifications for: {}'.format(instrument_name))
+        ## Import parameter values
+        self._instr_config_values[instrument_name] = instrument_params
         self._hardware_names[instrument_name] = hardware_name
 
     def add_iteration_spec(self, instrument_name, instrument_params, *, verbose = 1):
@@ -300,6 +312,7 @@ class LabberExporter:
         ## Apply different parameter sets
         self.apply_api_values(verbose = verbose)
         self.apply_client_values(verbose = verbose)
+        self.apply_instr_config_values(verbose = verbose)
         self.apply_relations(verbose = verbose)
         ## debug message
         if verbose >= 2:
@@ -397,16 +410,36 @@ class LabberExporter:
             ## Connect to instrument
             if verbose >= 3:
                 print('Connecting to instrument {} ({})'.format(instrument_name, hardware_name))
-            instClient = ServerClient.connectToInstrument(hardware_name, {'name': instrument_name})
-            ## Iterate over stored values
+            ## Treat strings and lists/arrays differently (weird Labber quirk)
+            array_params = {}
+            string_params = {}
             for param_name, param_value in self._client_values[instrument_name].items():
+                if isinstance(param_value, str):
+                    if verbose >= 3:
+                        print('{} is a string: {}'.format(param_name, param_value))
+                    string_params[param_name] = param_value
+                elif isinstance(param_value, list) or isinstance(param_value, np.ndarray):
+                    if verbose >= 3:
+                        print('{} is a list/array: {}'.format(param_name, param_value))
+                    array_params[param_name] = param_value
+            ## Open InstrumentClient
+            instClient = ServerClient.connectToInstrument(hardware_name, {'name': instrument_name})
+            ## Iterate over arrays/lists
+            for param_name, param_value in array_params.items():
                 ## Set parameter value
                 instClient.setValue(param_name, param_value)
                 ## Status message
                 if verbose >= 2:
-                    print('Set value: {} to {}'.format(param_name, param_value))
+                    print('Set value: {} to {} ({})'.format(param_name, param_value, type(param_value)))
+            ## Apply string values
+            instClient.setInstrConfig(string_params)
+            ## Print status messages
+            if verbose >= 2:
+                for param_name in string_params.keys():
+                    print('Set value: {} to {}'.format(param_name, instClient.getValue(param_name)))
             ## Close connection to instrument
             instClient.disconnectFromInstr()
+            ##
             if verbose >= 3:
                 print('Disconnected from instrument: {}'.format(instrument_name))
         ## Close server connection
@@ -416,6 +449,31 @@ class LabberExporter:
         ## Status message
         if verbose >= 2:
             print('LabberExporter: InstrumentClient values applied.')
+
+    def apply_instr_config_values(self, *, verbose = 1):
+        '''
+        Apply all stored values through direct editing of the Instrument Config attributes in the reference hdf5 file.
+        '''
+        ## Status message
+        if verbose >= 2:
+            print('LabberExporter: Applying Instrument Config values...')
+        ## Iterate over instruments
+        for instrument_name in self._instr_config_values.keys():
+            if verbose >= 3:
+                print('Applying Instrument Config values for {}'.format(instrument_name))
+            instrument_params = self._instr_config_values[instrument_name]
+            hardware_name = self._hardware_names[instrument_name]
+            full_instrument_string = hardware_name+' - , '+instrument_name+' at '+self._InstrumentServer
+            ## Open file and set values
+            with h5py.File(self.MeasurementObject.sCfgFileIn, 'r+') as config_file:
+                ## Iterate over each instrument parameter
+                for param_name, param_value in instrument_params.items():
+                    if verbose >= 3:
+                        print('Setting value: {} to {}'.format(param_name, param_value))
+                    config_file['Instrument config'][full_instrument_string].attrs[param_name] = param_value
+        ## Status message
+        if verbose >= 2:
+            print('LabberExporter: Instrument Config values applied.')
 
     def process_channel_defs(self, *, verbose = 1):
         '''

@@ -191,6 +191,28 @@ class psictUIFInterface:
         if verbose >= 1:
             print('Instrument parameter API client values added.')
 
+    def set_instr_config_values(self, instr_config_values_dict, hardware_names, server_name = 'localhost', *, verbose = 1):
+        '''
+        Set values by directly editing the reference hdf5 file's 'Instrument config' attributes.
+
+        Note that this requires the 'hardware name' of the instrument (ie the full name of the driver), as well as the server name ('localhost' by default).
+        '''
+        ## Status message
+        if verbose >= 1:
+            print('Adding HDF5 InstrumentConfig values for instrument parameters...')
+        ## Set server name in LabberExporter
+        self.labberExporter.set_server_name(server_name)
+        ## Iterate through instruments and pass to LabberExporter
+        for instrument_name in instr_config_values_dict.keys():
+            instrument_params = instr_config_values_dict[instrument_name]
+            hardware_name = hardware_names[instrument_name]
+            self.labberExporter.add_instr_config_spec(instrument_name, instrument_params, \
+                        hardware_name, verbose = verbose)
+        ## Status message
+        if verbose >= 1:
+            print('Instrument parameter HDF5 InstrumentConfig values added.')
+
+
     def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 1):
         '''
         Set instrument parameters as (independent) iteration values.

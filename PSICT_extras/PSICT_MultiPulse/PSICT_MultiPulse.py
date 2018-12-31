@@ -81,7 +81,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Get the value of the specified quantity from the instrument
         '''
         ## Ensure that vector waveforms are updated before returning value
-        if quant.isVector():
+        if quant.name[:5] == 'Trace':
             ## Recalculate waveform if necessary
             if self.isConfigUpdated():
                 self.calculateWaveform()
@@ -97,15 +97,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
     def getWaveformFromMemory(self, quant):
         '''Return data from calculated waveforms'''
-        vData = np.zeros((self.getValue('Number of points')))
-        if quant.name == 'Trace 1':
-            vData[2000:4000] = -0.1
-        elif quant.name[-1] == '1':
-            vData[100:2000] = 0.7
-        elif quant.name[-1] == '2':
-            vData[1500:2500] = 1.0
+        if quant.name[:5] == 'Trace':
+            iDataIndex = int(quant.name[-1]) - 1
+            self._logger.debug('Fetching waveform for output {}'.format(iDataIndex))
+            vData = self.lWaveforms[iDataIndex]
         else:
-            pass
+            raise RuntimeError('Invalid specification for getting waveform: {}'.format(quant.name))
         return vData
 
     def calculateWaveform(self):
@@ -113,28 +110,40 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Generate waveform, selecting sequence based on 'Pulse sequence counter' value
         '''
         self._logger.info('Generating waveform...')
-
         ## Get config values
         sampleRate = self.getValue('Sample rate')
         truncRange = self.getValue('Truncation range')
-
         seqCounter = int(self.getValue('Pulse sequence counter'))
         ## Fetch pulse sequence list based on counter
         pulseSeq = self.lPulseSequences[seqCounter]
         self._logger.debug('Fetched pulse sequence at index {}: {}'.format(pulseSeq, seqCounter))
-
         ## Get total time for pulse sequence
         ## TODO: Allow specifying fixed total time
         totalTime = self.calculateTotalSeqTime(pulseSeq, truncRange)
         self._logger.debug('Total time calculated: {}'.format(totalTime))
-
         ## Get total number of points
         totalNPoints = int(np.round(totalTime * sampleRate))
         self._logger.debug('Total number of points: {}'.format(totalNPoints))
-
         ## Allocate master time vector
         self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
-
+        ## Re-create waveforms with correct size
+        self.lWaveforms = [np.zeros((self.getValue('Number of points')), dtype=float)] \
+                                * self.nTrace
+        ## Generate pulse sequence
+        iHeadIndex = 0 # TODO: allow specification of custom start point?
+        for iPulseIndex in pulseSeq:
+            ## Get time corresponding to head index from master time vector
+            dHeadTime = self.vTime[iHeadIndex]
+            ## Get master times relative to head time
+            vRelTimeMaster = self.vTime - dHeadTime
+            ## Generate pulse
+            vNewPulse = self.generatePulse(vRelTimeMaster, dHeadTime, \
+                                           self.lPulseDefinitions[iPulseIndex])
+            ## Add new pulse to waveform at index
+            iOutputIndex = int(self.lPulseDefinitions[iPulseIndex]['o']) - 1
+            self.lWaveforms[iOutputIndex] = self.lWaveforms[iOutputIndex] + vNewPulse
+            ## Update head index
+            iHeadIndex = self.updateHeadIndex(iHeadIndex, self.lPulseDefinitions[iPulseIndex])
         ##
         self._logger.info('Waveform generation completed.')
 
@@ -143,15 +152,70 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Calculate the total time required for the specified pulse sequence with the given truncation range
         '''
         ## Get pulse definitions
-        pulseDefs = self.lPulseDefinitions
+        lPulseDefs = self.lPulseDefinitions
         ## Calculate total time
         totalTime = 0.0
         for pulseIndex in pulseSeq:
-            totalTime += pulseDefs[pulseIndex]['w'] + pulseDefs[pulseIndex]['v']
+            totalTime += lPulseDefs[pulseIndex]['w'] + lPulseDefs[pulseIndex]['v']
         ## Add decay time for last pulse in sequence
-        totalTime += pulseDefs[pulseSeq[-1]]['w'] * (truncRange - 1)/2
+        totalTime += lPulseDefs[pulseSeq[-1]]['w'] * (truncRange - 1)/2
         ## Return final value
         return totalTime
+
+    def generatePulse(self, vRelTimes, dAbsTime, oPulseDef):
+        '''
+        Generate a pulse with the given definition
+
+        NB times are specified relative to the start point (ie the leading-edge FWHM point), and so can be negative!
+        '''
+        ## Get definition params
+        dWidth = oPulseDef['w']
+        dPlateau = oPulseDef['v']
+        dAmp = oPulseDef['a']
+        dStd = dWidth / np.sqrt(2 * np.pi)
+        ## Get other params
+        truncRange = self.getValue('Truncation range')
+        ## Shift times such that 0 is in the middle of the pulse
+        vShiftedTimes = vRelTimes - (dWidth + dPlateau) / 2
+        ## Generate envelope; algorithm copied from SQPG driver
+        if dPlateau > 0:
+            ## Start with plateau
+            vPulse = (vShiftedTimes >= -dPlateau/2) & (vShiftedTimes < dPlateau/2)
+            ## Add rise and fall before and after plateau if applicable
+            if dStd > 0:
+                ## Leading edge
+                vPulse = vPulse + (vShiftedTimes < -dPlateau/2) * \
+                    (np.exp(-(vShiftedTimes + dPlateau/2)**2/(2*dStd**2)))
+                ## Trailing edge
+                vPulse = vPulse + (vShiftedTimes >= dPlateau/2) * \
+                    (np.exp(-(vShiftedTimes - dPlateau/2)**2/(2*dStd**2)))
+        else:
+            ## No plateau - only gaussian
+            if dStd > 0:
+                vPulse = np.exp(-vShiftedTimes**2 / (2*dStd**2))
+            else:
+                vPulse = np.zeros_like(vShiftedTimes)
+        ## Apply truncation range
+        vPulse[vShiftedTimes < -(dPlateau/2)-(truncRange/2)*dWidth] = 0.0
+        vPulse[vShiftedTimes > (dPlateau/2)+(truncRange/2)*dWidth] = 0.0
+        ## Scale by amplitude
+        vPulse = vPulse * dAmp
+        ## Get modulation parameters
+        freq = 2 * np.pi * oPulseDef['f']
+        phase = oPulseDef['p']
+        ## Apply modulation
+        vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase))
+        ## Return value
+        return vPulseMod
+
+    def updateHeadIndex(self, iOldHeadIndex, oPulseDef):
+        ## Get edge-to-edge length of pulse
+        dPulseLength = oPulseDef['w'] + oPulseDef['v']
+        ## Convert to indices using sample rate
+        iIndexDelta = int(np.round(dPulseLength * self.getValue('Sample rate')))
+        ## Increment head index and return new value
+        iNewHeadIndex = iOldHeadIndex + iIndexDelta
+        return iNewHeadIndex
 
 if __name__ == '__main__':
     pass

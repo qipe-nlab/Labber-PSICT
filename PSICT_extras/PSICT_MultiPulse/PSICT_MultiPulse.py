@@ -7,7 +7,7 @@ import os
 import logging
 from datetime import datetime
 
-from PSICT_MultiPulse_tools import pulseDefList2DictList
+from PSICT_MultiPulse_tools import delistifyPulseDefs
 
 class Driver(InstrumentDriver.InstrumentWorker):
     """ This class implements the PSICT-MultiPulse pulse generator"""
@@ -62,7 +62,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
                     lRawPulseDefinitions = [[float(yy) for yy in xx.strip().split(',')] \
                                                for xx in pdfile.readlines()]
                 ## Parse raw pulse definitions
-                self.lPulseDefinitions = pulseDefList2DictList(lRawPulseDefinitions, self.lDefKeyOrder)
+                self.lPulseDefinitions = delistifyPulseDefs(lRawPulseDefinitions, self.lDefKeyOrder)
                 self._logger.debug('Pulse definitions: {}'.format(self.lPulseDefinitions))
         elif quant.name == 'Pulse sequences file':
             ## Only fetch if input string is not empty

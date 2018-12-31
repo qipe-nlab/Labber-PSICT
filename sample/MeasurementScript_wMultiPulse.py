@@ -4,38 +4,18 @@ import os
 import sys
 
 import Labber
+from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs, writePulseSeqs
 
 ## Create pulse definitions (list of dicts)
-lMPSpecOriginal = []
-lMPSpecOriginal.append({'a': 0.3, 'w': 60e-9, 'v': 100e-9, 'f': 90e6, 'o': 2, 'p': 0})
-lMPSpecOriginal.append({'a': 0.5, 'w': 0e-9, 'v': 90e-9, 'f': 60e6, 'o': 4, 'p': 0})
-lMPSpecOriginal.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 'f': 0e6, 'o': 4, 'p': 0})
-## Serialize pulse definitions
-lSpecKeyOrder = ['a', 'w', 'v', 'f', 'p', 'o']
-def listifyMPSpec(lMPSpecIn, lKeyOrder):
-	lSpecOut = []
-	for oMPSpec in lMPSpecIn:
-		lSpecInner = []
-		for sSpecKey in lKeyOrder:
-			lSpecInner.append(oMPSpec[sSpecKey])
-		lSpecOut.append(lSpecInner)
-	return lSpecOut
-lMPSpecList = listifyMPSpec(lMPSpecOriginal, lSpecKeyOrder)
-
+pulse_defs = []
+pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 100e-9, 'f': 90e6, 'o': 2, 'p': 0})
+pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 90e-9, 'f': 60e6, 'o': 4, 'p': 0})
+pulse_defs.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 'f': 0e6, 'o': 4, 'p': 0})
+pulse_def_key_order = ['a', 'w', 'v', 'f', 'p', 'o']
 ## Write to file
 pulse_def_path = os.path.abspath('definitions_001.txt')
-## Check directory existence
-if not os.path.exists(os.path.dirname(pulse_def_path)):
-	os.makedirs(os.path.dirname(pulse_def_path))
-## Write to file
-with open(pulse_def_path, 'w') as pd_file:
-	pd_file.write(','.join(lSpecKeyOrder)+'\n')
-	for pulse_def in lMPSpecList:
-		pd_file.write(','.join(str(quant) for quant in pulse_def)+'\n')
-## Status message
+writePulseDefs(pulse_def_path, pulse_defs, pulse_def_key_order)
 print('Pulse definitions written to file: {}'.format(pulse_def_path))
-
-## Generate permutations for GST, write to file, and the pass file path to MultiPulse
 
 ## Generate list of lists of pulse sequences
 all_pulse_seqs = []
@@ -44,23 +24,15 @@ all_pulse_seqs.append([1])
 all_pulse_seqs.append([2])
 all_pulse_seqs.append([0,0])
 all_pulse_seqs.append([0,1])
-all_pulse_seqs.append([0,2])
-all_pulse_seqs.append([1,0])
+all_pulse_seqs.append([0,2,2,1,0])
+all_pulse_seqs.append([1,0,2,1,2])
 all_pulse_seqs.append([1,0,2,1,2,0])
 all_pulse_seqs.append([0,0,0,1,1,1,2,2,2])
 all_pulse_seqs.append([1,0,2,0,1,2,0])
 n_pulse_seqs = len(all_pulse_seqs)
-
 ## Write to file
 pulse_seq_path = os.path.abspath('sequence_001.txt')
-## Check directory existence
-if not os.path.exists(os.path.dirname(pulse_seq_path)):
-	os.makedirs(os.path.dirname(pulse_seq_path))
-## Write to file
-with open(pulse_seq_path, 'w') as ps_file:
-	for pulse_seq in all_pulse_seqs:
-		ps_file.write(','.join(str(pulse) for pulse in pulse_seq)+'\n')
-## Status message
+writePulseSeqs(pulse_seq_path, all_pulse_seqs)
 print('Pulse sequences written to file: {}'.format(pulse_seq_path))
 
 ##############################################################################

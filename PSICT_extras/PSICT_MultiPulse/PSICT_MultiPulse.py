@@ -7,6 +7,8 @@ import os
 import logging
 from datetime import datetime
 
+from PSICT_MultiPulse_tools import pulseDefList2DictList
+
 class Driver(InstrumentDriver.InstrumentWorker):
     """ This class implements the PSICT-MultiPulse pulse generator"""
 
@@ -20,6 +22,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         self.lWaveforms = [np.array([], dtype=float)] * self.nTrace
         self.vTime = np.array([], dtype=float)
         ## Pulse definition and sequence containers
+        self.lDefKeyOrder = []
         self.lPulseDefinitions = []
         self.lPulseSequences = []
         ## Log completion of opening operation
@@ -55,11 +58,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
                 self._logger.debug('Pulling pulse definitions from file: {}'.format(value))
                 ## Get pulse definitions from file
                 with open(value, 'r') as pdfile:
-                    self.lPulseDefinitions = [[float(yy) for yy in xx.strip().split(',')] \
+                    self.lDefKeyOrder = pdfile.readline().strip().split(',')
+                    lRawPulseDefinitions = [[float(yy) for yy in xx.strip().split(',')] \
                                                for xx in pdfile.readlines()]
-                self._logger.debug('Imported pulse definitions: {}'.format(self.lPulseDefinitions))
-                ## TODO parse pulse definitions - convert to dict?
-
+                ## Parse raw pulse definitions
+                self.lPulseDefinitions = pulseDefList2DictList(lRawPulseDefinitions, self.lDefKeyOrder)
+                self._logger.debug('Pulse definitions: {}'.format(self.lPulseDefinitions))
         elif quant.name == 'Pulse sequences file':
             ## Only fetch if input string is not empty
             if value is not '':

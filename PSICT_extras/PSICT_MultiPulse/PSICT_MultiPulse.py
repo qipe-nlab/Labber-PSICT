@@ -19,6 +19,9 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Waveform and time containers
         self.lWaveforms = [np.array([], dtype=float)] * self.nTrace
         self.vTime = np.array([], dtype=float)
+        ## Pulse definition and sequence containers
+        self.lPulseDefinitions = []
+        self.lPulseSequences = []
         ## Log completion of opening operation
         self._logger.info('Instrument opened successfully.')
 
@@ -45,14 +48,35 @@ class Driver(InstrumentDriver.InstrumentWorker):
         Should return the actual value set by the instrument.
         '''
         self._logger.debug('SetValue: {} {} {}'.format(quant.name, value, type(value)))
-        ## Do nothing, just return value
+        ## If the value is a pulse definitions or sequences file path, pull the contents of the file
+        if quant.name == 'Pulse definitions file':
+            ## Only fetch if input string is not empty
+            if value is not '':
+                self._logger.debug('Pulling pulse definitions from file: {}'.format(value))
+                ## Get pulse definitions from file
+                with open(value, 'r') as pdfile:
+                    self.lPulseDefinitions = [[float(yy) for yy in xx.strip().split(',')] \
+                                               for xx in pdfile.readlines()]
+                self._logger.debug('Imported pulse definitions: {}'.format(self.lPulseDefinitions))
+                ## TODO parse pulse definitions - convert to dict?
+
+        elif quant.name == 'Pulse sequences file':
+            ## Only fetch if input string is not empty
+            if value is not '':
+                self._logger.debug('Pulling pulse sequences from file: {}'.format(value))
+                ## Get pulse definitions from file
+                with open(value, 'r') as psfile:
+                    self.lPulseSequences = [[int(yy) for yy in xx.strip().split(',')] \
+                                                 for xx in psfile.readlines()]
+                self._logger.debug('Imported pulse sequences: {}'.format(self.lPulseSequences))
+        ## Return value, regardless of quant
         return value
 
     def performGetValue(self, quant, options = {}):
         '''
         Get the value of the specified quantity from the instrument
         '''
-        ## Potentially have to do something special for vector waveforms
+        ## Ensure that vector waveforms are updated before returning value
         if quant.isVector():
             ## Recalculate waveform if necessary
             if self.isConfigUpdated():
@@ -61,6 +85,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
             dt = 1/self.getValue('Sample rate')
             value = quant.getTraceDict(vData, dt=dt)
         else:
+            ## All other values can be returned as-is
             value = quant.getValue()
         ## Log GetValue operation
         self._logger.debug('GetValue: {} {} {}'.format(quant.name, value, type(value)))
@@ -84,12 +109,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
         self._logger.info('Generating waveform...')
 
         ## Verify stored values for pulse definition and sequence paths
-        pulseDefFile = self.getValue('Pulse definitions file')
-        self._logger.debug('## Pulse definitions file: {}'.format(pulseDefFile))
-        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pulseDefFile)))
-        pulseSeqFile = self.getValue('Pulse sequences file')
-        self._logger.debug('## Pulse sequences file: {}'.format(pulseSeqFile))
-        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pulseSeqFile)))
+        pPulseDefFile = self.getValue('Pulse definitions file')
+        self._logger.debug('## Pulse definitions file: {}'.format(pPulseDefFile))
+        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pPulseDefFile)))
+        pPulseSeqFile = self.getValue('Pulse sequences file')
+        self._logger.debug('## Pulse sequences file: {}'.format(pPulseSeqFile))
+        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pPulseSeqFile)))
 
         ## Get config values
         sampleRate = self.getValue('Sample rate')

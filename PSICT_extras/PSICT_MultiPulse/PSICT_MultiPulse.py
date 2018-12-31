@@ -109,29 +109,49 @@ class Driver(InstrumentDriver.InstrumentWorker):
         return vData
 
     def calculateWaveform(self):
-        '''Generate waveform'''
+        '''
+        Generate waveform, selecting sequence based on 'Pulse sequence counter' value
+        '''
         self._logger.info('Generating waveform...')
-
-        ## Verify stored values for pulse definition and sequence paths
-        pPulseDefFile = self.getValue('Pulse definitions file')
-        self._logger.debug('## Pulse definitions file: {}'.format(pPulseDefFile))
-        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pPulseDefFile)))
-        pPulseSeqFile = self.getValue('Pulse sequences file')
-        self._logger.debug('## Pulse sequences file: {}'.format(pPulseSeqFile))
-        self._logger.debug('Does this file exist? {}'.format(os.path.exists(pPulseSeqFile)))
 
         ## Get config values
         sampleRate = self.getValue('Sample rate')
+        truncRange = self.getValue('Truncation range')
 
-        ##TODO Calculate pulse blocks from stored parameters
+        seqCounter = int(self.getValue('Pulse sequence counter'))
+        ## Fetch pulse sequence list based on counter
+        pulseSeq = self.lPulseSequences[seqCounter]
+        self._logger.debug('Fetched pulse sequence at index {}: {}'.format(pulseSeq, seqCounter))
 
+        ## Get total time for pulse sequence
+        ## TODO: Allow specifying fixed total time
+        totalTime = self.calculateTotalSeqTime(pulseSeq, truncRange)
+        self._logger.debug('Total time calculated: {}'.format(totalTime))
 
-        ##TODO Calculate total number of points
+        ## Get total number of points
+        totalNPoints = int(np.round(totalTime * sampleRate))
+        self._logger.debug('Total number of points: {}'.format(totalNPoints))
 
-        ## Allocate time vector
+        ## Allocate master time vector
         self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
+
         ##
         self._logger.info('Waveform generation completed.')
+
+    def calculateTotalSeqTime(self, pulseSeq, truncRange):
+        '''
+        Calculate the total time required for the specified pulse sequence with the given truncation range
+        '''
+        ## Get pulse definitions
+        pulseDefs = self.lPulseDefinitions
+        ## Calculate total time
+        totalTime = 0.0
+        for pulseIndex in pulseSeq:
+            totalTime += pulseDefs[pulseIndex]['w'] + pulseDefs[pulseIndex]['v']
+        ## Add decay time for last pulse in sequence
+        totalTime += pulseDefs[pulseSeq[-1]]['w'] * (truncRange - 1)/2
+        ## Return final value
+        return totalTime
 
 if __name__ == '__main__':
     pass

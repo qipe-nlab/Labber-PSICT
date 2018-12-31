@@ -117,14 +117,17 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Fetch pulse sequence list based on counter
         pulseSeq = self.lPulseSequences[seqCounter]
         self._logger.debug('Fetched pulse sequence at index {}: {}'.format(pulseSeq, seqCounter))
-        ## Get total time for pulse sequence
-        ## TODO: Allow specifying fixed total time
-        totalTime = self.calculateTotalSeqTime(pulseSeq, truncRange)
-        self._logger.debug('Total time calculated: {}'.format(totalTime))
-        ## Get total number of points
-        totalNPoints = int(np.round(totalTime * sampleRate))
-        self._logger.debug('Total number of points: {}'.format(totalNPoints))
-        self.setValue('Number of points', totalNPoints)
+        ## Calculate or use existing number of points
+        if self.getValue('Use fixed number of points'):
+            pass
+        else:
+            ## Get total time for pulse sequence
+            totalTime = self.calculateTotalSeqTime(pulseSeq, truncRange)
+            self._logger.debug('Total time calculated: {}'.format(totalTime))
+            ## Get total number of points
+            totalNPoints = int(np.round(totalTime * sampleRate))
+            self._logger.debug('Total number of points: {}'.format(totalNPoints))
+            self.setValue('Number of points', totalNPoints)
         ## Allocate master time vector
         self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
         ## Re-create waveforms with correct size

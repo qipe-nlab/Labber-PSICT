@@ -124,6 +124,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Get total number of points
         totalNPoints = int(np.round(totalTime * sampleRate))
         self._logger.debug('Total number of points: {}'.format(totalNPoints))
+        self.setValue('Number of points', totalNPoints)
         ## Allocate master time vector
         self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
         ## Re-create waveforms with correct size

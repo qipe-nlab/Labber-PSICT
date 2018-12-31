@@ -39,16 +39,17 @@ print('Pulse definitions written to file: {}'.format(pulse_def_path))
 
 ## Generate list of lists of pulse sequences
 all_pulse_seqs = []
-# all_pulse_seqs.append([0])
-# all_pulse_seqs.append([1])
-# all_pulse_seqs.append([2])
-# all_pulse_seqs.append([0,0])
-# all_pulse_seqs.append([0,1])
-# all_pulse_seqs.append([0,2])
-# all_pulse_seqs.append([1,0])
-# all_pulse_seqs.append([1,0,2,1,2,0])
-# all_pulse_seqs.append([0,0,0,1,1,1,2,2,2])
+all_pulse_seqs.append([0])
+all_pulse_seqs.append([1])
+all_pulse_seqs.append([2])
+all_pulse_seqs.append([0,0])
+all_pulse_seqs.append([0,1])
+all_pulse_seqs.append([0,2])
+all_pulse_seqs.append([1,0])
+all_pulse_seqs.append([1,0,2,1,2,0])
+all_pulse_seqs.append([0,0,0,1,1,1,2,2,2])
 all_pulse_seqs.append([1,0,2,0,1,2,0])
+n_pulse_seqs = len(all_pulse_seqs)
 
 ## Write to file
 pulse_seq_path = os.path.abspath('sequence_001.txt')
@@ -248,6 +249,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		'MultiPulse': {
 				'TestField02': 9,
 				'Number of points': 3E3,
+				'Pulse sequence counter': 0,
 			}, # end MultiPulse
 		# 'SQPG': {
 		# 	## Parameters for overall pulse sequence - general SGPQ parameters
@@ -273,7 +275,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		# 		'a': readout_amplitude, 'w': 0.0, 'v': readout_plateau, 'f': readout_IF_frequency,
 		# 		'o': 1
 		# 		}
-			# }, # end SQPG
+		# 	}, # end SQPG
 		'Manual': {
 				'Value 1': 100,
 			}
@@ -292,9 +294,11 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		Labber_api_hardware_names = {'MultiPulse': 'PSICT MultiPulse'}
 
 		iteration_values = {
+			'MultiPulse': {'Pulse sequence counter': [0, n_pulse_seqs - 1, n_pulse_seqs]},
 			}
 
 		iteration_order = [
+			('MultiPulse', 'Pulse sequence counter'),
 			] # end iteration order
 		# end reference
 

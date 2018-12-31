@@ -8,10 +8,10 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 
 ## Create pulse definitions (list of dicts)
 pulse_defs = []
-pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 100e-9, 'f': 90e6, 'o': 2, 'p': 0})
-pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 90e-9, 'f': 60e6, 'o': 4, 'p': 0})
-pulse_defs.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 'f': 0e6, 'o': 4, 'p': 0})
-pulse_def_key_order = ['a', 'w', 'v', 'f', 'p', 'o']
+pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 100e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0})
+pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 90e-9, 's': 0e-9, 'f': 60e6, 'o': 4, 'p': 0})
+pulse_defs.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 's': 0e-9, 'f': 0e6, 'o': 4, 'p': 0})
+pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o']
 ## Write to file
 pulse_def_path = os.path.abspath('definitions_001.txt')
 writePulseDefs(pulse_def_path, pulse_defs, pulse_def_key_order)

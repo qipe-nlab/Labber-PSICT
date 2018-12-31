@@ -160,7 +160,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Calculate total time
         totalTime = 0.0
         for pulseIndex in pulseSeq:
-            totalTime += lPulseDefs[pulseIndex]['w'] + lPulseDefs[pulseIndex]['v']
+            oPulseDef = lPulseDefs[pulseIndex]
+            totalTime += oPulseDef['w'] + oPulseDef['v'] + oPulseDef['s']
         ## Add decay time for last pulse in sequence
         totalTime += lPulseDefs[pulseSeq[-1]]['w'] * (truncRange - 1)/2
         ## Return final value
@@ -213,8 +214,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
         return vPulseMod
 
     def updateHeadIndex(self, iOldHeadIndex, oPulseDef):
-        ## Get edge-to-edge length of pulse
-        dPulseLength = oPulseDef['w'] + oPulseDef['v']
+        ## Get edge-to-edge length of pulse (including spacing)
+        dPulseLength = oPulseDef['w'] + oPulseDef['v'] + oPulseDef['s']
         ## Convert to indices using sample rate
         iIndexDelta = int(np.round(dPulseLength * self.getValue('Sample rate')))
         ## Increment head index and return new value

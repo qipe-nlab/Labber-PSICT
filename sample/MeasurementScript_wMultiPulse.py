@@ -8,31 +8,35 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 
 ## Create pulse definitions (list of dicts)
 pulse_defs = []
-pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 100e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0})
-pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 90e-9, 's': 0e-9, 'f': 60e6, 'o': 4, 'p': 0})
+## qubit
+pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 109e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0})
+## magnon
+pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 93e-9, 's': 0e-9, 'f': 60e6, 'o': 3, 'p': 0})
+## dead
 pulse_defs.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 's': 0e-9, 'f': 0e6, 'o': 4, 'p': 0})
-pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o']
+## trigger
+pulse_defs.append({'a': 1.5, 'w': 0e-9, 'v': 20e-9, 's': 0e-9, 'f': 0e6, 'o': 4, 'p': 0})
+## readout
+pulse_defs.append({'a': 0.64, 'w': 0e-9, 'v': 400e-9, 's': 0e-9, 'f': 85e6, 'o': 1, 'p': 90, 'fix_phase': 1})
+
+## Set key order
+pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o', 'fix_phase']
 ## Write to file
-pulse_def_path = os.path.abspath('definitions_001.txt')
+pulse_def_path = os.path.abspath('definitions_002.txt')
 writePulseDefs(pulse_def_path, pulse_defs, pulse_def_key_order)
 print('Pulse definitions written to file: {}'.format(pulse_def_path))
 
 ## Generate list of lists of pulse sequences
-all_pulse_seqs = []
-all_pulse_seqs.append([0])
-all_pulse_seqs.append([1])
-all_pulse_seqs.append([2])
-all_pulse_seqs.append([0,0])
-all_pulse_seqs.append([0,1])
-all_pulse_seqs.append([0,2,2,1,0])
-all_pulse_seqs.append([1,0,2,1,2])
-all_pulse_seqs.append([1,0,2,1,2,0])
-all_pulse_seqs.append([0,0,0,1,1,1,2,2,2])
-all_pulse_seqs.append([1,0,2,0,1,2,0])
-n_pulse_seqs = len(all_pulse_seqs)
+pulse_seqs = []
+pulse_seqs.append(np.array([0,3,4]))
+pulse_seqs.append(np.array([1,3,4]))
+pulse_seqs.append(np.array([0,1,3,4]))
+pulse_seqs.append(np.array([1,0,3,4]))
+pulse_seqs.append(np.array([2,0,2,1,2,0,2,1,3,4]))
+n_pulse_seqs = len(pulse_seqs)
 ## Write to file
-pulse_seq_path = os.path.abspath('sequence_001.txt')
-writePulseSeqs(pulse_seq_path, all_pulse_seqs)
+pulse_seq_path = os.path.abspath('sequence_002.txt')
+writePulseSeqs(pulse_seq_path, pulse_seqs)
 print('Pulse sequences written to file: {}'.format(pulse_seq_path))
 
 ##############################################################################
@@ -47,8 +51,8 @@ slave_PSICT_options = {
 	'template_dir': 'C:/Users/Pierre/Google Drive/Quantum magnonics/Data/Reference_files/',
 	'template_file': 'MultiPulse_test02',
 	## Set output file directory and name (where result will be saved)
-	'output_dir': 'C:/Users/Pierre/Google Drive/Quantum magnonics/Data/2018/12/Data_1228',
-	'output_file': 'MultiPulse_test_0001',
+	'output_dir': 'C:/Users/Pierre/Google Drive/Quantum magnonics/Data/2019/01/Data_0101',
+	'output_file': 'MultiPulse_test_0074',
 	## Script copy options
 	'script_copy_target_dir': 'C:/Users/Pierre/Google Drive/Quantum magnonics/Data/Measurement_scripts/MultiPulse/',
 }

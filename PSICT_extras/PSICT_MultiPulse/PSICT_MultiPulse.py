@@ -208,8 +208,11 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Get modulation parameters
         freq = 2 * np.pi * oPulseDef['f']
         phase = oPulseDef['p']
-        ## Apply modulation
-        vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase))
+        ## Apply modulation - check for fixed phase
+        if oPulseDef['fix_phase']:
+            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase))
+        else:
+            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase))
         ## Return value
         return vPulseMod
 

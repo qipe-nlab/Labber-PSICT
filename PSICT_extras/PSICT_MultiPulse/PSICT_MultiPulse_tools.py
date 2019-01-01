@@ -3,6 +3,17 @@
 
 import os
 
+DEFAULT_PULSE_VALUES = {
+        'a': 0.0,
+        'w': 0.0,
+        'v': 0.0,
+        's': 0.0,
+        'p': 0.0,
+        'o': 4,
+        ##
+        'fix_phase': 0,
+    }
+
 def writePulseDefs(pPulseDefsPath, lPulseDefsIn, lPulseDefKeyOrder):
     '''
     Convenience function to quickly write the pulse definitions to file in the standardized format
@@ -60,7 +71,12 @@ def listifyPulseDefs(lPulseDefsIn, lKeyOrder):
         lPulseDef = []
         ## Populate an inner list in the specified order
         for sDefKey in lKeyOrder:
-            lPulseDef.append(oPulseDef[sDefKey])
+            try:
+                value = oPulseDef[sDefKey]
+            except KeyError:
+                value = DEFAULT_PULSE_VALUES[sDefKey]
+            # print('Value for {} is {}'.format(sDefKey, value))
+            lPulseDef.append(value)
         ## Append inner list to outer list
         lPulseDefsOut.append(lPulseDef)
     return lPulseDefsOut

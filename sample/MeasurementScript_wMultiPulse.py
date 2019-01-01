@@ -223,9 +223,9 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 
 		point_values = {
 		'MultiPulse': {
-				'TestField02': 9,
-				'Number of points': 3E3,
-				'Pulse sequence counter': 0,
+				'Number of points': 5E3,
+				'Generate from final pulse': 1,
+				'Final pulse time': 3e-6
 			}, # end MultiPulse
 		# 'SQPG': {
 		# 	## Parameters for overall pulse sequence - general SGPQ parameters

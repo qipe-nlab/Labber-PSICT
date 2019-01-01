@@ -114,6 +114,10 @@ class Driver(InstrumentDriver.InstrumentWorker):
         sampleRate = self.getValue('Sample rate')
         truncRange = self.getValue('Truncation range')
         seqCounter = int(self.getValue('Pulse sequence counter'))
+        bReversed = self.getValue('Generate from final pulse')
+        dFinalPulseTime = self.getValue('Final pulse time')
+        if bReversed:
+            self._logger.debug('Generating sequence in reverse, with final pulse at {}'.format(dFinalPulseTime))
         ## Fetch pulse sequence list based on counter
         pulseSeq = self.lPulseSequences[seqCounter]
         self._logger.debug('Fetched pulse sequence at index {}: {}'.format(pulseSeq, seqCounter))
@@ -133,9 +137,16 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Re-create waveforms with correct size
         self.lWaveforms = [np.zeros((self.getValue('Number of points')), dtype=float)] \
                                 * self.nTrace
+        ## Get first head index
+        if bReversed:
+            iHeadIndex = int(np.round(dFinalPulseTime * sampleRate))
+        else:
+            iHeadIndex = 0 # TODO: allow specification of custom start point?
+        ## Reverse pulse sequence if generating from the back
+        if bReversed:
+            pulseSeq = pulseSeq[::-1]
         ## Generate pulse sequence
-        iHeadIndex = 0 # TODO: allow specification of custom start point?
-        for iPulseIndex in pulseSeq:
+        for iPulse, iPulseIndex in enumerate(pulseSeq):
             ## Get time corresponding to head index from master time vector
             dHeadTime = self.vTime[iHeadIndex]
             ## Get master times relative to head time
@@ -147,7 +158,16 @@ class Driver(InstrumentDriver.InstrumentWorker):
             iOutputIndex = int(self.lPulseDefinitions[iPulseIndex]['o']) - 1
             self.lWaveforms[iOutputIndex] = self.lWaveforms[iOutputIndex] + vNewPulse
             ## Update head index
-            iHeadIndex = self.updateHeadIndex(iHeadIndex, self.lPulseDefinitions[iPulseIndex])
+            if bReversed:
+                ## Don't attempt to fetch 'previous' pulse for 'first' pulse in sequence
+                if iPulse < len(pulseSeq) - 1:
+                    iHeadIndex = self.updateHeadIndex(iHeadIndex, \
+                                  self.lPulseDefinitions[pulseSeq[iPulse+1]], bReversed=True)
+                else:
+                    pass
+            else:
+                iHeadIndex = self.updateHeadIndex(iHeadIndex, \
+                                                  self.lPulseDefinitions[iPulseIndex])
         ##
         self._logger.info('Waveform generation completed.')
 
@@ -216,13 +236,16 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Return value
         return vPulseMod
 
-    def updateHeadIndex(self, iOldHeadIndex, oPulseDef):
+    def updateHeadIndex(self, iOldHeadIndex, oPulseDef, bReversed = False):
         ## Get edge-to-edge length of pulse (including spacing)
         dPulseLength = oPulseDef['w'] + oPulseDef['v'] + oPulseDef['s']
         ## Convert to indices using sample rate
         iIndexDelta = int(np.round(dPulseLength * self.getValue('Sample rate')))
         ## Increment head index and return new value
-        iNewHeadIndex = iOldHeadIndex + iIndexDelta
+        if bReversed:
+            iNewHeadIndex = iOldHeadIndex - iIndexDelta
+        else:
+            iNewHeadIndex = iOldHeadIndex + iIndexDelta
         return iNewHeadIndex
 
 if __name__ == '__main__':

@@ -124,8 +124,13 @@ slave_general_options = {
 slave_pulse_sequence_options = {
 
 	'MultiPulse-Test01': {
-		##
-	},
+		'Number of points': 5E3,
+		'Generate from final pulse': 1,
+		'Final pulse time': 3e-6,
+
+		'pulse_def_path': pulse_def_path,
+		'pulse_seq_path': pulse_seq_path,
+	},##
 
 }
 
@@ -223,38 +228,10 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 
 		point_values = {
 		'MultiPulse': {
-				'Number of points': 5E3,
-				'Generate from final pulse': 1,
-				'Final pulse time': 3e-6
+				'Number of points': pulse_sequence_options['Number of points'],
+				'Generate from final pulse': pulse_sequence_options['Generate from final pulse'],
+				'Final pulse time': pulse_sequence_options['Final pulse time'],
 			}, # end MultiPulse
-		# 'SQPG': {
-		# 	## Parameters for overall pulse sequence - general SGPQ parameters
-		# 	'main': {'Truncation range': SQPG_truncation_range, 'Sample rate': SQPG_sampling_rate, 'sequence_duration': SQPG_sequence_duration},
-		# 	'qubit1': {
-		# 		'time_reference': 'absolute',
-		# 		'time_offset': 0.0, 'pulse_number': 1,
-		# 		'a': qubit_amplitude, 'w': qubit_width, 'v': 0.0, 'f': qubit_IF_frequency,
-		# 		'o': 2
-		# 		},
-		# 	'qubit2': {'relative_to': 'qubit1',
-		# 		'time_offset': 0.0, 'time_reference': 'relative', 'relative_marker': 'end',
-		# 		'a': qubit_amplitude, 'w': qubit_width, 'v': 0.0, 'f': qubit_IF_frequency,
-		# 		'o': 2
-		# 		},
-		# 	'trigger': {'relative_to': 'qubit2',
-		# 		'time_offset': 0.0, 'time_reference': 'relative', 'relative_marker': 'end',
-		# 		'a': 1.5, 'w': 0.0, 'v': 20E-9, 'f': 0.0,
-		# 		'o': 4
-		# 		},
-		# 	'readout': {'relative_to': 'trigger',
-		# 		'time_offset': 0.0, 'time_reference': 'relative', 'relative_marker': 'end',
-		# 		'a': readout_amplitude, 'w': 0.0, 'v': readout_plateau, 'f': readout_IF_frequency,
-		# 		'o': 1
-		# 		}
-		# 	}, # end SQPG
-		'Manual': {
-				'Value 1': 100,
-			}
 		} # end point values
 
 		Labber_api_client_values = {
@@ -263,8 +240,8 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		} # end api client values
 		instr_config_values = {
 			'MultiPulse': {
-				'Pulse definitions file': pulse_def_path,
-				'Pulse sequences file': pulse_seq_path,
+				'Pulse definitions file': pulse_sequence_options['pulse_def_path'],
+				'Pulse sequences file': pulse_sequence_options['pulse_seq_path'],
 			}, # end MultiPulse
 		} # end instr_config_values
 		Labber_api_hardware_names = {'MultiPulse': 'PSICT MultiPulse'}

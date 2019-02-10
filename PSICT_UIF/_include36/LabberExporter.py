@@ -25,6 +25,8 @@ class LabberExporter:
         self.verbose = verbose
         ## Labber MeasurementObject - will be set later
         self.MeasurementObject = None
+        ## Set server name to 'localhost' as default
+        self.set_server_name('localhost', verbose = verbose)
         ## Parameter containers
         self._api_values = {}     # parameter values which will be set through the Labber API
         self._client_values = {}  # parameter values which will be set through the InstrumentClient interface

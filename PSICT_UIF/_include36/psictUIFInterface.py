@@ -31,6 +31,8 @@ class psictUIFInterface:
         ## Save original working directory from which external script was invoked from
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
+        ## Add attributes
+        self.is_SQPG_used = False
         ## Add constituent objects
         self.fileManager = FileManager(verbose = self.verbose)
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
@@ -163,12 +165,56 @@ class psictUIFInterface:
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager.
         for instrument_name, instrument_params in point_values_dict.items():
             if instrument_name == "SQPG":
+                self.is_SQPG_used = True
                 self.pulseSeqManager.set_input_pulse_seq(instrument_params, verbose = verbose)
             else:
                 self.labberExporter.add_point_value_spec(instrument_name, instrument_params, verbose = verbose)
         ## Status message
         if verbose >= 1:
             print("Instrument parameter point values added.")
+
+    def set_api_client_values(self, api_client_values_dict, hardware_names, server_name = 'localhost', *, verbose = 1):
+        '''
+        Set values through the Labber API InstrumentClient object.
+
+        In principle, this can be used for all point values, but is only strictly necessary for setting values as lists/arrays (presently, this is possible neither through the direct scripting API nor by direct HDF5 editing).
+        '''
+        ## Status message
+        if verbose >= 1:
+            print('Adding API client values for instrument parameters...')
+        ## Set server name in LabberExporter
+        self.labberExporter.set_server_name(server_name)
+        ## Iterate through instrument specifications, and pass to the LabberExporter
+        for instrument_name in api_client_values_dict.keys():
+            instrument_params = api_client_values_dict[instrument_name]
+            hardware_name = hardware_names[instrument_name]
+            self.labberExporter.add_client_value_spec(instrument_name, instrument_params, \
+                        hardware_name, verbose = verbose)
+        ## Status message
+        if verbose >= 1:
+            print('Instrument parameter API client values added.')
+
+    def set_instr_config_values(self, instr_config_values_dict, hardware_names, server_name = 'localhost', *, verbose = 1):
+        '''
+        Set values by directly editing the reference hdf5 file's 'Instrument config' attributes.
+
+        Note that this requires the 'hardware name' of the instrument (ie the full name of the driver), as well as the server name ('localhost' by default).
+        '''
+        ## Status message
+        if verbose >= 1:
+            print('Adding HDF5 InstrumentConfig values for instrument parameters...')
+        ## Set server name in LabberExporter
+        self.labberExporter.set_server_name(server_name)
+        ## Iterate through instruments and pass to LabberExporter
+        for instrument_name in instr_config_values_dict.keys():
+            instrument_params = instr_config_values_dict[instrument_name]
+            hardware_name = hardware_names[instrument_name]
+            self.labberExporter.add_instr_config_spec(instrument_name, instrument_params, \
+                        hardware_name, verbose = verbose)
+        ## Status message
+        if verbose >= 1:
+            print('Instrument parameter HDF5 InstrumentConfig values added.')
+
 
     def set_iteration_values(self, iteration_values_dict, iteration_order_list, *, verbose = 1):
         '''
@@ -182,6 +228,7 @@ class psictUIFInterface:
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
         for instrument_name, instrument_params in iteration_values_dict.items():
             if instrument_name == "SQPG":
+                self.is_SQPG_used = True
                 self.pulseSeqManager.set_iteration_spec(instrument_params, verbose = verbose)
             else:
                 self.labberExporter.add_iteration_spec(instrument_name, instrument_params, verbose = verbose)
@@ -204,11 +251,13 @@ class psictUIFInterface:
             print("Adding channel relations...")
         ## Peel off SQPG specifications
         if "SQPG" in channel_defs_dict:
+            self.is_SQPG_used = True
             SQPG_defs = channel_defs_dict["SQPG"]
             del channel_defs_dict["SQPG"]
             ## Set definitions
             self.pulseSeqManager.add_channel_defs(SQPG_defs, verbose = verbose)
         if "SQPG" in channel_relations_dict:
+            self.is_SQPG_used = True
             SQPG_relations = channel_relations_dict["SQPG"]
             del channel_relations_dict["SQPG"]
             ## Set relations
@@ -247,13 +296,17 @@ class psictUIFInterface:
         self.fileManager.apply_labber_exe_path(verbose = verbose)
         ## Initialise Labber MeasurementObject if not already done
         self.init_MeasurementObject(auto_init = True, verbose = verbose)
-        ## Convert stored input pulse sequence to output pulse sequence
-        self.pulseSeqManager.convert_seq(verbose = verbose)
-        ## Transfer output pulse sequence and main SQPG params to LabberExporter
-        self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose), verbose = verbose-1)
-        self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
-        ## Transfer pulse sequence relations to LabberExporter
-        self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
+        ## Check if SPQG is being used
+        if self.is_SQPG_used:
+            ## Convert stored input pulse sequence to output pulse sequence
+            self.pulseSeqManager.convert_seq(verbose = verbose)
+            ## Transfer output pulse sequence and main SQPG params to LabberExporter
+            self.labberExporter.add_point_value_spec("SQPG", self.pulseSeqManager.get_main_params(verbose = verbose), verbose = verbose-1)
+            self.labberExporter.receive_pulse_sequence(self.pulseSeqManager.export_output(verbose = verbose))
+            ## Transfer pulse sequence relations to LabberExporter
+            self.labberExporter.receive_pulse_rels(*self.pulseSeqManager.export_relations(verbose = verbose), verbose = verbose)
+        else:
+            self.labberExporter.process_iteration_order(verbose = verbose)
         ## Apply all parameters stored in LabberExporter
         self.labberExporter.apply_all(verbose = verbose)
         ## Copy script - carried out before measurement to allow editing the script file while the measurement is running in Labber

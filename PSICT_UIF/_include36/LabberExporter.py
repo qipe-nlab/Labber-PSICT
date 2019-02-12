@@ -406,7 +406,15 @@ class LabberExporter:
         ## Open server connection
         if verbose >= 3:
             print('Opening connection to Labber InstrumentServer...')
-        ServerClient = Labber.connectToServer(self._InstrumentServer)
+        try:
+            ServerClient = Labber.connectToServer(self._InstrumentServer)
+        except:
+            if verbose >= 1:
+                print('Could not connect to server; skipping...')
+            ## Could not connect to server; do not attempt further client value application
+            return
+        else:
+            pass
         ## Iterate through instruments, opening InstrumentClient instance
         for instrument_name, hardware_name in self._hardware_names.items():
             ## Connect to instrument

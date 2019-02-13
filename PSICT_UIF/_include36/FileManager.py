@@ -9,6 +9,7 @@ import shutil
 import sys
 import inspect
 import pathlib
+import logging
 
 from Labber import ScriptTools
 
@@ -21,26 +22,21 @@ class FileManager:
     Includes methods to set (either manually or through defaults in the _FileManager_rc file) the script-specific rcfile and the Labber executable path. In addition, stores and handles the paths and filenames of the template, reference, and output database files. The resource database file is a temporary copy of the template file, where the hdf5 entries are directly modified by the PSICT-UIF package, and is deleted after the script has been run.
     '''
 
-    def __init__(self, *, verbose = 1):
-        ## Set object log level
-        self.verbose = verbose
+    def __init__(self):
+        ## Logging
+        self.logger = logging.getLogger('psictUIFInterface.FileManager')
         ## Set values of attributes constant across multiple methods
         self._REF_COPY_POSTFIX = _rc.REF_COPY_POSTFIX
         ## Set Labber exe path to system default - can be overwritten by user in external script later
-        self.setdef_labber_exe_path(verbose = self.verbose)
+        self.setdef_labber_exe_path()
         ## Status message
-        if self.verbose >= 4:
-            print("Called FileManager constructor.")
+        self.logger.debug('FileManager instance initialized.')
 
     def __del__(self):
-        ## Status message
-        if self.verbose >= 4:
-            print("Calling FileManager destructor.")
         ## Delete reference file (temporary copy of template file)
-        self.clean_reference_file(verbose = self.verbose)
+        self.clean_reference_file()
         ## Status message
-        if self.verbose >= 4:
-            print("FileManager destructor finished.")
+        self.logger.debug('FileManager instance deleted.')
 
     def set_original_wd(self, original_wd, script_inv):
         '''
@@ -48,6 +44,7 @@ class FileManager:
 
         These are necessary for copying scripts etc. correctly in full generality.
         '''
+        self.logger.debug('Setting original wd and script inv...')
         self._original_wd = original_wd
         self._script_inv = script_inv
 
@@ -66,11 +63,12 @@ class FileManager:
         '''
         self._script_rc = rcmodule
         self._script_rcpath = rcpath
+        self.logger.debug('Script rcmodule and rcpath assigned to FileManager instance.')
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber executable methods
 
-    def set_labber_exe_path(self, new_labber_exe_path, *, verbose = 1):
+    def set_labber_exe_path(self, new_labber_exe_path):
         '''
         Set the Labber executable path stored in the FileManager object.
 
@@ -79,55 +77,46 @@ class FileManager:
         ## Normalize path
         new_labber_exe_path = os.path.normpath(new_labber_exe_path)
         ## Status message
-        if verbose >= 2:
-            print("New Labber executable path:", new_labber_exe_path)
+        self.logger.debug("Setting new Labber executable path: {}".format(new_labber_exe_path))
         ## Change attribute
         self.labber_exe_path = new_labber_exe_path
-        ## Status message
-        if verbose >= 2:
-            print("New Labber executable path set.")
 
-    def setdef_labber_exe_path(self, *, verbose = 1):
+    def setdef_labber_exe_path(self):
         '''
         Set the Labber executable path as the system default (os-sensitive).
 
         Currently supports Windows and Darwin (macOS); other operating systems will raise a RuntimeError.
         '''
         ## Status message
-        if verbose >= 2:
-            print("Setting Labber executable path spec to system default...")
+        self.logger.debug("Setting Labber executable path spec to system default...")
         ## Check os
         _SYSTEM = platform.system()
         if _SYSTEM == "Windows":  # Windows
-            if verbose >= 3:
-                print("System identified as Windows; default executable path is", _rc.EXE_PATH_WIN)
+            self.logger.debug("System identified as Windows; "+\
+                              "default executable path is {}".format(_rc.EXE_PATH_WIN))
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_WIN
         elif _SYSTEM == "Darwin": # macOS
-            if verbose >= 3:
-                print("System identified as macOS; default executable path is", _rc.EXE_PATH_MAC)
+            self.logger.debug("System identified as macOS; "\
+                             +"default executable path is".format(_rc.EXE_PATH_MAC))
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_MAC
         else:                     # Other OSes are currently not supported
-            raise RuntimeError("System could not be identified, or is not supported.\nplatform.system() returned:", _SYSTEM)
+            raise RuntimeError("System could not be identified, or is not supported.\nplatform.system() returned: {}".format(_SYSTEM))
         ## Change path stored in FileManager attributes
-        self.set_labber_exe_path(_SYSDEF_LABBER_EXE_PATH, verbose = verbose)
+        self.set_labber_exe_path(_SYSDEF_LABBER_EXE_PATH)
         ## Status message
-        if verbose >= 2:
-            print("Labber executable path spec set to system default.")
+        self.logger.debug("Labber executable path spec set to system default.")
 
-    def apply_labber_exe_path(self, *, verbose = 1):
+    def apply_labber_exe_path(self):
         '''
         Apply the Labber executable path stored in the FileManager object attributes to ScriptTools, ie "set" externally.
 
         NB: This method should not be used explicitly in the external script; it will be called as part of measurement pre-processing anyway.
         '''
-        ## Status message
-        if verbose >= 2:
-            print("Applying Labber executable path...")
+        self.logger.debug("Setting Labber executable path through ScriptTools...")
         ## Set ScriptTools path
         ScriptTools.setExePath(self.labber_exe_path)
         ## Status message
-        if verbose >= 2:
-            print("Labber executable path applied.")
+        self.logger.debug("Labber executable path set through ScriptTools.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Database file methods
@@ -142,34 +131,30 @@ class FileManager:
 
     ## Template and reference file methods
 
-    def set_template_file(self, template_dir, template_file, *, verbose = 1):
+    def set_template_file(self, template_dir, template_file):
         '''
         Set the template database file.
 
         This template file will never be modified by PSICT. Where it is necessary to edit the hdf5 files directly (eg setting channel relations), such edits will be applied to the temporary copy (the "reference file").
         '''
-        ## Status message
-        if verbose >= 1:
-            print("Setting template file...")
+        self.logger.debug("Setting template file...")
         ## Set attributes
         self.template_dir = os.path.expanduser(os.path.normpath(template_dir))
         self.template_file = template_file
         self.template_path = self.generate_full_path(self.template_dir, self.template_file)
         ## Status message
-        if verbose >= 1:
-            print("Template file set as:", self.template_path)
+        self.logger.info("Template file set as: {}".format(self.template_path))
         ## Copy template file to create reference file
-        self.copy_reference_file(verbose = verbose)
+        self.copy_reference_file()
+        self.logger.debug('Template file copied to temporary reference file.')
 
-    def copy_reference_file(self, *, verbose = 1):
+    def copy_reference_file(self):
         '''
         Copies the template file into a temporary reference file.
 
         The temporary reference file will have all direct hdf5 edits applied to it, and the measurement will be run from it as well.
         '''
-        ## Status message
-        if verbose >= 3:
-            print("Copying reference file...")
+        self.logger.debug("Copying reference file...")
         ## Set reference file target names
         try:
             self.reference_dir = self.template_dir
@@ -180,31 +165,28 @@ class FileManager:
         ## Copy file
         shutil.copy(self.template_path, self.reference_path)
         ## Status message
-        if verbose >= 3:
-            print("Reference file copied successfully:", self.reference_path)
+        self.logger.debug("Reference file copied successfully: {}".format(self.reference_path))
 
 
-    def clean_reference_file(self, *, verbose = 1):
+    def clean_reference_file(self):
         '''
         Clean up the temporary reference file (ie delete it).
         '''
-        ## Status message
-        if verbose >= 3:
-            print("Deleting temporary copy of reference file...")
+        self.logger.debug("Deleting temporary reference file...")
         ## Delete temporary copy of reference file
         try:
             os.remove(self.reference_path)
         except (AttributeError, FileNotFoundError):
+            ## Log but do nothing
+            self.logger.warning('Reference file {} not found!'.format(self.reference_path))
             pass
         else:
-            ## Status message
-            if verbose >= 3:
-                print("Deleted reference file", self.reference_path)
+            self.logger.debug("Deleted reference file {}".format(self.reference_path))
 
 
     ## Output file methods
 
-    def set_output_file(self, output_dir, output_file, *, verbose = 1):
+    def set_output_file(self, output_dir, output_file):
         '''
         Set the output file for the measurement.
 
@@ -213,27 +195,23 @@ class FileManager:
          - If disallowed, or if allowed and unable to parse a sequential integer from the file name, a RuntimeError will be raised.
         Basically, the PSICT-UIF will never overwrite an existing output file.
         '''
-        ## Status message
-        if verbose >= 2:
-            print("Setting output file...")
+        self.logger.debug("Setting output file...")
         ## Set output dir (will not change)
         self.output_dir = os.path.abspath(os.path.normpath(output_dir))
         ## Create output dir if it does not exist
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         ## Get valid output filename, checking for existence, incrementing if nececssary, etc
-        valid_output_file = self.get_valid_output_file(self.output_dir, output_file, verbose = verbose)
+        valid_output_file = self.get_valid_output_file(self.output_dir, output_file)
         ## Set attributes
         self.output_file = valid_output_file
         self.output_path = self.generate_full_path(self.output_dir, self.output_file)
         ## Status message
-        if verbose == 1:
-            print("Output file:", self.output_file)
-        elif verbose >= 1:
-            print("Output file set as:", self.output_path)
+        self.logger.info("Output file: {}".format(self.output_file))
+        self.logger.debug("Full output path: {}".format(self.output_path))
 
 
-    def get_valid_output_file(self, dir_in, file_in, *, verbose = 1):
+    def get_valid_output_file(self, dir_in, file_in):
         '''
         Return the name of a valid output file.
 
@@ -244,32 +222,27 @@ class FileManager:
         path_in = self.generate_full_path(dir_in, file_in)
         file_new = file_in
         ## Status message
-        if verbose >= 2:
-            print("Verifying output file:", path_in)
+        self.logger.debug("Verifying output file: {}".format(path_in))
 
         ## Check if file already exists
         if not os.path.isfile(path_in):
             ## File does not exist; set new file name as-is
-            if verbose >= 2:
-                print("The file", path_in, "does not already exist.")
+            self.logger.debug("The file {} does not already exist.".format(path_in))
             ## Keep going past incrementation, return as-is
         else:
             ## File already exists
-            if verbose >= 2:
-                print("The file", path_in, "already exists.")
+            self.logger.debug("The file {} already exists.".format(path_in))
             ## Check if user permission to increment is necessary
             if self._script_rc.outfile_iter_automatic:
                 ## Check if incrementation is set to be automatic
-                if verbose >= 2:
-                    print("Automatic incrementation enabled.")
+                self.logger.debug("Automatic incrementation enabled.")
                 flag_increment = True
             elif self._script_rc.outfile_iter_user_check:
                 ## Ask for user input
                 user_response = input("Attempt to increment? [Y/n] ")
                 if user_response == "" or user_response.lower()[0] == "y":
                     ## User incrementation permitted
-                    if verbose >= 3:
-                        print("User permitted incrementation.")
+                    self.logger.info("User permitted incrementation.")
                     flag_increment = True
             else:
                 ## Incrementation to not be attempted; raise error as program execution cannot continue
@@ -277,13 +250,11 @@ class FileManager:
 
         ## Attempt to increment filename if required
         if flag_increment:
-            if verbose >= 2:
-                print("Attempting to increment file name...")
+            self.logger.debug("Attempting to increment file name...")
             n_incr_attempts = 0   # log number of attempts to prevent loop with no exit condition
             path_new = self.generate_full_path(dir_in, file_new)
             while os.path.isfile(path_new):
-                if verbose >= 2:
-                    print("File", path_new, "exists; incrementing...")
+                self.logger.debug("File {} exists; incrementing...".format(path_new))
                 ## increment filename
                 file_new = self.increment_filename(file_new)
                 ## update other values
@@ -291,14 +262,14 @@ class FileManager:
                 n_incr_attempts = n_incr_attempts + 1
                 ## check if max number of attempts exceeded
                 if n_incr_attempts > _rc.INCREMENT_MAX_ATTEMPTS:
-                    raise RuntimeError("Maximum number of incrementation attempts reached:", _rc.INCREMENT_MAX_ATTEMPTS)
+                    raise RuntimeError("Maximum number of incrementation attempts reached: {}"\
+                                        .format(_rc.INCREMENT_MAX_ATTEMPTS))
             ##
 
         ## Return new file name (can be unchanged)
         path_new = self.generate_full_path(dir_in, file_new)
         ## Status message
-        if verbose >= 2:
-            print("The file", path_new, "is a valid output file.")
+        self.logger.debug("The file {} is a valid output file.".format(path_new))
         return file_new
 
     def increment_filename(self, fname_in):
@@ -329,17 +300,16 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
-    def set_slave_status(self, is_slave, *, verbose = 1):
+    def set_slave_status(self, is_slave):
         '''
         Set whether or not the script is running as a slave (ie not a standalone).
 
         Affects whether or not the integrated script copying methods are invoked.
         '''
         self._is_slave = is_slave
-        if verbose >= 2:
-            print('Slave status set to:', self._is_slave)
+        self.logger.debug('Slave status set to: {}'.format(self._is_slave))
 
-    def pre_measurement_copy(self, *, verbose = 1):
+    def pre_measurement_copy(self):
         '''
         Copies files associated with the measurement to a target folder for reproducability/storage.
 
@@ -349,40 +319,32 @@ class FileManager:
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
             if self._is_slave:
-                if verbose >= 2:
-                    print('Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
+                self.logger.debug('Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
             else: # Script copying is enabled and the script is running as a standalone
-                if verbose >= 2:
-                    print("Copying script and additional files...")
+                self.logger.debug("Copying script and additional files...")
                 ## Check if target directory has been specified
                 try:
                     assert self._script_copy_target_dir
                 except AssertionError:
                     raise RuntimeError('The script copy target directory has not been specified.')
                 ## Create target dir if it does not already exist
-                if verbose >= 3:
-                    print("Creating target directory (if it does not exist)...")
+                self.logger.debug("Creating target directory (if it does not exist)...")
                 pathlib.Path(self._script_copy_target_dir).mkdir(parents = True, exist_ok = True)
                 script_target_dir = self._script_copy_target_dir  # will have custom filename appended if necessary
                 ## Set target file names (eg renaming to match output file)
-                if verbose >= 3:
-                    print("Setting new filenames...")
+                self.logger.debug("Setting new filenames...")
                 target_file = "".join([self.output_file, self._script_rc.script_copy_postfix, ".", _rc.SCRIPT_COPY_EXTENSION])
-                if verbose >= 2:
-                    print("The target file name is", target_file)
+                self.logger.debug("Target file name is: {}".format(target_file))
                 ## Append name to script target path
                 script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
                 ## Copy external script (the one which runs the whole thing)
                 script_path_original = os.path.join(self._original_wd, self._script_inv)
-                if verbose >= 3:
-                    print("The original script is at", script_path_original)
+                self.logger.debug("Original script is: {}".format(script_path_original))
                 script_path_new = shutil.copy(script_path_original, script_target_path)
-                if verbose >= 3:
-                    print("The script file has been copied to", script_path_new)
+                self.logger.debug("Script file copied to: {}".format(script_path_new))
         else:
             ## Copying script not enabled
-            if verbose >= 2:
-                print("Script copying has been disabled in the PSICT config file.")
+            self.logger.warning("Script copying has been disabled in the PSICT config file.")
         ##
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

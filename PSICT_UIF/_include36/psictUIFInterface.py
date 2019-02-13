@@ -38,7 +38,7 @@ class psictUIFInterface:
         ## Add attributes
         self.is_SQPG_used = False
         ## Add constituent objects
-        self.fileManager = FileManager(verbose = self.verbose)
+        self.fileManager = FileManager()
         self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
         self.labberExporter = LabberExporter(verbose = self.verbose)
         ## Add attributes for constituent objects

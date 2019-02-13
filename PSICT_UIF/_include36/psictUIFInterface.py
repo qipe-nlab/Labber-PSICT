@@ -7,6 +7,7 @@ import sys
 import importlib.util
 from pathlib import Path
 import logging
+from datetime import datetime
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
@@ -45,8 +46,9 @@ class psictUIFInterface:
         ## Set slave status as standalone script by default
         self.set_slave_status(is_slave, verbose = self.verbose)
         ## Status message
-        if self.verbose >= 4:
-            print("Called psictUIFInterface constructor.")
+        self.logger.info('psictUIFInterface initialised.')
+        # if self.verbose >= 4:
+        #     print("Called psictUIFInterface constructor.")
         ##
 
     ## Direct access to MeasurementObject as attribute
@@ -77,12 +79,24 @@ class psictUIFInterface:
         self.logger.setLevel(logging.DEBUG)
         ## Console stream handler
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG)
+        console_handler.setLevel(logging.INFO)
         console_fmt = logging.Formatter('%(asctime)s %(name)s: %(message)s', \
                                         datefmt = '%y-%m-%d %H:%M:%S')
         console_handler.setFormatter(console_fmt)
+        ## File handler
+        log_dir = 'logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        log_file = 'psict_{:%y%m%d_%H%M%S}'.format(datetime.now())+'.log'
+        log_path = os.path.join(log_dir, log_file)
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_fmt = logging.Formatter('%(asctime)s %(name)s: %(message)s', \
+                                        datefmt = '%y-%m-%d %H:%M:%S')
+        file_handler.setFormatter(file_fmt)
         ## Add handlers to logger
         self.logger.addHandler(console_handler)
+        self.logger.addHandler(file_handler)
         ## Status message
         self.logger.debug('Logging initialization complete.')
 

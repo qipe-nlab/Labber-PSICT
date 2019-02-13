@@ -2,6 +2,8 @@
 ##  Stores input (specified by user) and output
 ##  (used to set Labber parameters) pulse sequences.
 
+import logging
+
 from PSICT_UIF._include36.PulseSequence import InputPulseSeq, OutputPulseSeq
 from PSICT_UIF._include36.ParameterSpec import IterationSpec
 
@@ -11,27 +13,29 @@ class PulseSeqManager:
     '''
 
     ## constructor
-    def __init__(self, *, verbose = 0):
-        ## set log level
-        self.verbose = verbose
+    def __init__(self, *, parent_logger_name = None):
+        ## Logging
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'PulseSeqManager'])
+        else:
+            logger_name = 'PulseSeqManager'
+        self.logger = logging.getLogger(logger_name)
         ## init input and output pulse sequence containers
-        self.inputPulseSeq = InputPulseSeq(verbose = self.verbose)
-        self.outputPulseSeq = OutputPulseSeq(verbose = self.verbose)
+        self.inputPulseSeq = InputPulseSeq(parent_logger_name = logger_name)
+        self.outputPulseSeq = OutputPulseSeq(parent_logger_name = logger_name)
         ## flags
         self.is_input_seq_populated = False
         self.is_output_seq_populated = False
         ## debug message
-        if self.verbose >= 4:
-            print("Called PulseSeqManager constructor.")
+        self.logger.debug('Instance initialized.')
 
     ## destructor
     def __del__(self):
         ## delete object attributes
         del self.inputPulseSeq
         del self.outputPulseSeq
-        ## debug message
-        if self.verbose >= 4:
-            print("Called PulseSeqManager destructor.")
+        ## Status message
+        self.logger.debug('Instance deleted.')
 
     def assign_script_rcmodule(self, rcmodule, rcpath):
         '''
@@ -43,28 +47,28 @@ class PulseSeqManager:
         ## Assign to constituents
         self.inputPulseSeq.assign_script_rcmodule(rcmodule, rcpath)
         self.outputPulseSeq.assign_script_rcmodule(rcmodule, rcpath)
+        ## Status message
+        self.logger.debug('Script rcmodule and rcpath assigned.')
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input pulse sequence
 
-    def set_input_pulse_seq(self, pulse_seq_dict, *, verbose = 1):
+    def set_input_pulse_seq(self, pulse_seq_dict):
         '''
         Set the input pulse sequence from a dict of user specifications.
 
         This is passed directly to the InputPulseSeq.
         '''
-        if verbose >= 1:
-            print("Adding parameter specifications for SQPG...")
-        self.inputPulseSeq.set_pulse_seq(pulse_seq_dict, verbose = verbose)
+        self.logger.debug("Adding parameter specifications for SQPG...")
+        self.inputPulseSeq.set_pulse_seq(pulse_seq_dict)
         ## set flag
         self.is_input_seq_populated = True
 
-    def set_iteration_spec(self, iteration_spec_dict, *, verbose = 1):
+    def set_iteration_spec(self, iteration_spec_dict):
         '''
         Set iteration specifications, potentially overriding point values.
         '''
-        if verbose >= 2:
-            print("Setting iteration specifications for SQPG...")
+        self.logger.debug("Setting iteration specifications for SQPG...")
         for pulse_name, iter_params in iteration_spec_dict.items():
             for param_name, param_spec in iter_params.items():
                 ## Convert to IterationSpec object
@@ -73,114 +77,106 @@ class PulseSeqManager:
                                           "n_pts": param_spec[2],
                                         })
                 ## Set parameter using IterationSpec object
-                self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj, verbose = verbose)
+                self.inputPulseSeq.set_pulse_parameter(pulse_name, param_name, iter_obj)
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Channel relations methods
 
-    def add_channel_defs(self, channel_defs_dict, *, verbose = 1):
+    def add_channel_defs(self, channel_defs_dict):
         '''
         Process SQPG channel definitions, and return a format-compliant dict.
         '''
         ## status message
-        self.inputPulseSeq.add_channel_defs(channel_defs_dict, verbose = verbose)
+        self.inputPulseSeq.add_channel_defs(channel_defs_dict)
 
-    def add_channel_relations(self, channel_relations_dict, *, verbose = 1):
+    def add_channel_relations(self, channel_relations_dict):
         '''
         Process SQPG channel relations, and return a generic-format-compliant dict.
         '''
-        self.inputPulseSeq.add_channel_relations(channel_relations_dict, verbose = verbose)
+        self.inputPulseSeq.add_channel_relations(channel_relations_dict)
 
-    def get_channel_defs(self, *, verbose = 1):
+    def get_channel_defs(self):
         '''
         Get SQPG channel key definitions (for channel relations), in the format required by the LabberExporter.
         '''
-        return self.outputPulseSeq.get_channel_defs(verbose = verbose)
+        return self.outputPulseSeq.get_channel_defs()
 
-    def get_channel_relations(self, *, verbose = 1):
+    def get_channel_relations(self):
         '''
         Get SQPG channel relations in the format required by the LabberExporter.
         '''
-        return self.outputPulseSeq.get_channel_relations(verbose = verbose)
+        return self.outputPulseSeq.get_channel_relations()
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Conversion methods
 
-    def convert_seq(self, *, verbose = 1):
+    def convert_seq(self):
         '''
         Convert the input sequence (specified by the user) into an output sequence (suitable for input into Labber).
 
         Note that the input sequence must have already been imported using the set_input_pulse_seq method.
         '''
         ## debug message
-        if verbose >= 2:
-            print("Converting input sequence to output sequence...")
+        self.logger.debug("Converting input sequence to output sequence...")
         ## Assert input sequence is populated
         if not self.is_input_seq_populated:
             raise RuntimeError("Input sequence is not populated!")
         #### Pulse sequence conversion
         ## Transfer main parameters
-        if verbose >= 3:
-            print("Transferring main parameters...")
+        self.logger.debug("Transferring main parameters...")
         self.outputPulseSeq.set_main_params(self.inputPulseSeq.export_main_params())
         ## Get list of pulses from inputPulseSeq (sorted by absolute_time)
         ##  and set the outputPulseSeq to this list
-        if verbose >= 3:
-            print("Sorting pulses...")
-        sorted_pulses = self.inputPulseSeq.get_sorted_list(verbose = verbose)
-        self.outputPulseSeq.set_pulse_seq(sorted_pulses, verbose = verbose)
+        self.logger.debug("Sorting pulses...")
+        sorted_pulses = self.inputPulseSeq.get_sorted_list()
+        self.outputPulseSeq.set_pulse_seq(sorted_pulses)
         ## Transfer channel relations data
-        if verbose >= 3:
-            print("Transferring channel relations data...")
+        self.logger.debug("Transferring channel relations data...")
         self.outputPulseSeq.add_channel_defs(self.inputPulseSeq.get_channel_defs())
         self.outputPulseSeq.add_channel_relations(self.inputPulseSeq.get_channel_relations())
         ####
         ## Set flag
         self.is_output_seq_populated = True
         ## debug message
-        if verbose >= 2:
-            print("Conversion to output sequence completed.")
+        self.logger.debug("Conversion to output sequence completed.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Output sequence export
 
-    def get_main_params(self, *, verbose = 1):
+    def get_main_params(self):
         '''
         Get 'main' parameters of the stored pulse sequence (those associated with the SQPG instrument as a whole).
         '''
         return self.outputPulseSeq.main_params
 
-    def export_output(self, *, verbose = 1):
+    def export_output(self):
         '''
         Export the output pulse sequence, in a form that can be parsed by the LabberExporter and applied to the Labber API.
         '''
         ## debug message
-        if verbose >= 2:
-            print("Exporting output pulse sequence...")
-        return self.outputPulseSeq.export(verbose = verbose)
+        self.logger.debug("Exporting output pulse sequence...")
+        return self.outputPulseSeq.export()
 
-    def export_relations(self, *, verbose = 1):
+    def export_relations(self):
         '''
         Export the definitions and relations which define relations between the channels in a format ready to be received by a LabberExporter instance.
         '''
         ## status message
-        if verbose >= 2:
-            print("Exporting pulse definitions and relations...")
-        SQPG_defs = {"SQPG": self.outputPulseSeq.get_channel_defs(verbose = verbose)}
-        SQPG_rels = {"SQPG": self.outputPulseSeq.get_channel_relations(verbose = verbose)}
+        self.logger.debug("Exporting pulse definitions and relations...")
+        SQPG_defs = {"SQPG": self.outputPulseSeq.get_channel_defs()}
+        SQPG_rels = {"SQPG": self.outputPulseSeq.get_channel_relations()}
         return SQPG_defs, SQPG_rels
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Misc
 
-    def convert_iter_order_pulses(self, iter_order, *, verbose = 1):
+    def convert_iter_order_pulses(self, iter_order):
         '''
         IN PROGRESS; convert pulse names to numbers.
         '''
         ## status message
-        if verbose >= 3:
-            print("Converting pulse names to numbers in iteration order...")
+        self.logger.debug("Converting pulse names to numbers in iteration order...")
         new_iter_order = []
         return new_iter_order

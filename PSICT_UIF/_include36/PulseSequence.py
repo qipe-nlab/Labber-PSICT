@@ -4,6 +4,7 @@
 
 from operator import attrgetter
 import warnings
+import logging
 
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
@@ -14,22 +15,24 @@ class PulseSeq:
 
     This class should not be used directly, as it acts as a subclass for the InputPulseSeq and OutputPulseSeq classes.
     '''
-    def __init__(self, *, verbose = 1):
-        ## set logging level
-        self.verbose = verbose
+    def __init__(self, *, parent_logger_name = None):
+        ## Logging
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'PulseSeq'])
+        else:
+            logger_name = 'PulseSeq'
+        self.logger = logging.getLogger(logger_name)
         ## initialise containers
         self.pulse_list = []  # holds Pulse objects
         self.main_params = {} # holds parameters that are set for the whole sequence
         self.channel_defs = {}
         self.channel_relations = {}
         ## debug message
-        if self.verbose >= 4:
-            print("Called PulseSeq constructor.")
+        self.logger.debug('Instance initialized.')
 
     def __del__(self):
-        ## debug message
-        if self.verbose >= 4:
-            print("Called PulseSeq destructor.")
+        ## Status message
+        self.logger.debug('Instance deleted.')
 
     def assign_script_rcmodule(self, rcmodule, rcpath):
         '''
@@ -77,7 +80,7 @@ class PulseSeq:
             pass
         return self.pulse_list[id]
 
-    def add_pulse(self, new_pulse, *, verbose = 1):
+    def add_pulse(self, new_pulse):
         '''
         Add a single pulse to the pulse sequence.
 
@@ -87,13 +90,11 @@ class PulseSeq:
         '''
         ## Handle new_pulse spec in different cases
         if isinstance(new_pulse, Pulse):
-            if verbose >= 4:
-                print("New Pulse is already pulse object.")
+            self.logger.debug("New Pulse is already pulse object.")
             pass
         elif isinstance(new_pulse, dict):
-            if verbose >= 4:
-                print("Creating a new pulse by attribute list")
-            new_pulse = Pulse(new_pulse, verbose = verbose)
+            self.logger.debug("Creating a new pulse by attribute list")
+            new_pulse = Pulse(new_pulse)
         else:
             raise ValueError(" ".join(["Cannot interpret", new_pulse, "as pulse identifier"]))
         ## Check if pulse with matching name already exists
@@ -140,17 +141,21 @@ class InputPulseSeq(PulseSeq):
 
     Also contains methods which prepare the pulse parameters for conversion to an output sequence, most notably calculation of an absolute-time specification for every pulse.
     '''
-    def __init__(self, *, verbose = 1):
+    def __init__(self, *, parent_logger_name = None):
         ## call base class constructor
-        super().__init__(verbose = verbose)
-        ## debug message
-        if self.verbose >= 4:
-            print("Called InputPulseSeq constructor.")
+        super().__init__()
+        ## Logging
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'InputPulseSeq'])
+        else:
+            logger_name = 'InputPulseSeq'
+        self.logger = logging.getLogger(logger_name)
+        ## Status message
+        self.logger.debug('Instance initialized.')
 
     def __del__(self):
-        ## debug message
-        if self.verbose >= 4:
-            print("Called InputPulseSeq destructor.")
+        ## Status message
+        self.logger.debug("Instance deleted.")
         ## call base class destructor
         super().__del__()
 
@@ -165,7 +170,7 @@ class InputPulseSeq(PulseSeq):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Input-specific main parameter methods
 
-    def export_main_params(self, *, verbose = 1):
+    def export_main_params(self):
         '''
         Carry out all required pre-export operations on the main parameters.
         '''
@@ -177,45 +182,35 @@ class InputPulseSeq(PulseSeq):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence import
 
-    def set_pulse_seq(self, params_dict, * , verbose = 1):
+    def set_pulse_seq(self, params_dict):
         '''
         Set the pulse sequence from an input dict (this should be the dict created by the user in the external script).
 
         Note that a pulse named "main" is treated as specifying the main sequence parameters; all other names will be treated as pulse names.
         '''
-        ## debug message
-        if verbose >= 2:
-            print("Setting input pulse sequence parameters...")
+        ## Status message
+        self.logger.debug("Setting input pulse sequence parameters...")
         ## Set pulse sequence from input dict
         for pulse_name, pulse_params in params_dict.items():
             if pulse_name == "main":        # check for main specification
-                if verbose >= 2:
-                    print("Setting sequence main parameters...")
                 self.main_params = pulse_params
-                if verbose >= 2:
-                    print("Sequence main parameters set.")
+                self.logger.debug("Sequence main parameters set.")
             elif pulse_name == "inverted":  # check for global inverted pulse specification
-                if verbose >= 2:
-                    print("Setting global inverted pulse parameters...")
                 self.inverted_params = pulse_params
-                if verbose >= 2:
-                    print("Global inverted pulse parameters set.")
+                self.logger.debug("Global inverted pulse parameters set.")
             else:                       # add pulses normally
-                ## debug message
-                if verbose >= 2:
-                    print("Setting parameters for pulse", pulse_name)
+                ## Status message
+                self.logger.debug("Setting parameters for pulse {}".format(pulse_name))
                 ## add pulse name to param list
                 pulse_params["name"] = pulse_name
                 ## create new pulse with given parameters
-                self.add_pulse(pulse_params, verbose = verbose)
+                self.add_pulse(pulse_params)
                 ## debug message
-                if verbose >= 2:
-                    print("Added pulse", pulse_name, "successfully.")
+                self.logger.debug("Added pulse {} successfully.".format(pulse_name))
         ## debug message
-        if verbose >= 2:
-            print("Input pulse sequence parameters set.")
+        self.logger.debug("Input pulse sequence parameters set.")
 
-    def set_pulse_parameter(self, pulse_id, param_name, param_value, *, verbose = 1):
+    def set_pulse_parameter(self, pulse_id, param_name, param_value):
         '''
         Set the individual value for a pulse parameter.
 
@@ -223,112 +218,98 @@ class InputPulseSeq(PulseSeq):
         Note that the pulse can, as usual, be specified by either name or index.
         '''
         self[pulse_id][param_name] = param_value
-        if verbose >= 1:
-            print("Set pulse", str(pulse_id), "parameter", param_name, "to", param_value)
+        self.logger.debug("Set pulse {} parameter {} to {}".format(str(pulse_id), param_name, param_value))
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Channel relations
 
-    def add_channel_defs(self, channel_defs_dict, *, verbose = 1):
+    def add_channel_defs(self, channel_defs_dict):
         '''
         Add channel key definitions (for setting channel relations)
         '''
         ## status message
-        if verbose >= 2:
-            print("Adding channel definitions to InputPulseSeq...")
+        self.logger.debug("Adding channel definitions to InputPulseSeq...")
         self.channel_defs = channel_defs_dict
 
-    def add_channel_relations(self, channel_relations_dict, *, verbose = 1):
+    def add_channel_relations(self, channel_relations_dict):
         '''
         Add channel relations.
         '''
         ## status message
-        if verbose >= 2:
-            print("Adding channel relations to InputPulseSeq...")
+        self.logger.debug("Adding channel relations to InputPulseSeq...")
         self.channel_relations = channel_relations_dict
 
-    def get_channel_defs(self, *, verbose = 1):
+    def get_channel_defs(self):
         '''
         Get channel definitions.
         '''
         ## status message
-        if verbose >= 2:
-            print("Getting channel definitions from InputPulseSeq...")
+        self.logger.debug("Getting channel definitions from InputPulseSeq...")
         return self.channel_defs
 
-    def get_channel_relations(self, *, verbose = 1):
+    def get_channel_relations(self):
         '''
         Get channel relations.
         '''
         ## status message
-        if verbose >= 2:
-            print("Getting channel relations from InputPulseSeq...")
+        self.logger.debug("Getting channel relations from InputPulseSeq...")
         return self.channel_relations
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence sorting
 
-    def pulse_pre_conversion(self, *, verbose = 1):
+    def pulse_pre_conversion(self):
         '''
         Carry out all required pre-conversion operations on the pulse parameters.
 
         Most notably, this involves parameter value adjustment (eg converting to ns), as well as working out the timing/ordering of the entire pulse sequence.
         '''
-        ## debug message
-        if verbose >= 2:
-            print("Carrying out pulse sequence pre-conversion...")
+        ## Status message
+        self.logger.debug("Carrying out pulse sequence pre-conversion...")
 
         ###########################################
         #### Setting required pulse parameters ####
         ###########################################
 
-        if verbose >= 3:
-            print("Setting required pulse parameter defaults...")
+        self.logger.debug("Setting required pulse parameter defaults...")
         ## Set required pulse parameter defaults
         for _default_param, _default_value in _rc.PULSE_PARAM_DEFAULTS.items():
             for pulse in self.pulse_list:
                 if not _default_param in pulse.attributes:
                     pulse[_default_param] = _default_value
-        if verbose >= 3:
-            print("Required pulse parameter defaults set.")
+        self.logger.debug("Required pulse parameter defaults set.")
 
         ##########################################
         #### Setting special pulse parameters ####
         ##########################################
 
-        if verbose >= 3:
-            print("Applying global inverted-pulse parameters... (pre-absolute_time calculation)")
+        self.logger.debug("Applying global inverted-pulse parameters... (pre-absolute_time calculation)")
         ## For each pulse that is_inverted, apply the global parameters
         for pulse in self.pulse_list:
             if pulse["is_inverted"]:
                 pulse.set_attributes(self.inverted_params)
-        if verbose >= 3:
-            print("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
+        self.logger.debug("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
 
         ##############################################
         ## Converting values based on script-rcfile ##
         ##############################################
 
-        if verbose >= 3:
-            print("SQPG values undergoing pre-calculation (based on script-rcfile specification)...")
+        self.logger.debug("SQPG values undergoing pre-calculation (based on script-rcfile specification)...")
         ## Fetch the appropriate specifications
         try:
             SQPG_spec = self._script_rc.parameter_pre_process["SQPG"]
         except KeyError:
-            if verbose >= 3:
-                print("SQPG pre-calculation spec not found.")
+            self.logger.error("SQPG pre-calculation spec not found.")
         else:
             try:
                 pulse_spec = SQPG_spec["pulse"]
             except KeyError:
-                if verbose >= 3:
-                    print("SQPG pre-calculation pulse spec not found.")
+                self.logger.debug("SQPG pre-calculation pulse spec not found.")
             else:
                 for param_name, param_converter in pulse_spec.items():
                     ## Status message
-                    if verbose >= 3:
-                        print("Carrying out pre-calculation conversion for", param_name)
+                    self.logger.debug("Carrying out pre-calculation conversion for {}".format(param_name))
                     ## Cycle through each pulse and apply the desired pre-calculations
                     if isinstance(param_converter, dict):
                         for pulse in self.pulse_list:
@@ -337,18 +318,15 @@ class InputPulseSeq(PulseSeq):
                     else:
                         pass
         ## Status message
-        if verbose >= 3:
-            print("Pre-calculation completed for SQPG values")
+        self.logger.debug("Pre-calculation completed for SQPG values")
 
         ####################################
         #### Absolute time calculations ####
         ####################################
-        if verbose >= 3:
-            print("Carrying out absolute_time calculations...")
+        self.logger.debug("Carrying out absolute_time calculations...")
 
         ## First, all pulses which have their time_reference set as "absolute" automatically have a valid absolute time if it is specified
-        if verbose >= 3:
-            print("Setting validity of absolute_time for pulses with 'absolute' time_reference...")
+        self.logger.debug("Setting validity of absolute_time for pulses with 'absolute' time_reference...")
         for pulse in self.pulse_list:
             if pulse["time_reference"] == "absolute":
                 ## Verify that an absolute_time parameter is actually set (can fall back on time_offset if there is no absolute_time)
@@ -360,17 +338,15 @@ class InputPulseSeq(PulseSeq):
                     raise RuntimeError(" ".join(["Pulse", pulse.name, "has no absolute_time or time_offset specified, but time_reference is set as 'absolute'."]))
                 ## Set flag
                 pulse.valid_abs_time = True
-        if verbose >= 3:
-            print("Absolute time set for 'absolute' time_reference pulses.")
-        if verbose >= 4:
-            print("Current pulse state:")
-            self.print_info(pulse_params = True)
-            print("Absolute time validity:")
-            print([pulse.valid_abs_time for pulse in self.pulse_list])
+        self.logger.debug("Absolute time set for 'absolute' time_reference pulses.")
+        # if verbose >= 4:
+        #     print("Current pulse state:")
+        #     self.print_info(pulse_params = True)
+        #     print("Absolute time validity:")
+        #     print([pulse.valid_abs_time for pulse in self.pulse_list])
 
         ## debug message
-        if verbose >= 3:
-            print("Setting absolute time for pulses with 'previous' and 'relative' time reference...")
+        self.logger.debug("Setting absolute time for pulses with 'previous' and 'relative' time reference...")
         ## Loop through pulses for the next two processes, as there may be odd dependencies
         max_loop_counter = len(self.pulse_list) # at least one pulse should be set each loop
         loop_counter = 0
@@ -382,8 +358,7 @@ class InputPulseSeq(PulseSeq):
                 pulse["pulse_number"] = -1
         ## Loop through pulses
         while not all([pulse.valid_abs_time for pulse in self.pulse_list]):
-            if verbose >= 3:
-                print("Looping through pulse list, iteration", loop_counter)
+            self.logger.debug("Looping through pulse list, iteration {}".format(loop_counter))
             ## check maximum loops - could indicate improper time-ordering dependencies
             if loop_counter >= max_loop_counter:
                 raise RuntimeError("Could not calculate pulse timing; please re-check dependencies to ensure calculation is possible!")
@@ -407,7 +382,7 @@ class InputPulseSeq(PulseSeq):
                         if current_pulse.valid_abs_time:
                             pass
                         else:
-                            self.calculate_absolute_time(current_pulse, previous_pulse, verbose = verbose)
+                            self.calculate_absolute_time(current_pulse, previous_pulse)
                     else: # the current pulse does not have 'previous' as its time_reference specification - do nothing
                         pass
                     ## If a pulse with this pulse_number exists, always update the previous_pulse reference
@@ -432,19 +407,20 @@ class InputPulseSeq(PulseSeq):
                         raise RuntimeError(" ".join(["No pulse with name", ref_pulse_name, "exists."]))
                     ## Check if current pulse already has a valid absolute time set
                     if current_pulse.valid_abs_time:
-                        if verbose >= 4:
-                            print(str(current_pulse), "already has a valid absolute time, skipping...")
+                        # if verbose >= 4:
+                        #     print(str(current_pulse), "already has a valid absolute time, skipping...")
+                        pass
                     else:
-                        if verbose >= 4:
-                            print(str(current_pulse), "has no valid absolute time; calculating...")
-                        self.calculate_absolute_time(current_pulse, ref_pulse, verbose = verbose)
+                        # if verbose >= 4:
+                        #     print(str(current_pulse), "has no valid absolute time; calculating...")
+                        self.calculate_absolute_time(current_pulse, ref_pulse)
                 ##
             ## debug message
-            if verbose >= 4:
-                print("Current pulse state:")
-                self.print_info(pulse_params = True)
-                print("Absolute time validity:")
-                print([pulse.valid_abs_time for pulse in self.pulse_list])
+            # if verbose >= 4:
+            #     print("Current pulse state:")
+            #     self.print_info(pulse_params = True)
+            #     print("Absolute time validity:")
+            #     print([pulse.valid_abs_time for pulse in self.pulse_list])
             ## Increment loop counter to prevent infinite loops
             loop_counter = loop_counter + 1
 
@@ -453,19 +429,16 @@ class InputPulseSeq(PulseSeq):
         for pulse in self.pulse_list:
             if pulse["pulse_number"] == -1:
                 del pulse["pulse_number"]
-        ## debug message
-        if verbose >= 3:
-            print("Absolute time set for 'previous' and 'relative' reference pulses.")
+        ## Status message
+        self.logger.debug("Absolute time set for 'previous' and 'relative' reference pulses.")
         ## Absolute times calculations finished
-        if verbose >= 2:
-            print("Absolute time calculations completed.")
+        self.logger.debug("Absolute time calculations completed.")
 
         ####
-        ## debug message
-        if verbose >= 2:
-            print("Pulse sequence pre-conversion completed.")
+        ## Status message
+        self.logger.debug("Pulse sequence pre-conversion completed.")
 
-    def calculate_absolute_time(self, current_pulse, reference_pulse, *, verbose = 1):
+    def calculate_absolute_time(self, current_pulse, reference_pulse):
         '''
         Calculate the absolute time of the current_pulse relative to the relative_marker (start or end) of the reference_pulse.
 
@@ -477,11 +450,11 @@ class InputPulseSeq(PulseSeq):
             if "relative_marker" not in current_pulse.attributes:
                 current_pulse["relative_marker"] = 'end'
             ## Assume measurement from 'start'
-            if verbose >= 4:
-                print("Current pulse is:", current_pulse.name)
-                print("Reference pulse info:")
-                reference_pulse.print_info()
-                print(reference_pulse.valid_abs_time)
+            # if verbose >= 4:
+            #     print("Current pulse is:", current_pulse.name)
+            #     print("Reference pulse info:")
+            #     reference_pulse.print_info()
+            #     print(reference_pulse.valid_abs_time)
             new_absolute_time = reference_pulse["absolute_time"] + current_pulse["time_offset"]
             ## Add reference_pulse width if from 'end'
             if current_pulse["relative_marker"] == 'end':
@@ -495,22 +468,20 @@ class InputPulseSeq(PulseSeq):
         ##
 
 
-    def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr, *, verbose = 1):
+    def get_sorted_list(self, sort_attribute = _rc.pulse_sort_attr):
         '''
         Fetch the list of pulses in the sequence, sorted by an attribute (should be absolute_time).
 
         The output of this method can be passed directly to an OutputPulseSeq.
         '''
-        ## debug message
-        if verbose >= 2:
-            print("Getting sorted pulse sequence...")
+        ## Status message
+        self.logger.debug("Getting sorted pulse sequence...")
         ## Carry out pre-sort processing
-        self.pulse_pre_conversion(verbose = verbose)
+        self.pulse_pre_conversion()
         ## Assert that each pulse in the sequence has the appropriate sort attribute set
         assert all([pulse.valid_abs_time for pulse in self.pulse_list]), "There are pulses which do not have a valid (set or calculated) absolute_time attribute."
         ## debug message
-        if verbose >= 4:
-            print("Sorting by attribute:", sort_attribute)
+        self.logger.debug("Sorting by attribute: {}".format(sort_attribute))
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])
 
 ###############################################################################
@@ -525,19 +496,23 @@ class OutputPulseSeq(PulseSeq):
 
     Also contains methods which prepare the pulse parameters for export to Labber from a time-ordered list of pulses obtained through an InputPulseSeq -> OutputPulseSeq conversion. Note that this should not be done directly, but instead handled by a PulseSeqManager object.
     '''
-    def __init__(self, *, verbose = 1):
+    def __init__(self, *, parent_logger_name = None):
         ## call base class constructor
-        super().__init__(verbose = verbose)
+        super().__init__()
+        ## Logging
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'InputPulseSeq'])
+        else:
+            logger_name = 'InputPulseSeq'
+        self.logger = logging.getLogger(logger_name)
         ## Flags
         self.is_exportable = False
         ## debug message
-        if self.verbose >= 4:
-            print("Called OutputPulseSeq constructor.")
+        self.logger.debug('Instance initialized.')
 
     def __del__(self):
-        ## debug message
-        if self.verbose >= 4:
-            print("Called OutputPulseSeq destructor.")
+        ## Status message
+        self.logger.debug('Instance deleted.')
         ## call base class destructor
         super().__del__()
 
@@ -551,47 +526,40 @@ class OutputPulseSeq(PulseSeq):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse import methods (post-conversion)
 
-    def set_main_params(self, param_dict, *, verbose = 1):
+    def set_main_params(self, param_dict):
         '''
         Set the pulse sequence main parameters.
         '''
-        ## debug message
-        if verbose >= 3:
-            print("Importing main parameters for OutputPulseSeq...")
+        ## Status message
+        self.logger.debug("Importing main parameters for OutputPulseSeq...")
         ##
         self.main_params = param_dict
-        ## debug message
-        if verbose >= 3:
-            print("OutputPulseSeq main parameter import completed.")
 
-    def set_pulse_seq(self, pulse_list, *, verbose = 1):
+    def set_pulse_seq(self, pulse_list):
         '''
         Import data from a (sorted) list of pulses.
         '''
         ## debug message
-        if verbose >= 3:
-            print("Setting pulse sequence in OutputPulseSeq...")
+        self.logger.debug("Setting pulse sequence in OutputPulseSeq...")
         ## Add pulses from list
         for pulse in pulse_list:
-            self.add_pulse(pulse, verbose = verbose)
-        if verbose >= 4:
-            print("Imported pulse sequence in OutputPulseSeq:")
-            self.print_info(pulse_params = True)
+            self.add_pulse(pulse)
+        # if verbose >= 4:
+        #     print("Imported pulse sequence in OutputPulseSeq:")
+        #     self.print_info(pulse_params = True)
         ## Post-import processing
-        self.pulse_post_conversion(verbose = verbose)
+        self.pulse_post_conversion()
         ## debug message
-        if verbose >= 3:
-            print("OutputPulseSeq processing completed.")
+        self.logger.debug("OutputPulseSeq processing completed.")
 
-    def pulse_post_conversion(self, *, verbose = 1):
+    def pulse_post_conversion(self):
         '''
         Post-conversion pulse sequence cleanup.
 
         This method carries out any modifications to the pulse sequence parameters such that they are ready for export to Labber.
         '''
         ## debug messsage
-        if verbose >= 3:
-            print("Carrying out post-conversion processing on output sequence...")
+        self.logger.debug("Carrying out post-conversion processing on output sequence...")
         ## Assign pulse number attributes based on ordering
         for index, pulse in enumerate(self.pulse_list):
             pulse["pulse_number"] = index + 1  # pulse numbering starts at 0
@@ -607,30 +575,28 @@ class OutputPulseSeq(PulseSeq):
         self.main_params["First pulse delay"] = self.pulse_list[0]["absolute_time"]
         ## Iterate through pulses, setting previous pulse's spacing based on next pulse's absolute_time
         for current_pulse, next_pulse in zip(self.pulse_list[:-1], self.pulse_list[1:]):
-            if verbose >= 4:
-                print("Calculating pulse spacing between", current_pulse, "and", next_pulse)
+            # if verbose >= 4:
+            #     print("Calculating pulse spacing between", current_pulse, "and", next_pulse)
             current_pulse["s"] = next_pulse["absolute_time"] - current_pulse.end_time
-            if verbose >= 4:
-                print("\tNext pulse absolute time:", next_pulse['absolute_time'])
-                print("\tCurrent pulse end time:", current_pulse.end_time)
-                print("\tCurrent pulse spacing:", current_pulse['s'])
+            # if verbose >= 4:
+            #     print("\tNext pulse absolute time:", next_pulse['absolute_time'])
+            #     print("\tCurrent pulse end time:", current_pulse.end_time)
+            #     print("\tCurrent pulse spacing:", current_pulse['s'])
         ## Set pulse sequence length (number of points)
         if 'sequence_duration' in self.main_params and 'Sample rate' in self.main_params:
             self.main_params['Number of points'] = int(self.main_params['sequence_duration']*self.main_params['Sample rate'])
         if 'sequence_duration' in self.main_params:
             del self.main_params['sequence_duration']
         ####
-        if verbose >= 4:
-            print("Pulse parameters after pre-export timing conversions:")
-            self.print_info(pulse_params = True)
+        # if verbose >= 4:
+        #     print("Pulse parameters after pre-export timing conversions:")
+        #     self.print_info(pulse_params = True)
 
         ####
         ## Convert all physical parameter pulse shortcodes to full names
-        if verbose >= 3:
-            print("Converting parameter shortcodes...")
+        self.logger.debug("Converting parameter shortcodes...")
         for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
-            if verbose >= 4:
-                print("Converting ", param_short_name, " into ", param_full_name, "...", sep="")
+            self.logger.debug("Converting {} into {}...".format(param_short_name, param_full_name))
             for pulse in self.pulse_list:
                 try:
                     param_value = pulse[param_short_name]
@@ -639,25 +605,22 @@ class OutputPulseSeq(PulseSeq):
                 else:
                     del pulse[param_short_name]
                     pulse[param_full_name] = param_value
-        if verbose >= 3:
-            print("Parameter shortcodes converted.")
+        self.logger.debug("Parameter shortcodes converted.")
 
         ## set flag
         self.is_exportable = True
         ## debug message
-        if verbose >= 3:
-            print("Post-conversion processing on output sequence completed.")
+        self.logger.debug("Post-conversion processing on output sequence completed.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Channel relations
 
-    def process_channel_defs(self, channel_defs_dict, * ,verbose = 1):
+    def process_channel_defs(self, channel_defs_dict):
         '''
         Process channel definitions.
         '''
-        if verbose >= 3:
-            print("Processing channel definitions in OutputPulseSeq...")
+        self.logger.debug("Processing channel definitions...")
         processed_channel_defs = {}
         ## Convert pulse names to pulse numbers
         for pulse_name, pulse_defs in channel_defs_dict.items():
@@ -669,13 +632,12 @@ class OutputPulseSeq(PulseSeq):
         ##
         return processed_channel_defs
 
-    def process_channel_relations(self, channel_relations_dict, * ,verbose = 1):
+    def process_channel_relations(self, channel_relations_dict):
         '''
         Process channel relations.
         '''
-        ## status message
-        if verbose >= 3:
-            print("Processing channel relations in OutputPulseSeq...")
+        ## Status message
+        self.logger.debug("Processing channel relations...")
         processed_channel_relations = {}
         ## Convert pulse names to pulse numbers
         for pulse_name, pulse_defs in channel_relations_dict.items():
@@ -686,46 +648,42 @@ class OutputPulseSeq(PulseSeq):
                 processed_channel_relations[pulse_number] = pulse_defs
         return processed_channel_relations
 
-    def add_channel_defs(self, channel_defs_dict, *, verbose = 1):
+    def add_channel_defs(self, channel_defs_dict):
         '''
         Add channel key definitions (for setting channel relations)
         '''
-        ## status message
-        if verbose >= 2:
-            print("Adding channel definitions to OutputPulseSeq...")
-        self.channel_defs = self.process_channel_defs(channel_defs_dict, verbose = verbose)
+        ## Status message
+        self.logger.debug("Adding channel definitions...")
+        self.channel_defs = self.process_channel_defs(channel_defs_dict)
 
-    def add_channel_relations(self, channel_relations_dict, *, verbose = 1):
+    def add_channel_relations(self, channel_relations_dict):
         '''
         Add channel relations.
         '''
-        ## status message
-        if verbose >= 2:
-            print("Adding channel relations to OutputPulseSeq...")
-        self.channel_relations = self.process_channel_relations(channel_relations_dict, verbose = verbose)
+        ## Status message
+        self.logger.debug("Adding channel relations...")
+        self.channel_relations = self.process_channel_relations(channel_relations_dict)
 
-    def get_channel_defs(self, *, verbose = 1):
+    def get_channel_defs(self):
         '''
         Get channel definitions.
         '''
         ## status message
-        if verbose >= 2:
-            print("Getting channel definitions from OutputPulseSeq...")
+        self.logger.debug("Getting channel definitions...")
         return self.channel_defs
 
-    def get_channel_relations(self, *, verbose = 1):
+    def get_channel_relations(self):
         '''
         Get channel relations.
         '''
         ## status message
-        if verbose >= 2:
-            print("Getting channel relations from OutputPulseSeq...")
+        self.logger.debug("Getting channel relations...")
         return self.channel_relations
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Pulse sequence export
 
-    def export(self, *, verbose = 1):
+    def export(self):
         '''
         Returns the output sequence, ready to be parsed by the LabberExporter and read into the Labber API.
         '''

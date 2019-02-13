@@ -37,8 +37,8 @@ class psictUIFInterface:
         self.is_SQPG_used = False
         ## Add constituent objects
         self.fileManager = FileManager(parent_logger_name = self.logger.name)
-        self.pulseSeqManager = PulseSeqManager()
-        self.labberExporter = LabberExporter()
+        self.pulseSeqManager = PulseSeqManager(parent_logger_name = self.logger.name)
+        self.labberExporter = LabberExporter(parent_logger_name = self.logger.name)
         ## Add attributes for constituent objects
         self.fileManager.set_original_wd(self._original_wd, self._script_inv)
         ## Set slave status as standalone script by default

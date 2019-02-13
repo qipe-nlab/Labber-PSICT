@@ -11,16 +11,16 @@ class Pulse:
 
     This class should not in general be used directly, but instead managed through PulseSeq objects (which act as containers for the pulse sequence as a whole)
     '''
-    def __init__(self, spec, *, verbose = 0):
+    def __init__(self, spec, *, parent_logger_name = None):
         self.attributes = {}
         self.valid_abs_time = False
         if isinstance(spec, dict):  # create from dict of parameters
-            if verbose >= 4:
-                print("Creating Pulse object from parameter dict...")
-            self.set_attributes(spec, verbose = verbose)
+            # if verbose >= 4:
+            #     print("Creating Pulse object from parameter dict...")
+            self.set_attributes(spec)
         elif isinstance(spec, str): # create from string as name
-            if verbose >= 4:
-                print("Creating pulse object by name:", spec)
+            # if verbose >= 4:
+            #     print("Creating pulse object by name:", spec)
             self.name = spec
         else:
             raise TypeError("Invalid specification for Pulse creation:", spec)
@@ -91,14 +91,14 @@ class Pulse:
     ###########################################################################
     ## Attribute import and input
 
-    def set_attributes(self, input_attributes, *, verbose = 0):
+    def set_attributes(self, input_attributes):
         '''
         Set attributes from an input dictionary input_attributes.
         '''
         for key, value in input_attributes.items():
             self[key] = value
-            if verbose >= 3:
-                try:
-                    print("Pulse ", self.name, ": attribute ", key, " set to value ", value, sep = "")
-                except KeyError:
-                    print("<unnamed pulse>: attribute", key, "set to value", value)
+            # if verbose >= 3:
+            #     try:
+            #         print("Pulse ", self.name, ": attribute ", key, " set to value ", value, sep = "")
+            #     except KeyError:
+            #         print("<unnamed pulse>: attribute", key, "set to value", value)

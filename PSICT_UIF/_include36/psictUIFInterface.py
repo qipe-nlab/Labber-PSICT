@@ -6,6 +6,7 @@ import os
 import sys
 import importlib.util
 from pathlib import Path
+import logging
 
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
@@ -26,6 +27,8 @@ class psictUIFInterface:
 
     def __init__(self, *, is_slave = False, verbose = 1):
         ## NB declare all attributes explicitly for __del__ to work correctly
+        ## Logging
+        self.init_logging()
         ## Set object logging level
         self.verbose = verbose
         ## Save original working directory from which external script was invoked from
@@ -61,6 +64,27 @@ class psictUIFInterface:
         if self.verbose >= 4:
             print("Called psictUIFInterface destructor.")
         ##
+
+    ##########################################################################
+    ## Logging
+
+    def init_logging(self):
+        '''
+        Initialize logging for the psictUIFInterface.
+        '''
+        ## Init logger
+        self.logger = logging.getLogger('psictUIFInterface')
+        self.logger.setLevel(logging.DEBUG)
+        ## Console stream handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_fmt = logging.Formatter('%(asctime)s %(name)s: %(message)s', \
+                                        datefmt = '%y-%m-%d %H:%M:%S')
+        console_handler.setFormatter(console_fmt)
+        ## Add handlers to logger
+        self.logger.addHandler(console_handler)
+        ## Status message
+        self.logger.debug('Logging initialization complete.')
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management

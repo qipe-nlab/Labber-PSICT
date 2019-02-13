@@ -3,4 +3,4 @@
 ## Any version featuring a non-null subsubversion or build number is not guaranteed to be stable.
 ## Prior to 1.0.7.0, version numbers were weird.
 
-version = "1.1.1.1"
+version = "1.1.1.2"

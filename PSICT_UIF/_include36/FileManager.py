@@ -22,9 +22,13 @@ class FileManager:
     Includes methods to set (either manually or through defaults in the _FileManager_rc file) the script-specific rcfile and the Labber executable path. In addition, stores and handles the paths and filenames of the template, reference, and output database files. The resource database file is a temporary copy of the template file, where the hdf5 entries are directly modified by the PSICT-UIF package, and is deleted after the script has been run.
     '''
 
-    def __init__(self):
+    def __init__(self, *, parent_logger_name = None):
         ## Logging
-        self.logger = logging.getLogger('psictUIFInterface.FileManager')
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'FileManager'])
+        else:
+            logger_name = 'FileManager'
+        self.logger = logging.getLogger(logger_name)
         ## Set values of attributes constant across multiple methods
         self._REF_COPY_POSTFIX = _rc.REF_COPY_POSTFIX
         ## Set Labber exe path to system default - can be overwritten by user in external script later

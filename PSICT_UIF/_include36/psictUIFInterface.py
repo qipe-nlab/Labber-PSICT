@@ -26,17 +26,17 @@ class psictUIFInterface:
     Since version 1.0.7.2, it is possible to specify the is_slave parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the slave setting is False, this is fully backwards-compatible with scripts from previous versions.
     '''
 
-    def __init__(self, *, is_slave = False):
+    def __init__(self, *, is_slave = False, parent_logger_name = None):
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## Logging
-        self.init_logging()
+        self.init_logging(parent_logger_name)
         ## Save original working directory from which external script was invoked from
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
         ## Add attributes
         self.is_SQPG_used = False
         ## Add constituent objects
-        self.fileManager = FileManager()
+        self.fileManager = FileManager(parent_logger_name = self.logger.name)
         self.pulseSeqManager = PulseSeqManager()
         self.labberExporter = LabberExporter()
         ## Add attributes for constituent objects
@@ -65,12 +65,16 @@ class psictUIFInterface:
     ##########################################################################
     ## Logging
 
-    def init_logging(self):
+    def init_logging(self, parent_logger_name = None):
         '''
         Initialize logging for the psictUIFInterface.
         '''
         ## Init logger
-        self.logger = logging.getLogger('psictUIFInterface')
+        if parent_logger_name is not None:
+            logger_name = '.'.join([parent_logger_name, 'psictUIFInterface'])
+        else:
+            logger_name = 'psictUIFInterface'
+        self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
         ## Console stream handler
         console_handler = logging.StreamHandler()

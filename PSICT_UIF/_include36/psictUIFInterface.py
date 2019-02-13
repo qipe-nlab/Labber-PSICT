@@ -26,12 +26,10 @@ class psictUIFInterface:
     Since version 1.0.7.2, it is possible to specify the is_slave parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the slave setting is False, this is fully backwards-compatible with scripts from previous versions.
     '''
 
-    def __init__(self, *, is_slave = False, verbose = 1):
+    def __init__(self, *, is_slave = False):
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## Logging
         self.init_logging()
-        ## Set object logging level
-        self.verbose = verbose
         ## Save original working directory from which external script was invoked from
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
@@ -39,8 +37,8 @@ class psictUIFInterface:
         self.is_SQPG_used = False
         ## Add constituent objects
         self.fileManager = FileManager()
-        self.pulseSeqManager = PulseSeqManager(verbose = self.verbose)
-        self.labberExporter = LabberExporter(verbose = self.verbose)
+        self.pulseSeqManager = PulseSeqManager()
+        self.labberExporter = LabberExporter()
         ## Add attributes for constituent objects
         self.fileManager.set_original_wd(self._original_wd, self._script_inv)
         ## Set slave status as standalone script by default

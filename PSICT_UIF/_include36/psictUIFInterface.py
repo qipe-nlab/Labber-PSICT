@@ -77,7 +77,7 @@ class psictUIFInterface:
         ## Console stream handler
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
-        console_fmt = logging.Formatter('%(asctime)s %(name)s: %(message)s', \
+        console_fmt = logging.Formatter('[%(asctime)s] %(message)s', \
                                         datefmt = '%y-%m-%d %H:%M:%S')
         console_handler.setFormatter(console_fmt)
         ## File handler
@@ -88,7 +88,7 @@ class psictUIFInterface:
         log_path = os.path.join(log_dir, log_file)
         file_handler = logging.FileHandler(log_path)
         file_handler.setLevel(logging.DEBUG)
-        file_fmt = logging.Formatter('%(asctime)s %(name)s: %(message)s', \
+        file_fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)s: %(message)s', \
                                         datefmt = '%y-%m-%d %H:%M:%S')
         file_handler.setFormatter(file_fmt)
         ## Add handlers to logger

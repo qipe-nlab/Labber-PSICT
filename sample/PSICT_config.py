@@ -1,9 +1,11 @@
 ## Logging
 logging_config = {
+    'console_log_enabled': True,
     'console_log_level': 25, # SPECIAL
     'console_fmt': '[%(asctime)s] %(message)s',
     'console_datefmt': '%y-%m-%d %H:%M:%S',
     ##
+    'file_log_enabled': True,
     'file_log_level': 15,    # VERBOSE
     'file_fmt': '%(asctime)s %(levelname)-8s %(name)s: %(message)s',
     'file_datefmt': '%y-%m-%d %H:%M:%S',

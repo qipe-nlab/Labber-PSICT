@@ -26,10 +26,14 @@ class psictUIFInterface:
     Since version 1.0.7.2, it is possible to specify the is_slave parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the slave setting is False, this is fully backwards-compatible with scripts from previous versions.
     '''
 
-    def __init__(self, *, is_slave = False, parent_logger_name = None):
+    def __init__(self, config_path, *, is_slave = False, parent_logger_name = None):
         ## NB declare all attributes explicitly for __del__ to work correctly
+        ## Load config (log after logger initialized)
+        self.load_config_file(config_path)
         ## Logging
         self.init_logging(parent_logger_name)
+        ## Log config loading for debugging
+        self.logger.debug('Config file loaded from path: {}'.format(self.script_rcpath))
         ## Save original working directory from which external script was invoked from
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
@@ -41,6 +45,8 @@ class psictUIFInterface:
         self.labberExporter = LabberExporter(parent_logger_name = self.logger.name)
         ## Add attributes for constituent objects
         self.fileManager.set_original_wd(self._original_wd, self._script_inv)
+        ## Assign config to delegates
+        self.assign_config_to_delegates()
         ## Set slave status as standalone script by default
         self.set_slave_status(is_slave)
         ## Status message
@@ -112,22 +118,30 @@ class psictUIFInterface:
         '''
         Load the PSICT config file from the specified path.
 
+        Prior to version 1.1.3.1, this method needed to be invoked explicitly in the external script.
+        This is now changed in order to enable logging config to be imported from the config file,
+        and log as much of the psictUIFInterface object creation as possible. Logging of the config
+        file load process is now confirmed post-fact.
+
         The config_path provided should be an absolute path (behaviour is not guaranteed if it is relative).
         Prior to version 1.0.7.1, these configuration settings were stored in the script rc-file.
         '''
-        ## Status message
-        self.logger.debug('Loading config file from path: {}'.format(config_path))
         ## Set config path
         self.script_rcpath = os.path.normpath(config_path)
         ## Import config file as module - preserve old names from rc-file
         config_spec = importlib.util.spec_from_file_location("", self.script_rcpath)
         self._script_rc = importlib.util.module_from_spec(config_spec)
         config_spec.loader.exec_module(self._script_rc)
-        ## Assign to delegates
+
+    def assign_config_to_delegates(self):
+        '''
+        Assign the config path/module to the FileManager and PulseSeqManager objects
+
+        Prior to version 1.1.3.1, this was done implicitly in the load_config_file method.
+        '''
         self.fileManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
         self.pulseSeqManager.assign_script_rcmodule(self._script_rc, self.script_rcpath)
-        ## Status message
-        self.logger.debug('Config file loaded and assigned to delegates.')
+        self.logger.debug('Config path/module assigned to delegates.')
 
     def set_labber_exe_path(self, new_labber_exe_path):
         '''

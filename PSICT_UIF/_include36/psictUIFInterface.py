@@ -90,7 +90,7 @@ class psictUIFInterface:
         self.logger.setLevel(LogLevels.ALL) # Log all possible events
         ## Console stream handler
         if self._script_rc.logging_config['console_log_enabled']:
-            console_handler = logging.StreamHandler()
+            console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(self._script_rc.logging_config['console_log_level'])
             console_fmt = logging.Formatter(self._script_rc.logging_config['console_fmt'], \
                                             datefmt = self._script_rc.logging_config['console_datefmt'])

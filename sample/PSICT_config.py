@@ -1,3 +1,16 @@
+## Logging
+logging_config = {
+    'console_log_level': 20, # INFO
+    'console_fmt': '[%(asctime)s] %(message)s',
+    'console_datefmt': '%y-%m-%d %H:%M:%S',
+    ##
+    'file_log_level': 10,    # DEBUG
+    'file_fmt': '%(asctime)s %(levelname)-8s %(name)s: %(message)s',
+    'file_datefmt': '%y-%m-%d %H:%M:%S',
+    'log_dir': 'logs',
+    'log_file': 'psict_{:%y%m%d_%H%M%S}',
+}
+
 ## Parameter value pre-processing and conversion
 parameter_pre_process = {
         "SQPG": {

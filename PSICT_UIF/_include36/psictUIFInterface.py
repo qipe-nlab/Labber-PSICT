@@ -81,23 +81,23 @@ class psictUIFInterface:
         else:
             logger_name = 'psictUIFInterface'
         self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(1) # Log all possible events
         ## Console stream handler
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_fmt = logging.Formatter('[%(asctime)s] %(message)s', \
-                                        datefmt = '%y-%m-%d %H:%M:%S')
+        console_handler.setLevel(self._script_rc.logging_config['console_log_level'])
+        console_fmt = logging.Formatter(self._script_rc.logging_config['console_fmt'], \
+                                        datefmt = self._script_rc.logging_config['console_datefmt'])
         console_handler.setFormatter(console_fmt)
         ## File handler
-        log_dir = 'logs'
+        log_dir = self._script_rc.logging_config['log_dir']
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        log_file = 'psict_{:%y%m%d_%H%M%S}'.format(datetime.now())+'.log'
+        log_file = self._script_rc.logging_config['log_file'].format(datetime.now())+'.log'
         log_path = os.path.join(log_dir, log_file)
         file_handler = logging.FileHandler(log_path)
-        file_handler.setLevel(logging.DEBUG)
-        file_fmt = logging.Formatter('%(asctime)s %(levelname)-8s %(name)s: %(message)s', \
-                                        datefmt = '%y-%m-%d %H:%M:%S')
+        file_handler.setLevel(self._script_rc.logging_config['file_log_level'])
+        file_fmt = logging.Formatter(self._script_rc.logging_config['file_fmt'], \
+                                        datefmt = self._script_rc.logging_config['file_datefmt'])
         file_handler.setFormatter(file_fmt)
         ## Add handlers to logger
         self.logger.addHandler(console_handler)

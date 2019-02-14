@@ -11,6 +11,7 @@ import Labber
 
 import PSICT_UIF._include36._Pulse_rc as _Pulse_rc
 from PSICT_UIF._include36.ParameterSpec import IterationSpec
+import PSICT_UIF._include36._LogLevels as LogLevels
 
 class LabberExporter:
     '''
@@ -364,10 +365,14 @@ class LabberExporter:
             self.MeasurementObject.updateValue(target_string, param_value.start_value, 'START')
             self.MeasurementObject.updateValue(target_string, param_value.stop_value, 'STOP')
             self.MeasurementObject.updateValue(target_string, param_value.n_pts, 'N_PTS')
+            ## Status message
+            self.logger.log(LogLevels.SPECIAL, \
+                    "Instrument value updated: \'{}\' to {}".format(target_string, param_value))
         else: # the parameter is a single value, either string or numeric
             self.MeasurementObject.updateValue(target_string, param_value, 'SINGLE')
-        ## Status message
-        self.logger.debug("Instrument value updated: \'{}\' to {}".format(target_string, param_value))
+            ## Status message
+            self.logger.log(LogLevels.VERBOSE, \
+                    "Instrument value updated: \'{}\' to {}".format(target_string, param_value))
 
     def apply_client_values(self):
         '''

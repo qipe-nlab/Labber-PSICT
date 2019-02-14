@@ -14,6 +14,7 @@ import logging
 from Labber import ScriptTools
 
 import PSICT_UIF._include36._FileManager_rc as _rc
+import PSICT_UIF._include36._LogLevels as LogLevels
 
 class FileManager:
     '''
@@ -211,7 +212,7 @@ class FileManager:
         self.output_file = valid_output_file
         self.output_path = self.generate_full_path(self.output_dir, self.output_file)
         ## Status message
-        self.logger.info("Output file: {}".format(self.output_file))
+        self.logger.log(LogLevels.SPECIAL, "Output file: {}".format(self.output_file))
         self.logger.debug("Full output path: {}".format(self.output_path))
 
 

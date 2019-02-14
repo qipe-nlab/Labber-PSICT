@@ -12,6 +12,7 @@ from datetime import datetime
 from PSICT_UIF._include36.FileManager import FileManager
 from PSICT_UIF._include36.PulseSeqManager import PulseSeqManager
 from PSICT_UIF._include36.LabberExporter import LabberExporter
+import PSICT_UIF._include36._LogLevels as LogLevels
 
 class psictUIFInterface:
     '''
@@ -75,13 +76,18 @@ class psictUIFInterface:
         '''
         Initialize logging for the psictUIFInterface.
         '''
+        ## Add extra logging levels
+        logging.addLevelName(LogLevels.ALL, 'ALL')
+        logging.addLevelName(LogLevels.TRACE, 'TRACE')
+        logging.addLevelName(LogLevels.VERBOSE, 'VERBOSE')
+        logging.addLevelName(LogLevels.SPECIAL, 'SPECIAL')
         ## Init logger
         if parent_logger_name is not None:
             logger_name = '.'.join([parent_logger_name, 'psictUIFInterface'])
         else:
             logger_name = 'psictUIFInterface'
         self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(1) # Log all possible events
+        self.logger.setLevel(LogLevels.ALL) # Log all possible events
         ## Console stream handler
         console_handler = logging.StreamHandler()
         console_handler.setLevel(self._script_rc.logging_config['console_log_level'])

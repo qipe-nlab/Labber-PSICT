@@ -6,6 +6,7 @@ import logging
 
 from PSICT_UIF._include36.PulseSequence import InputPulseSeq, OutputPulseSeq
 from PSICT_UIF._include36.ParameterSpec import IterationSpec
+import PSICT_UIF._include36._LogLevels as LogLevels
 
 class PulseSeqManager:
     '''
@@ -27,7 +28,7 @@ class PulseSeqManager:
         self.is_input_seq_populated = False
         self.is_output_seq_populated = False
         ## debug message
-        self.logger.debug('Instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'Instance initialized.')
 
     ## destructor
     def __del__(self):
@@ -35,7 +36,7 @@ class PulseSeqManager:
         del self.inputPulseSeq
         del self.outputPulseSeq
         ## Status message
-        self.logger.debug('Instance deleted.')
+        self.logger.log(LogLevels.TRACE, 'Instance deleted.')
 
     def assign_script_rcmodule(self, rcmodule, rcpath):
         '''

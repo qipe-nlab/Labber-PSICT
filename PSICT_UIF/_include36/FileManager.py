@@ -35,13 +35,13 @@ class FileManager:
         ## Set Labber exe path to system default - can be overwritten by user in external script later
         self.setdef_labber_exe_path()
         ## Status message
-        self.logger.debug('FileManager instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'Instance initialized.')
 
     def __del__(self):
         ## Delete reference file (temporary copy of template file)
         self.clean_reference_file()
         ## Status message
-        self.logger.debug('FileManager instance deleted.')
+        self.logger.log(LogLevels.TRACE, 'Instance deleted.')
 
     def set_original_wd(self, original_wd, script_inv):
         '''
@@ -82,7 +82,7 @@ class FileManager:
         ## Normalize path
         new_labber_exe_path = os.path.normpath(new_labber_exe_path)
         ## Status message
-        self.logger.debug("Setting new Labber executable path: {}".format(new_labber_exe_path))
+        self.logger.log(LogLevels.VERBOSE, "Setting new Labber executable path: {}".format(new_labber_exe_path))
         ## Change attribute
         self.labber_exe_path = new_labber_exe_path
 
@@ -93,23 +93,23 @@ class FileManager:
         Currently supports Windows and Darwin (macOS); other operating systems will raise a RuntimeError.
         '''
         ## Status message
-        self.logger.debug("Setting Labber executable path spec to system default...")
+        self.logger.log(LogLevels.DEBUG, "Setting Labber executable path spec to system default...")
         ## Check os
         _SYSTEM = platform.system()
         if _SYSTEM == "Windows":  # Windows
-            self.logger.debug("System identified as Windows; "+\
-                              "default executable path is {}".format(_rc.EXE_PATH_WIN))
+            msg_string = "System identified as Windows; default executable path is {}".format(_rc.EXE_PATH_WIN)
+            self.logger.log(LogLevels.TRACE, msg_string)
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_WIN
         elif _SYSTEM == "Darwin": # macOS
-            self.logger.debug("System identified as macOS; "\
-                             +"default executable path is".format(_rc.EXE_PATH_MAC))
+            msg_string = "System identified as macOS; default executable path is {}".format(_rc.EXE_PATH_MAC)
+            self.logger.log(LogLevels.TRACE, msg_string)
             _SYSDEF_LABBER_EXE_PATH = _rc.EXE_PATH_MAC
         else:                     # Other OSes are currently not supported
             raise RuntimeError("System could not be identified, or is not supported.\nplatform.system() returned: {}".format(_SYSTEM))
         ## Change path stored in FileManager attributes
         self.set_labber_exe_path(_SYSDEF_LABBER_EXE_PATH)
         ## Status message
-        self.logger.debug("Labber executable path spec set to system default.")
+        self.logger.log(LogLevels.TRACE, "Labber executable path spec set to system default.")
 
     def apply_labber_exe_path(self):
         '''
@@ -159,7 +159,7 @@ class FileManager:
 
         The temporary reference file will have all direct hdf5 edits applied to it, and the measurement will be run from it as well.
         '''
-        self.logger.debug("Copying reference file...")
+        self.logger.log(LogLevels.VERBOSE, "Copying reference file...")
         ## Set reference file target names
         try:
             self.reference_dir = self.template_dir
@@ -177,7 +177,7 @@ class FileManager:
         '''
         Clean up the temporary reference file (ie delete it).
         '''
-        self.logger.debug("Deleting temporary reference file...")
+        self.logger.log(LogLevels.VERBOSE, "Deleting temporary reference file...")
         ## Delete temporary copy of reference file
         try:
             os.remove(self.reference_path)
@@ -186,7 +186,7 @@ class FileManager:
             self.logger.warning('Reference file {} not found!'.format(self.reference_path))
             pass
         else:
-            self.logger.debug("Deleted reference file {}".format(self.reference_path))
+            self.logger.log(LogLevels.DEBUG, "Deleted reference file {}".format(self.reference_path))
 
 
     ## Output file methods
@@ -312,7 +312,7 @@ class FileManager:
         Affects whether or not the integrated script copying methods are invoked.
         '''
         self._is_slave = is_slave
-        self.logger.debug('Slave status set to: {}'.format(self._is_slave))
+        self.logger.log(LogLevels.VERBOSE, 'Slave status set to: {}'.format(self._is_slave))
 
     def pre_measurement_copy(self):
         '''
@@ -324,9 +324,9 @@ class FileManager:
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
             if self._is_slave:
-                self.logger.debug('Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
+                self.logger.log(LogLevels.VERBOSE, 'Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
             else: # Script copying is enabled and the script is running as a standalone
-                self.logger.debug("Copying script and additional files...")
+                self.logger.log(LogLevels.VERBOSE, "Copying script and additional files...")
                 ## Check if target directory has been specified
                 try:
                     assert self._script_copy_target_dir
@@ -344,9 +344,9 @@ class FileManager:
                 script_target_path = os.path.abspath(os.path.join(script_target_dir, target_file))
                 ## Copy external script (the one which runs the whole thing)
                 script_path_original = os.path.join(self._original_wd, self._script_inv)
-                self.logger.debug("Original script is: {}".format(script_path_original))
+                self.logger.log(LogLevels.VERBOSE, "Original script is: {}".format(script_path_original))
                 script_path_new = shutil.copy(script_path_original, script_target_path)
-                self.logger.debug("Script file copied to: {}".format(script_path_new))
+                self.logger.log(LogLevels.INFO, "Script file copied to: {}".format(script_path_new))
         else:
             ## Copying script not enabled
             self.logger.warning("Script copying has been disabled in the PSICT config file.")

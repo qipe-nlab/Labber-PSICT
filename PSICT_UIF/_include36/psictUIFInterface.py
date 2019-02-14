@@ -34,7 +34,7 @@ class psictUIFInterface:
         ## Logging
         self.init_logging(parent_logger_name)
         ## Log config loading for debugging
-        self.logger.debug('Config file loaded from path: {}'.format(self.script_rcpath))
+        self.logger.log(LogLevels.VERBOSE, 'Config file loaded from path: {}'.format(self.script_rcpath))
         ## Save original working directory from which external script was invoked from
         self._original_wd = os.getcwd()
         self._script_inv = sys.argv[0]
@@ -51,7 +51,7 @@ class psictUIFInterface:
         ## Set slave status as standalone script by default
         self.set_slave_status(is_slave)
         ## Status message
-        self.logger.debug('psictUIFInterface instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'psictUIFInterface instance initialized.')
         ##
 
     ## Direct access to MeasurementObject as attribute
@@ -66,7 +66,7 @@ class psictUIFInterface:
         ## Change working directory back to original
         os.chdir(self._original_wd)
         ## Status message
-        self.logger.debug('psictUIFInterface instance deleted.')
+        self.logger.log(LogLevels.TRACE, 'psictUIFInterface instance deleted.')
         ##
 
     ##########################################################################
@@ -216,7 +216,7 @@ class psictUIFInterface:
         Set instrument parameters as point (single) values.
         '''
         ## Status message
-        self.logger.debug('Adding point values for instrument parameters...')
+        self.logger.log(LogLevels.VERBOSE, 'Adding point values for instrument parameters...')
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager.
         for instrument_name, instrument_params in point_values_dict.items():
             if instrument_name == "SQPG":
@@ -273,7 +273,7 @@ class psictUIFInterface:
         Iteration values are set as custom IterationSpec objects. They live within the same structure as the point values, and so overwrite any point values that were previously specified using the set_point_values method. As there is no simple way to implement general relationships amongst variables, all inter-pulse calculations carried out using IterationSpec objects will always take the maximal values in the iteration range.
         '''
         ## Status message
-        self.logger.debug("Adding iteration values for instrument parameters...")
+        self.logger.log(LogLevels.VERBOSE, "Adding iteration values for instrument parameters...")
         ## Iterate through instrument specifications in the input dict, and divert the SQPG spec to the PulseSeqManager
         for instrument_name, instrument_params in iteration_values_dict.items():
             if instrument_name == "SQPG":
@@ -295,7 +295,7 @@ class psictUIFInterface:
         channel_defs_dict specifies the available channels, and their algebraic symbols used in the channel relation strings. channel_relations_dict specifies the actual relations.
         '''
         ## Status message
-        self.logger.debug("Adding channel relations...")
+        self.logger.log(LogLevels.VERBOSE, "Adding channel relations...")
         ## Peel off SQPG specifications
         if "SQPG" in channel_defs_dict:
             self.is_SQPG_used = True
@@ -335,7 +335,7 @@ class psictUIFInterface:
         There are currently no post-measurement operations (beyond changing the working directory back to the original one, which is probably redundant anyway...)
         '''
         ## Status message
-        self.logger.debug("Carrying out measurement pre-processing...")
+        self.logger.log(LogLevels.VERBOSE, "Carrying out measurement pre-processing...")
         ##### Measurement pre-processing
         ## Set ScriptTools executable path
         self.fileManager.apply_labber_exe_path()
@@ -360,7 +360,7 @@ class psictUIFInterface:
         self.logger.debug("Measurement pre-processing completed.")
         #### End measurement pre-processing
         ## Status message
-        self.logger.info("Calling Labber to perform measurement...")
+        self.logger.log(LogLevels.SPECIAL, "Calling Labber to perform measurement...")
         ## Call Labber to perform measurement
         if self.MeasurementObject is not None:
             if dry_run:  # allows debugging w/o a Labber license
@@ -370,7 +370,7 @@ class psictUIFInterface:
         else:
             raise RuntimeError("MeasurementObject has not been set!")
         ## Status message
-        self.logger.debug("Measurement completed.")
+        self.logger.log(LogLevels.SPECIAL, "Measurement completed.")
         ## Change working directory back to original - this is here so Dany will be happy (it also exists in the destructor, but that is not run until ipython exits!)
         os.chdir(self._original_wd)
         ## Final status message - this indicates the user can continue with other things!

@@ -8,6 +8,7 @@ import logging
 
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
+import PSICT_UIF._include36._LogLevels as LogLevels
 
 class PulseSeq:
     '''
@@ -28,11 +29,11 @@ class PulseSeq:
         self.channel_defs = {}
         self.channel_relations = {}
         ## debug message
-        self.logger.debug('Instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'Instance initialized.')
 
     def __del__(self):
         ## Status message
-        self.logger.debug('Instance deleted.')
+        self.logger.log(LogLevels.TRACE, 'Instance deleted.')
 
     def assign_script_rcmodule(self, rcmodule, rcpath):
         '''
@@ -90,10 +91,10 @@ class PulseSeq:
         '''
         ## Handle new_pulse spec in different cases
         if isinstance(new_pulse, Pulse):
-            self.logger.debug("New Pulse is already pulse object.")
+            self.logger.log(LogLevels.TRACE, "New Pulse is already pulse object.")
             pass
         elif isinstance(new_pulse, dict):
-            self.logger.debug("Creating a new pulse by attribute list")
+            self.logger.log(LogLevels.TRACE, "Creating a new pulse by attribute list")
             new_pulse = Pulse(new_pulse)
         else:
             raise ValueError(" ".join(["Cannot interpret", new_pulse, "as pulse identifier"]))
@@ -151,11 +152,11 @@ class InputPulseSeq(PulseSeq):
             logger_name = 'InputPulseSeq'
         self.logger = logging.getLogger(logger_name)
         ## Status message
-        self.logger.debug('Instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'Instance initialized.')
 
     def __del__(self):
         ## Status message
-        self.logger.debug("Instance deleted.")
+        self.logger.log(LogLevels.TRACE, "Instance deleted.")
         ## call base class destructor
         super().__del__()
 
@@ -194,19 +195,19 @@ class InputPulseSeq(PulseSeq):
         for pulse_name, pulse_params in params_dict.items():
             if pulse_name == "main":        # check for main specification
                 self.main_params = pulse_params
-                self.logger.debug("Sequence main parameters set.")
+                self.logger.log(LogLevels.DEBUG, "Sequence main parameters set.")
             elif pulse_name == "inverted":  # check for global inverted pulse specification
                 self.inverted_params = pulse_params
-                self.logger.debug("Global inverted pulse parameters set.")
+                self.logger.log(LogLevels.DEBUG, "Global inverted pulse parameters set.")
             else:                       # add pulses normally
                 ## Status message
-                self.logger.debug("Setting parameters for pulse {}".format(pulse_name))
+                self.logger.log(LogLevels.DEBUG, "Setting parameters for pulse {}".format(pulse_name))
                 ## add pulse name to param list
                 pulse_params["name"] = pulse_name
                 ## create new pulse with given parameters
                 self.add_pulse(pulse_params)
                 ## debug message
-                self.logger.debug("Added pulse {} successfully.".format(pulse_name))
+                self.logger.log(LogLevels.TRACE, "Added pulse {} successfully.".format(pulse_name))
         ## debug message
         self.logger.debug("Input pulse sequence parameters set.")
 
@@ -278,7 +279,7 @@ class InputPulseSeq(PulseSeq):
             for pulse in self.pulse_list:
                 if not _default_param in pulse.attributes:
                     pulse[_default_param] = _default_value
-        self.logger.debug("Required pulse parameter defaults set.")
+        self.logger.log(LogLevels.TRACE, "Required pulse parameter defaults set.")
 
         ##########################################
         #### Setting special pulse parameters ####
@@ -289,27 +290,27 @@ class InputPulseSeq(PulseSeq):
         for pulse in self.pulse_list:
             if pulse["is_inverted"]:
                 pulse.set_attributes(self.inverted_params)
-        self.logger.debug("Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
+        self.logger.log(LogLevels.TRACE, "Global inverted-pulse parameters applied. (pre-absolute_time calculation)")
 
         ##############################################
         ## Converting values based on script-rcfile ##
         ##############################################
 
-        self.logger.debug("SQPG values undergoing pre-calculation (based on script-rcfile specification)...")
+        self.logger.log(LogLevels.TRACE, "SQPG values undergoing pre-calculation (based on script-rcfile specification)...")
         ## Fetch the appropriate specifications
         try:
             SQPG_spec = self._script_rc.parameter_pre_process["SQPG"]
         except KeyError:
-            self.logger.error("SQPG pre-calculation spec not found.")
+            self.logger.warning("SQPG pre-calculation spec not found.")
         else:
             try:
                 pulse_spec = SQPG_spec["pulse"]
             except KeyError:
-                self.logger.debug("SQPG pre-calculation pulse spec not found.")
+                self.logger.warning("SQPG pre-calculation pulse spec not found.")
             else:
                 for param_name, param_converter in pulse_spec.items():
                     ## Status message
-                    self.logger.debug("Carrying out pre-calculation conversion for {}".format(param_name))
+                    self.logger.log(LogLevels.TRACE, "Carrying out pre-calculation conversion for {}".format(param_name))
                     ## Cycle through each pulse and apply the desired pre-calculations
                     if isinstance(param_converter, dict):
                         for pulse in self.pulse_list:
@@ -318,7 +319,7 @@ class InputPulseSeq(PulseSeq):
                     else:
                         pass
         ## Status message
-        self.logger.debug("Pre-calculation completed for SQPG values")
+        self.logger.log(LogLevels.TRACE, "Pre-calculation completed for SQPG values")
 
         ####################################
         #### Absolute time calculations ####
@@ -326,7 +327,7 @@ class InputPulseSeq(PulseSeq):
         self.logger.debug("Carrying out absolute_time calculations...")
 
         ## First, all pulses which have their time_reference set as "absolute" automatically have a valid absolute time if it is specified
-        self.logger.debug("Setting validity of absolute_time for pulses with 'absolute' time_reference...")
+        self.logger.log(LogLevels.TRACE, "Setting validity of absolute_time for pulses with 'absolute' time_reference...")
         for pulse in self.pulse_list:
             if pulse["time_reference"] == "absolute":
                 ## Verify that an absolute_time parameter is actually set (can fall back on time_offset if there is no absolute_time)
@@ -338,7 +339,7 @@ class InputPulseSeq(PulseSeq):
                     raise RuntimeError(" ".join(["Pulse", pulse.name, "has no absolute_time or time_offset specified, but time_reference is set as 'absolute'."]))
                 ## Set flag
                 pulse.valid_abs_time = True
-        self.logger.debug("Absolute time set for 'absolute' time_reference pulses.")
+        self.logger.log(LogLevels.TRACE, "Absolute time set for 'absolute' time_reference pulses.")
         # if verbose >= 4:
         #     print("Current pulse state:")
         #     self.print_info(pulse_params = True)
@@ -346,7 +347,7 @@ class InputPulseSeq(PulseSeq):
         #     print([pulse.valid_abs_time for pulse in self.pulse_list])
 
         ## debug message
-        self.logger.debug("Setting absolute time for pulses with 'previous' and 'relative' time reference...")
+        self.logger.log(LogLevels.TRACE, "Setting absolute time for pulses with 'previous' and 'relative' time reference...")
         ## Loop through pulses for the next two processes, as there may be odd dependencies
         max_loop_counter = len(self.pulse_list) # at least one pulse should be set each loop
         loop_counter = 0
@@ -358,7 +359,7 @@ class InputPulseSeq(PulseSeq):
                 pulse["pulse_number"] = -1
         ## Loop through pulses
         while not all([pulse.valid_abs_time for pulse in self.pulse_list]):
-            self.logger.debug("Looping through pulse list, iteration {}".format(loop_counter))
+            self.logger.log(LogLevels.TRACE, "Looping through pulse list, iteration {}".format(loop_counter))
             ## check maximum loops - could indicate improper time-ordering dependencies
             if loop_counter >= max_loop_counter:
                 raise RuntimeError("Could not calculate pulse timing; please re-check dependencies to ensure calculation is possible!")
@@ -430,9 +431,9 @@ class InputPulseSeq(PulseSeq):
             if pulse["pulse_number"] == -1:
                 del pulse["pulse_number"]
         ## Status message
-        self.logger.debug("Absolute time set for 'previous' and 'relative' reference pulses.")
+        self.logger.log(LogLevels.TRACE, "Absolute time set for 'previous' and 'relative' reference pulses.")
         ## Absolute times calculations finished
-        self.logger.debug("Absolute time calculations completed.")
+        self.logger.log(LogLevels.TRACE, "Absolute time calculations completed.")
 
         ####
         ## Status message
@@ -481,7 +482,7 @@ class InputPulseSeq(PulseSeq):
         ## Assert that each pulse in the sequence has the appropriate sort attribute set
         assert all([pulse.valid_abs_time for pulse in self.pulse_list]), "There are pulses which do not have a valid (set or calculated) absolute_time attribute."
         ## debug message
-        self.logger.debug("Sorting by attribute: {}".format(sort_attribute))
+        self.logger.log(LogLevels.TRACE, "Sorting by attribute: {}".format(sort_attribute))
         return sorted(self.pulse_list, key = lambda x: x[sort_attribute])
 
 ###############################################################################
@@ -501,18 +502,18 @@ class OutputPulseSeq(PulseSeq):
         super().__init__()
         ## Logging
         if parent_logger_name is not None:
-            logger_name = '.'.join([parent_logger_name, 'InputPulseSeq'])
+            logger_name = '.'.join([parent_logger_name, 'OutputPulseSeq'])
         else:
-            logger_name = 'InputPulseSeq'
+            logger_name = 'OutputPulseSeq'
         self.logger = logging.getLogger(logger_name)
         ## Flags
         self.is_exportable = False
         ## debug message
-        self.logger.debug('Instance initialized.')
+        self.logger.log(LogLevels.TRACE, 'Instance initialized.')
 
     def __del__(self):
         ## Status message
-        self.logger.debug('Instance deleted.')
+        self.logger.log(LogLevels.TRACE, 'Instance deleted.')
         ## call base class destructor
         super().__del__()
 
@@ -550,7 +551,7 @@ class OutputPulseSeq(PulseSeq):
         ## Post-import processing
         self.pulse_post_conversion()
         ## debug message
-        self.logger.debug("OutputPulseSeq processing completed.")
+        self.logger.log(LogLevels.TRACE, "OutputPulseSeq processing completed.")
 
     def pulse_post_conversion(self):
         '''
@@ -594,9 +595,9 @@ class OutputPulseSeq(PulseSeq):
 
         ####
         ## Convert all physical parameter pulse shortcodes to full names
-        self.logger.debug("Converting parameter shortcodes...")
+        self.logger.log(LogLevels.TRACE, "Converting parameter shortcodes...")
         for param_full_name, param_short_name in _rc.FULL_NAMES_PULSES.items():
-            self.logger.debug("Converting {} into {}...".format(param_short_name, param_full_name))
+            self.logger.log(LogLevels.TRACE, "Converting {} into {}...".format(param_short_name, param_full_name))
             for pulse in self.pulse_list:
                 try:
                     param_value = pulse[param_short_name]
@@ -605,12 +606,12 @@ class OutputPulseSeq(PulseSeq):
                 else:
                     del pulse[param_short_name]
                     pulse[param_full_name] = param_value
-        self.logger.debug("Parameter shortcodes converted.")
+        self.logger.log(LogLevels.TRACE, "Parameter shortcodes converted.")
 
         ## set flag
         self.is_exportable = True
         ## debug message
-        self.logger.debug("Post-conversion processing on output sequence completed.")
+        self.logger.log(LogLevels.TRACE, "Post-conversion processing on output sequence completed.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

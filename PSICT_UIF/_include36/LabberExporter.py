@@ -46,12 +46,12 @@ class LabberExporter:
         ## Other attributes
         self._hdf5_sl_entry_dtype = None # Stores the dtype of the hdf5 step list entries (this can't be auto-generated for some reason...)
         ## Status message
-        self.logger.debug("Instance initialized.")
+        self.logger.log(LogLevels.TRACE, "Instance initialized.")
 
     def __del__(self):
         ## Delete objects here
         ## Status message
-        self.logger.debug("Instance deleted.")
+        self.logger.log(LogLevels.TRACE, "Instance deleted.")
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -90,7 +90,7 @@ class LabberExporter:
         Used when connecting via the Labber InstrumentClient.
         '''
         self._InstrumentServer = server_name
-        self.logger.debug('InstrumentServer set to: {}'.format(server_name))
+        self.logger.log(LogLevels.VERBOSE, 'InstrumentServer set to: {}'.format(server_name))
 
     def add_client_value_spec(self, instrument_name, instrument_params, hardware_name):
         '''
@@ -130,7 +130,7 @@ class LabberExporter:
                                       "n_pts": iter_list[2],
                                     })
             self._api_values[instrument_name][param_name] = iter_obj
-            self.logger.info("Set {} - {} to {}".format(instrument_name, \
+            self.logger.debug("Set {} - {} to {}".format(instrument_name, \
                                                     param_name, iter_obj))
 
     def set_iteration_order(self, iteration_order_list):
@@ -266,12 +266,13 @@ class LabberExporter:
         For more information on the MeasurementObject, see the Labber API docs.
         '''
         ## debug message
-        self.logger.debug("Initialising MeasurementObject...")
+        self.logger.log(LogLevels.VERBOSE, "Initialising MeasurementObject...")
         ## Check that the MeasurementObject has not already been initialised
         if self.MeasurementObject is not None:
             if not auto_init:
                 ## This method has been called manually
-                warnings.warn("Labber MeasurementObject has already been initialised!", RuntimeWarning)
+                # warnings.warn("Labber MeasurementObject has already been initialised!", RuntimeWarning)
+                self.logger.warning('Labber MeasurementObject has already been initialised!')
             return
         else:
             ## Initialise MeasurementObject
@@ -290,14 +291,14 @@ class LabberExporter:
         Apply all stored parameters to the reference file, either through the Labber API or direct editing.
         '''
         ## Status message
-        self.logger.debug("Applying all instrument parameters from LabberExporter...")
+        self.logger.log(LogLevels.VERBOSE, "Applying all instrument parameters from LabberExporter...")
         ## Apply different parameter sets
         self.apply_api_values()
         self.apply_client_values()
         self.apply_instr_config_values()
         self.apply_relations()
         ## debug message
-        self.logger.debug("Instrument parameters applied.")
+        self.logger.log(LogLevels.VERBOSE, "Instrument parameters applied.")
 
     def swap_items_by_index(self, container, index_1, index_2):
         '''
@@ -330,7 +331,7 @@ class LabberExporter:
         Apply all stored point values (including for SQPG) through the Labber API.
         '''
         ## Status message
-        self.logger.debug("Applying parameter point values...")
+        self.logger.log(LogLevels.VERBOSE, "Applying parameter point values...")
         ## Apply all non-pulse parameters (including main SQPG parameters)
         for instrument_name, instrument_params in self._api_values.items():
             for param_name, param_value in instrument_params.items():
@@ -373,13 +374,15 @@ class LabberExporter:
             ## Status message
             self.logger.log(LogLevels.VERBOSE, \
                     "Instrument value updated: \'{}\' to {}".format(target_string, param_value))
+        ## Status message
+        self.logger.debug('Labber API values applied.')
 
     def apply_client_values(self):
         '''
         Apply all stored values that are marked for application through the InstrumentClient interface
         '''
         ## Status message
-        self.logger.debug('Applying InstrumentClient values...')
+        self.logger.log(LogLevels.VERBOSE, 'Applying InstrumentClient values...')
         ## Open server connection
         self.logger.debug('Opening connection to Labber InstrumentServer...')
         try:
@@ -399,10 +402,10 @@ class LabberExporter:
             string_params = {}
             for param_name, param_value in self._client_values[instrument_name].items():
                 if isinstance(param_value, str):
-                    self.logger.debug('{} is a string: {}'.format(param_name, param_value))
+                    self.logger.log(LogLevels.TRACE, '{} is a string: {}'.format(param_name, param_value))
                     string_params[param_name] = param_value
                 elif isinstance(param_value, list) or isinstance(param_value, np.ndarray):
-                    self.logger.debug('{} is a list/array: {}'.format(param_name, param_value))
+                    self.logger.log(LogLevels.TRACE, '{} is a list/array: {}'.format(param_name, param_value))
                     array_params[param_name] = param_value
             ## Open InstrumentClient
             instClient = ServerClient.connectToInstrument(hardware_name, {'name': instrument_name})
@@ -427,14 +430,14 @@ class LabberExporter:
         ServerClient.close()
         self.logger.debug('Labber InstrumentServer connection closed.')
         ## Status message
-        self.logger.debug('LabberExporter: InstrumentClient values applied.')
+        self.logger.debug('InstrumentClient values applied.')
 
     def apply_instr_config_values(self):
         '''
         Apply all stored values through direct editing of the Instrument Config attributes in the reference hdf5 file.
         '''
         ## Status message
-        self.logger.debug('Applying Instrument Config values...')
+        self.logger.log(LogLevels.VERBOSE, 'Applying Instrument Config values...')
         ## Iterate over instruments
         for instrument_name in self._instr_config_values.keys():
             self.logger.debug('Applying Instrument Config values for {}'.format(instrument_name))
@@ -448,7 +451,7 @@ class LabberExporter:
                     self.logger.debug('Setting value: {} to {}'.format(param_name, param_value))
                     config_file['Instrument config'][full_instrument_string].attrs[param_name] = param_value
         ## Status message
-        self.logger.debug('LabberExporter: Instrument Config values applied.')
+        self.logger.debug('Instrument Config values applied.')
 
     def process_channel_defs(self):
         '''
@@ -496,7 +499,7 @@ class LabberExporter:
         It is the user's responsibility to ensure that the correct channel keys are provided and referenced in the step config!
         '''
         ## status message
-        self.logger.debug("Applying equation string \'{}\' for {}".format(equation_string, label_string))
+        self.logger.log(LogLevels.VERBOSE, "Applying equation string \'{}\' for {}".format(equation_string, label_string))
         ## Get step list index of label string
         step_list_index =self.get_sl_index(label_string)
         ## Modify step list entry
@@ -550,7 +553,7 @@ class LabberExporter:
         Apply all channel relations by directly editing the reference hdf5 file.
         '''
         ## Status message
-        self.logger.debug("Applying channel relations...")
+        self.logger.log(LogLevels.VERBOSE, "Applying channel relations...")
         ## Process channel definitions
         self.process_channel_defs()
         ## Set relations for each item in the stored relations

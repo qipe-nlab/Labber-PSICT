@@ -117,6 +117,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Get config values
         sampleRate = self.getValue('Sample rate')
         truncRange = self.getValue('Truncation range')
+        dFirstPulseDelay = self.getValue('First pulse delay')
         seqCounter = int(self.getValue('Pulse sequence counter'))
         bReversed = self.getValue('Generate from final pulse')
         dFinalPulseTime = self.getValue('Final pulse time')
@@ -145,7 +146,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         if bReversed:
             iHeadIndex = int(np.round(dFinalPulseTime * sampleRate))
         else:
-            iHeadIndex = 0 # TODO: allow specification of custom start point?
+            iHeadIndex = int(np.round(dFirstPulseDelay * sampleRate))
         ## Reverse pulse sequence if generating from the back
         if bReversed:
             pulseSeq = pulseSeq[::-1]

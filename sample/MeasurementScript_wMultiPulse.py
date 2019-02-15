@@ -128,6 +128,7 @@ slave_pulse_sequence_options = {
 
 	'MultiPulse-Test01': {
 		'Number of points': 5E3,
+		'First pulse delay': 100e-9,
 		'Generate from final pulse': 0,
 		'Final pulse time': 3e-6,
 
@@ -232,6 +233,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		point_values = {
 		'MultiPulse': {
 				'Number of points': pulse_sequence_options['Number of points'],
+				'First pulse delay': pulse_sequence_options['First pulse delay'],
 				'Generate from final pulse': pulse_sequence_options['Generate from final pulse'],
 				'Final pulse time': pulse_sequence_options['Final pulse time'],
 			}, # end MultiPulse

@@ -9,18 +9,22 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 ## Create pulse definitions (list of dicts)
 pulse_defs = []
 ## qubit
-pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 109e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0})
+pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 0e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0, 'DRAG': 20e-9})
 ## magnon
-pulse_defs.append({'a': 0.5, 'w': 0e-9, 'v': 93e-9, 's': 0e-9, 'f': 60e6, 'o': 3, 'p': 0})
+pulse_defs.append({'a': 0.5, 'w': 85e-9, 'v': 0e-9, 's': 85e-9, 'f': 60e6, 'o': 3, 'p': 0, 'DRAG': 30e-9})
 ## dead
 pulse_defs.append({'a': 0.0, 'w': 0e-9, 'v': 40e-9, 's': 0e-9, 'f': 0e6, 'o': 4, 'p': 0})
 ## trigger
 pulse_defs.append({'a': 1.5, 'w': 0e-9, 'v': 20e-9, 's': 0e-9, 'f': 0e6, 'o': 4, 'p': 0})
 ## readout
 pulse_defs.append({'a': 0.64, 'w': 0e-9, 'v': 400e-9, 's': 0e-9, 'f': 85e6, 'o': 1, 'p': 90, 'fix_phase': 1})
+## qubit
+pulse_defs.append({'a': 0.3, 'w': 60e-9, 'v': 0e-9, 's': 60e-9, 'f': 90e6, 'o': 2, 'p': 0, 'DRAG': 0})
+## magnon
+pulse_defs.append({'a': 0.5, 'w': 85e-9, 'v': 0e-9, 's': 85e-9, 'f': 60e6, 'o': 3, 'p': 0, 'DRAG': 0})
 
 ## Set key order
-pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o', 'fix_phase']
+pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o', 'DRAG', 'fix_phase']
 ## Write to file
 pulse_def_path = os.path.abspath('definitions_002.txt')
 writePulseDefs(pulse_def_path, pulse_defs, pulse_def_key_order)
@@ -28,11 +32,10 @@ print('Pulse definitions written to file: {}'.format(pulse_def_path))
 
 ## Generate list of lists of pulse sequences
 pulse_seqs = []
-pulse_seqs.append(np.array([0,3,4]))
-pulse_seqs.append(np.array([1,3,4]))
-pulse_seqs.append(np.array([0,1,3,4]))
-pulse_seqs.append(np.array([1,0,3,4]))
-pulse_seqs.append(np.array([2,0,2,1,2,0,2,1,3,4]))
+pulse_seqs.append(np.array([2,2,0,3,4]))
+pulse_seqs.append(np.array([2,2,5,3,4]))
+pulse_seqs.append(np.array([2,2,1,3,4]))
+pulse_seqs.append(np.array([2,2,6,3,4]))
 n_pulse_seqs = len(pulse_seqs)
 ## Write to file
 pulse_seq_path = os.path.abspath('sequence_002.txt')
@@ -125,7 +128,8 @@ slave_pulse_sequence_options = {
 
 	'MultiPulse-Test01': {
 		'Number of points': 5E3,
-		'Generate from final pulse': 1,
+		'First pulse delay': 100e-9,
+		'Generate from final pulse': 0,
 		'Final pulse time': 3e-6,
 
 		'pulse_def_path': pulse_def_path,
@@ -229,6 +233,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		point_values = {
 		'MultiPulse': {
 				'Number of points': pulse_sequence_options['Number of points'],
+				'First pulse delay': pulse_sequence_options['First pulse delay'],
 				'Generate from final pulse': pulse_sequence_options['Generate from final pulse'],
 				'Final pulse time': pulse_sequence_options['Final pulse time'],
 			}, # end MultiPulse

@@ -109,10 +109,15 @@ class Driver(InstrumentDriver.InstrumentWorker):
         '''
         Generate waveform, selecting sequence based on 'Pulse sequence counter' value
         '''
+        ## Skip generation if no waveforms present (eg when starting instrument)
+        if self.lPulseSequences == []:
+            self._logger.info('No sequences specified; skipping waveform generation...')
+            return
         self._logger.info('Generating waveform...')
         ## Get config values
         sampleRate = self.getValue('Sample rate')
         truncRange = self.getValue('Truncation range')
+        dFirstPulseDelay = self.getValue('First pulse delay')
         seqCounter = int(self.getValue('Pulse sequence counter'))
         bReversed = self.getValue('Generate from final pulse')
         dFinalPulseTime = self.getValue('Final pulse time')
@@ -141,7 +146,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         if bReversed:
             iHeadIndex = int(np.round(dFinalPulseTime * sampleRate))
         else:
-            iHeadIndex = 0 # TODO: allow specification of custom start point?
+            iHeadIndex = int(np.round(dFirstPulseDelay * sampleRate))
         ## Reverse pulse sequence if generating from the back
         if bReversed:
             pulseSeq = pulseSeq[::-1]
@@ -197,6 +202,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         dWidth = oPulseDef['w']
         dPlateau = oPulseDef['v']
         dAmp = oPulseDef['a']
+        dDragScaling = oPulseDef['DRAG']
         dStd = dWidth / np.sqrt(2 * np.pi)
         ## Get other params
         truncRange = self.getValue('Truncation range')
@@ -225,14 +231,18 @@ class Driver(InstrumentDriver.InstrumentWorker):
         vPulse[vShiftedTimes > (dPlateau/2)+(truncRange/2)*dWidth] = 0.0
         ## Scale by amplitude
         vPulse = vPulse * dAmp
+        ## Apply DRAG
+        vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
         ## Get modulation parameters
         freq = 2 * np.pi * oPulseDef['f']
         phase = oPulseDef['p'] * np.pi/180
         ## Apply modulation - check for fixed phase
         if oPulseDef['fix_phase']:
-            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase))
+            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase)) \
+                        -vDrag * (np.cos(freq*vRelTimes - phase + np.pi/2))
         else:
-            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase))
+            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase)) \
+                        -vDrag * (np.cos(freq*(vRelTimes+dAbsTime) - phase + np.pi/2))
         ## Return value
         return vPulseMod
 

@@ -11,6 +11,7 @@ DEFAULT_PULSE_VALUES = {
         'p': 0.0,
         'o': 4,
         ##
+        'DRAG': 0.0,
         'fix_phase': 0,
     }
 

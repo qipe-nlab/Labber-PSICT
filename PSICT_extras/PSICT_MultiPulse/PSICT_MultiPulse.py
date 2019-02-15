@@ -201,6 +201,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         dWidth = oPulseDef['w']
         dPlateau = oPulseDef['v']
         dAmp = oPulseDef['a']
+        dDragScaling = oPulseDef['DRAG']
         dStd = dWidth / np.sqrt(2 * np.pi)
         ## Get other params
         truncRange = self.getValue('Truncation range')
@@ -229,14 +230,18 @@ class Driver(InstrumentDriver.InstrumentWorker):
         vPulse[vShiftedTimes > (dPlateau/2)+(truncRange/2)*dWidth] = 0.0
         ## Scale by amplitude
         vPulse = vPulse * dAmp
+        ## Apply DRAG
+        vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
         ## Get modulation parameters
         freq = 2 * np.pi * oPulseDef['f']
         phase = oPulseDef['p'] * np.pi/180
         ## Apply modulation - check for fixed phase
         if oPulseDef['fix_phase']:
-            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase))
+            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase)) \
+                        -vDrag * (np.cos(freq*vRelTimes - phase + np.pi/2))
         else:
-            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase))
+            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase)) \
+                        -vDrag * (np.cos(freq*(vRelTimes+dAbsTime) - phase + np.pi/2))
         ## Return value
         return vPulseMod
 

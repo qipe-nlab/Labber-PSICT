@@ -109,6 +109,10 @@ class Driver(InstrumentDriver.InstrumentWorker):
         '''
         Generate waveform, selecting sequence based on 'Pulse sequence counter' value
         '''
+        ## Skip generation if no waveforms present (eg when starting instrument)
+        if self.lPulseSequences == []:
+            self._logger.info('No sequences specified; skipping waveform generation...')
+            return
         self._logger.info('Generating waveform...')
         ## Get config values
         sampleRate = self.getValue('Sample rate')

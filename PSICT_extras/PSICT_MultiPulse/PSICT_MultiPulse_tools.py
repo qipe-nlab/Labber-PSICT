@@ -96,3 +96,13 @@ def delistifyPulseDefs(lPulseDefsIn, lKeyOrder):
         lDefsOut.append(oDef)
     ## Return list of dicts containing keyed pulse defs
     return lDefsOut
+
+def countNSequences(pPulseSeqsPath):
+    '''
+    Get the number of sequences stored in a file
+
+    Effectively just counts the number of non-empty lines in the file.
+    '''
+    with open(pPulseSeqsPath, 'r') as filePulseSeq:
+        iNLines = len(filePulseSeq.readlines())
+    return iNLines

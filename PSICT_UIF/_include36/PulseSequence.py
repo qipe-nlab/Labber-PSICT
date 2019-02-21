@@ -9,6 +9,7 @@ import logging
 from PSICT_UIF._include36.Pulse import Pulse
 import PSICT_UIF._include36._Pulse_rc as _rc
 import PSICT_UIF._include36._LogLevels as LogLevels
+from PSICT_UIF._include36._Common import extract_relation_variables
 
 class PulseSeq:
     '''
@@ -238,7 +239,22 @@ class InputPulseSeq(PulseSeq):
         Add channel relations.
         '''
         ## status message
-        self.logger.debug("Adding channel relations to InputPulseSeq...")
+        self.logger.debug("Adding channel relations...")
+        ## Extract required variable names if not provided
+        for pulse_name, pulse_relations in channel_relations_dict.items():
+            for param_name, param_relations in pulse_relations.items():
+                ## Check if provided value is string or list
+                if isinstance(param_relations, str):
+                    self.logger.log(LogLevels.VERBOSE, 'Channel relation variables not provided for SQPG::{}::{}'.format(pulse_name, param_name))
+                    self.logger.log(LogLevels.VERBOSE, 'Relation equation string: \'{}\''.format(param_relations))
+                    ## Extract variable names and create list
+                    variable_names = extract_relation_variables(param_relations)
+                    self.logger.log(LogLevels.VERBOSE, 'Variables extracted: {}'.format(variable_names))
+                    channel_relations_dict[pulse_name][param_name] = [param_relations, variable_names]
+                else:
+                    self.logger.log(LogLevels.VERBOSE, 'Channel relation variables provided for SQPG::{}::{}'.format(pulse_name, param_name))
+                    ## Variable names are already provided; skip
+                    continue
         self.channel_relations = channel_relations_dict
 
     def get_channel_defs(self):

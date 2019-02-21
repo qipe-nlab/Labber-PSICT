@@ -12,6 +12,7 @@ import Labber
 import PSICT_UIF._include36._Pulse_rc as _Pulse_rc
 from PSICT_UIF._include36.ParameterSpec import IterationSpec
 import PSICT_UIF._include36._LogLevels as LogLevels
+from PSICT_UIF._include36._Common import extract_relation_variables
 
 class LabberExporter:
     '''
@@ -229,9 +230,18 @@ class LabberExporter:
             ## Go through each of the instrument relations
             for param_name, channel_relation in instrument_relations.items():
                 channel_name = self.get_full_label(instrument_name, param_name)
+                ## Extract required variable names if not provided
+                if isinstance(channel_relation, str):
+                    self.logger.log(LogLevels.VERBOSE, 'Channel relation variables not provided for {}::{}'.format(instrument_name, param_name))
+                    self.logger.log(LogLevels.VERBOSE, 'Relation equation string: \'{}\''.format(channel_relation))
+                    variable_names = extract_relation_variables(channel_relation)
+                    self.logger.log(LogLevels.VERBOSE, 'Variables extracted: {}'.format(variable_names))
+                    channel_relation = [channel_relation, variable_names]
+                else:
+                    self.logger.log(LogLevels.VERBOSE, 'Channel relation variables provided for {}::{}'.format(instrument_name, param_name))
                 ## Set relation in container
                 self._channel_relations[channel_name] = channel_relation
-                self.logger.debug("Set channel relation for:", channel_name)
+                self.logger.debug("Set channel relation for: {}".format(channel_name))
 
     def receive_pulse_rels(self, pulse_defs, pulse_rels):
         '''

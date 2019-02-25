@@ -202,7 +202,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
         dWidth = oPulseDef['w']
         dPlateau = oPulseDef['v']
         dAmp = oPulseDef['a']
-        dDragScaling = oPulseDef['DRAG']
+        ## Use global DRAG if required, otherwise take from pulse definition
+        bUseGlobalDrag = self.getValue('Use global DRAG')
+        if bUseGlobalDrag:
+            dDragScaling = self.getValue('Global DRAG coefficient')
+        else:
+            dDragScaling = oPulseDef['DRAG']
         dStd = dWidth / np.sqrt(2 * np.pi)
         ## Get other params
         truncRange = self.getValue('Truncation range')

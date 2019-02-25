@@ -236,8 +236,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
         vPulse[vShiftedTimes > (dPlateau/2)+(truncRange/2)*dWidth] = 0.0
         ## Scale by amplitude
         vPulse = vPulse * dAmp
-        ## Apply DRAG
-        vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
+        ## Apply DRAG if not square pulse
+        bApplyDragToSquare = self.getValue('Apply DRAG to square pulses')
+        if dStd > 0 or bApplyDragToSquare:
+            vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
+        else:
+            vDrag = np.zeros_like(vPulse)
         ## Get modulation parameters
         freq = 2 * np.pi * oPulseDef['f']
         phase = oPulseDef['p'] * np.pi/180

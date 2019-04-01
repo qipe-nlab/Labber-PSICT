@@ -491,6 +491,11 @@ class WorkerScriptManager:
         ## Update pulse sequence name attribute
         self._pulse_sequence_name = pulse_sequence_name
 
+        ## Update parent logger name for worker script
+        PSICT_options = self.PSICT_options
+        PSICT_options['parent_logger_name'] = 'WorkerScriptManager'
+        self.PSICT_options = PSICT_options
+
         ## Update parameters: stored -> script -> stored
         self.update_parameters()
 

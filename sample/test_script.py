@@ -14,6 +14,7 @@ pulse_sequence = 'Qubit_echo'
 worker_PSICT_options = {
 	## Master/worker settings - do not change directly
 	'running_as_worker': True,
+	'parent_logger_name': 'WorkerScriptManager',
 	## Global PSICT settings
 	'config_path': 'PSICT_config.py',
 	## Set template file directory and name
@@ -195,7 +196,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 	print('PSICT_UIF version is', PSICT_UIF.__version__)
 
 	## Initialise PSICT-UIF interface object
-	psictInterface = PSICT_UIF.psictUIFInterface(PSICT_options['config_path'])
+	psictInterface = PSICT_UIF.psictUIFInterface(PSICT_options['config_path'], parent_logger_name = PSICT_options['parent_logger_name'])
 	psictInterface.set_worker_status(PSICT_options['running_as_worker'])
 
 	## Set file paths
@@ -1174,6 +1175,7 @@ if __name__ == '__main__':
 	# print('Running as a standalone script...')
 
 	worker_PSICT_options['running_as_worker'] = False
+	worker_PSICT_options['parent_logger_name'] = None
 
 	run_pulse_sequence(pulse_sequence, worker_PSICT_options, worker_general_options, worker_pulse_sequence_options)
 

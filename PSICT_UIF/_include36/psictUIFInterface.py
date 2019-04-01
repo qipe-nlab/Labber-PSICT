@@ -24,10 +24,10 @@ class psictUIFInterface:
 
     Some settings and attributes which may change with time are stored in the PSICT_config.py file. This must be loaded into the PSICT interface object using the load_config_file method. Prior to version 1.0.7.1, these parameters were stored in the script-rcfile.
 
-    Since version 1.0.7.2, it is possible to specify the is_slave parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the slave setting is False, this is fully backwards-compatible with scripts from previous versions.
+    Since version 1.0.7.2, it is possible to specify the is_worker parameter on initialisation. This indicates to the PSICT interface that it is running as part of a more complex automation procedure, but more generally that the 'measurement' script invoking the PSICT interface directly is *not* the main script being executed. The intention is to alter some of the default behaviours of the PSICT interface object that are no longer appropriate in this context. At present, this setting effectively turns off the script copying mechanism (as it does not play well when what is executed as __main__ is not the 'measurement' script mentioned previously), which shifts the burden of copying the script onto the 'master' automation/controller script. As the default of the worker setting is False, this is fully backwards-compatible with scripts from previous versions.
     '''
 
-    def __init__(self, config_path, *, is_slave = False, parent_logger_name = None):
+    def __init__(self, config_path, *, is_worker = False, parent_logger_name = None):
         ## NB declare all attributes explicitly for __del__ to work correctly
         ## Load config (log after logger initialized)
         self.load_config_file(config_path)
@@ -48,8 +48,8 @@ class psictUIFInterface:
         self.fileManager.set_original_wd(self._original_wd, self._script_inv)
         ## Assign config to delegates
         self.assign_config_to_delegates()
-        ## Set slave status as standalone script by default
-        self.set_slave_status(is_slave)
+        ## Set worker status as standalone script by default
+        self.set_worker_status(is_worker)
         ## Status message
         self.logger.log(LogLevels.TRACE, 'psictUIFInterface instance initialized.')
         ##
@@ -120,11 +120,11 @@ class psictUIFInterface:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
 
-    def set_slave_status(self, is_slave):
+    def set_worker_status(self, is_worker):
         '''
-        Passes slave status to the FileManager object.
+        Passes worker status to the FileManager object.
         '''
-        self.fileManager.set_slave_status(is_slave)
+        self.fileManager.set_worker_status(is_worker)
 
     def load_config_file(self, config_path):
         '''
@@ -334,7 +334,7 @@ class psictUIFInterface:
         - The Labber MeasurementObject is initialised (if this has not already occurred explicitly)
         - The pulse sequence is processed
         - All stored parameter values are actually applied to the Labber reference database file
-        - When not in slave mode, the measurement script is copied to its target destination
+        - When not in worker mode, the measurement script is copied to its target destination
 
         Following the pre-processing, Labber is called to carry out the measurement using the Labber MeasurementObject's performMeasurement() method.
 

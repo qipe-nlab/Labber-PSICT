@@ -305,14 +305,14 @@ class FileManager:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Post-measurement methods
 
-    def set_slave_status(self, is_slave):
+    def set_worker_status(self, is_worker):
         '''
-        Set whether or not the script is running as a slave (ie not a standalone).
+        Set whether or not the script is running as a worker (ie not a standalone).
 
         Affects whether or not the integrated script copying methods are invoked.
         '''
-        self._is_slave = is_slave
-        self.logger.log(LogLevels.VERBOSE, 'Slave status set to: {}'.format(self._is_slave))
+        self._is_worker = is_worker
+        self.logger.log(LogLevels.VERBOSE, 'Worker status set to: {}'.format(self._is_worker))
 
     def pre_measurement_copy(self):
         '''
@@ -323,8 +323,8 @@ class FileManager:
         '''
         ## Check if script copying is enabled in script-rcfile
         if self._script_rc.script_copy_enabled:
-            if self._is_slave:
-                self.logger.log(LogLevels.VERBOSE, 'Script copying through the PSICT-UIF is disabled when the script is run as a slave.')
+            if self._is_worker:
+                self.logger.log(LogLevels.VERBOSE, 'Script copying through the PSICT-UIF is disabled when the script is run as a worker.')
             else: # Script copying is enabled and the script is running as a standalone
                 self.logger.log(LogLevels.VERBOSE, "Copying script and additional files...")
                 ## Check if target directory has been specified

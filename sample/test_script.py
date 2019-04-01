@@ -12,14 +12,14 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 pulse_sequence = 'Qubit_echo'
 
 worker_PSICT_options = {
-	'running_as_slave': True,
+	'running_as_worker': True,
 	'config_path': 'PSICT_config.py',
 	## Set template file directory and name
 	'template_dir': '../../test_template_files',
 	'template_file': 'K2019-03-25_reference_averaged',
 	## Set output file directory and name (where result will be saved)
 	'output_dir': '../../test_output_files/results',
-	'output_file': 'labber_test_0016',
+	'output_file': 'labber_test_0019',
 	## Script copy options
 	'script_copy_target_dir': '../../test_output_files/scripts',
 }
@@ -194,7 +194,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 
 	## Initialise PSICT-UIF interface object
 	psictInterface = PSICT_UIF.psictUIFInterface(PSICT_options['config_path'])
-	psictInterface.is_slave = PSICT_options['running_as_slave']
+	psictInterface.is_worker = PSICT_options['running_as_worker']
 
 	## Set file paths
 	config_path = PSICT_options['config_path']
@@ -1171,7 +1171,7 @@ if __name__ == '__main__':
 
 	# print('Running as a standalone script...')
 
-	worker_PSICT_options['running_as_slave'] = False
+	worker_PSICT_options['running_as_worker'] = False
 
 	run_pulse_sequence(pulse_sequence, worker_PSICT_options, worker_general_options, worker_pulse_sequence_options)
 
@@ -1179,6 +1179,6 @@ else:
 	## This block will only be run when the worker is imported (ie 'run' through a master script)
 
 	# print('Running as worker script...')
-	worker_PSICT_options['running_as_slave'] = True
+	worker_PSICT_options['running_as_worker'] = True
 
 ##

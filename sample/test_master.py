@@ -44,7 +44,7 @@ intentional_detuning = -4.0E6
 pulse_sequence_options['Qubit_Ramsey']['fast_reference'] = True
 pulse_sequence_options['Qubit_Ramsey']['intentional_detuning'] = intentional_detuning
 pulse_sequence_options['Qubit_Ramsey']['tau_list'] = [0E-9, 4000E-9, 201]
-pulse_sequence_options['Qubit_Ramsey']['repetitions'] = 4
+pulse_sequence_options['Qubit_Ramsey']['N_repetitions'] = 4
 ## Update in workerMgr object
 workerMgr.set_parameters(PSICT_options, general_options, pulse_sequence_options)
 
@@ -74,7 +74,7 @@ print(u'+++ Delta_s/2pi    = {:.3f} +/- {:.3f} MHz'.format(Ramsey_results['Delta
 ## Set values
 pulse_sequence_options['Qubit_T1']['fast_reference'] = True
 pulse_sequence_options['Qubit_T1']['tau_list'] = [0E-9, 10000E-9, 101]
-pulse_sequence_options['Qubit_T1']['repetitions'] = 4
+pulse_sequence_options['Qubit_T1']['N_repetitions'] = 4
 ## Update in workerMgr object
 workerMgr.set_parameters(PSICT_options, general_options, pulse_sequence_options)
 
@@ -89,7 +89,7 @@ PSICT_options, general_options, pulse_sequence_options = workerMgr.get_parameter
 ## Set values
 pulse_sequence_options['Qubit_echo']['fast_reference'] = True
 pulse_sequence_options['Qubit_echo']['tau_list'] = [0e-9, 1000e-9, 101]
-pulse_sequence_options['Qubit_echo']['repetitions'] = 1
+pulse_sequence_options['Qubit_echo']['N_repetitions'] = 1
 ## Update in workerMgr object
 workerMgr.set_parameters(PSICT_options, general_options, pulse_sequence_options)
 

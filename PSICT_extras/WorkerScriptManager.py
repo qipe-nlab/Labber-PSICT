@@ -178,12 +178,12 @@ def get_user_confirmation(message, MAX_ATTEMPTS = 5):
 
     while n_attempts < MAX_ATTEMPTS:
         ## Print and ask for input
-        self.print(message)
+        print(message)
         user_response = input('Confirm? ({:d}/{:d}) [y/N] '.format(n_attempts+1, MAX_ATTEMPTS))
         if user_response == '' or not user_response.lower()[0] == 'y':
-            self.print('Response negative; please try again.')
+            print('Response negative; please try again.')
         else:
-            self.print('Positive response received; continuing...')
+            print('Positive response received; continuing...')
             positive_response = True
             break
         ## Increment to prevent infinite loops
@@ -358,6 +358,7 @@ class WorkerScriptManager:
         '''
         Mount the worker and pull values from it.
         '''
+        self.logger.debug('Refreshing worker...')
         self.mount_worker()
         self.pull_from_worker()
 
@@ -373,16 +374,15 @@ class WorkerScriptManager:
         worker_spec = importlib.util.spec_from_file_location('', self._worker_path)
         self._worker_script = importlib.util.module_from_spec(worker_spec)
         worker_spec.loader.exec_module(self._worker_script)
+        ## Status message
+        self.logger.debug('Worker file mounted as module.')
 
     def pull_from_worker(self):
         '''
         Pull option values from the worker script.
         '''
-        ## Import options dicts from worker script
-        self.PSICT_options = self._worker_script.worker_PSICT_options
-        self.general_options =  self._worker_script.worker_general_options
-        self.pulse_sequence_options = self._worker_script.worker_pulse_sequence_options
-        ## Scan blocks from worker
+        self.logger.log(LogLevels.TRACE, 'Pulling options dicts from worker...')
+        ## Scan blocks from worker - done first to avoid no-matches when updating options dicts
         scanned_blocks = scan_worker_blocks(self._worker_path)
         ## Allocate worker blocks to specific attributes
         self.header_block = scanned_blocks[0]
@@ -390,6 +390,12 @@ class WorkerScriptManager:
         self.general_options_block = scanned_blocks[2]
         self.pulse_sequence_options_block = scanned_blocks[3]
         self.end_block = scanned_blocks[4]
+        ## Import options dicts from worker script
+        self.PSICT_options = self._worker_script.worker_PSICT_options
+        self.general_options =  self._worker_script.worker_general_options
+        self.pulse_sequence_options = self._worker_script.worker_pulse_sequence_options
+        ## Status message
+        self.logger.debug('Pulled options dicts from worker.')
 
     def get_parameters(self):
         '''
@@ -397,12 +403,11 @@ class WorkerScriptManager:
         '''
         return self.PSICT_options, self.general_options, self.pulse_sequence_options
 
-    def set_parameters(self, new_PSICT_options, new_general_options, new_pulse_sequence_options, *, verbose = 0):
+    def set_parameters(self, new_PSICT_options, new_general_options, new_pulse_sequence_options):
         '''
         Set stored parameter dicts (and blocks).
         '''
-        if verbose >= 1:
-            self.print('Setting parameters...')
+        self.logger.log(LogLevels.VERBOSE, 'Setting parameters...')
         ## Update stored dicts and blocks
         self.PSICT_options = new_PSICT_options
         self.general_options = new_general_options
@@ -412,12 +417,13 @@ class WorkerScriptManager:
         '''
         Update script based on stored parameters, and then refresh stored parameters from script.
         '''
+        self.logger.log(LogLevels.VERBOSE, 'Cycling parameters through worker...')
         ## Push to worker
         self.update_script(copy = False)
         ## Refresh worker and pull
         self.refresh_worker()
 
-    def update_block(self, block, options_dict = {}, nested_dicts = False, *, verbose = 0):
+    def update_block(self, block, options_dict = {}, nested_dicts = False):
         if nested_dicts:
             for outer_key, nested_dict in options_dict.items():
                 ## Define top-level match object (pulse sequence name)
@@ -434,8 +440,7 @@ class WorkerScriptManager:
                             ## Check for inner match
                             match_obj = re_inner_match.match(line)
                             if match_obj:
-                                if verbose >= 3:
-                                    self.print('Key', inner_key, 'matches line at index', line_index)
+                                self.logger.log(LogLevels.TRACE, 'Key {} matches line at index {}'.format(inner_key, line_index))
                                 ## Get specific formatting
                                 value_rep = get_formatted_rep(inner_key, inner_value)
                                 ## Replace line in block
@@ -447,12 +452,11 @@ class WorkerScriptManager:
                             ## Check for outer match
                             if re_outer_match.match(line):
                                 outer_key_found = True
-                                if verbose >= 3:
-                                    self.print('Outer key', outer_key, 'matches line at index', line_index)
+                                self.logger.log(LogLevels.TRACE, 'Outer key {} matches line at index {}'.format(outer_key, line_index))
                                 continue
                     ## End looping over lines
-                    if not inner_key_found and verbose >= 1:
-                        self.print('WARNING: match not found for key:', inner_key)
+                    if not inner_key_found:
+                        self.logger.warning('Match not found for key: {}'.format(inner_key))
         else:
             ## Iterate over options_dict keys
             for key, value in options_dict.items():
@@ -463,8 +467,7 @@ class WorkerScriptManager:
                 for line_index, line in enumerate(block):
                     match_obj = re_match.match(line)
                     if match_obj:
-                        if verbose >= 3:
-                            self.print('Key', key, 'matches line at index', line_index)
+                        self.logger.log(LogLevels.TRACE, 'Key {} matches line at index {}'.format(key, line_index))
                         ## Get specific formatting
                         value_rep = get_formatted_rep(key, value)
                         ## Replace line in block
@@ -473,8 +476,8 @@ class WorkerScriptManager:
                         key_found = True
                         break
                 ## End looping over lines
-                if not key_found and verbose >= 1:
-                    self.print('WARNING: match not found for key:', key)
+                if not key_found:
+                    self.logger.warning('Match not found for key: {}'.format(key))
         return block
 
     #############################################################################
@@ -507,8 +510,10 @@ class WorkerScriptManager:
         '''
         Docstring
         '''
+        ## Status message
+        self.logger.debug('Updating worker script; copy option is {}'.format(copy))
+
         ## Update the original worker script file
-        # self.write_new_script('worker_new.py')
         self.write_new_script(self._worker_path)
 
         if copy:
@@ -534,10 +539,13 @@ class WorkerScriptManager:
     #############################################################################
     ## Run measurement & do associated admin
 
-    def run_measurement(self, pulse_sequence_name, *, verbose = 0):
+    def run_measurement(self, pulse_sequence_name):
         '''
         Docstring.
         '''
+        ## Status message
+        self.logger.info('Running measurement at master: {}'.format(pulse_sequence_name))
+
         ## Update pulse sequence name attribute
         self._pulse_sequence_name = pulse_sequence_name
 
@@ -571,6 +579,9 @@ class WorkerScriptManager:
         ## Update script (incremented filename), with no copy
         self.update_parameters()
 
+        ## Status message
+        self.logger.info('Running measurement completed at master.')
+
     def update_date(self):
         ## Update output dir based on today's date
         self.PSICT_options['output_dir'] = update_labber_dates_dir(self._PSICT_options['output_dir'])
@@ -592,16 +603,8 @@ class WorkerScriptManager:
         master_path_target = os.path.join(master_dir_target, master_file_target)
         ## Copy master file
         self._master_path_new = shutil.copy(master_path_original, master_path_target)
-        self.print('Master script copied to: {:s}'.format(self._master_path_new))
+        self.logger.log(LogLevels.SPECIAL, 'Master script copied to: {:s}'.format(self._master_path_new))
         ## Set flag
         self._iscopied_master = True
-
-
-    #############################################################################
-    ## Logging
-
-    def print(*args,**kwargs):
-        print(*args, **kwargs)
-
 
 ##

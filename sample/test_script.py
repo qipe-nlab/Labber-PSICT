@@ -12,7 +12,9 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 pulse_sequence = 'Qubit_echo'
 
 worker_PSICT_options = {
+	## Master/worker settings - do not change directly
 	'running_as_worker': True,
+	## Global PSICT settings
 	'config_path': 'PSICT_config.py',
 	## Set template file directory and name
 	'template_dir': '../../test_template_files',
@@ -194,7 +196,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 
 	## Initialise PSICT-UIF interface object
 	psictInterface = PSICT_UIF.psictUIFInterface(PSICT_options['config_path'])
-	psictInterface.is_worker = PSICT_options['running_as_worker']
+	psictInterface.set_worker_status(PSICT_options['running_as_worker'])
 
 	## Set file paths
 	config_path = PSICT_options['config_path']

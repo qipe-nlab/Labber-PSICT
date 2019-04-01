@@ -9,6 +9,8 @@ import time
 import pathlib
 import logging
 
+import PSICT_UIF._include36._LogLevels as LogLevels
+
 ## Worker script breakpoints - DO NOT MODIFY
 OPTIONS_DICT_BREAKPOINT = '## OPTIONS DICT BREAKPOINT'
 SCRIPT_COPY_BREAKPOINT = '## SCRIPT COPY BREAKPOINT'
@@ -244,12 +246,13 @@ def scan_worker_blocks(worker_file):
 
 class WorkerScriptManager:
 
-    def __init__(self, worker_script, logging = True, console_log_dir = 'logs', output_log_dir = 'logs'):
-        # ## Initialize console and output logging
-        # self._logging = logging
-        # if self._logging:
-        # 	self.init_console_logger(console_log_dir)
-        # 	self.init_output_logger(output_log_dir)
+    def __init__(self, worker_script, PSICT_config):
+        ## Load config (log after logger initialized)
+        self.set_PSICT_config(PSICT_config)
+        ## Logging
+        self.init_logging()
+        ## Log config loading for debugging
+        self.logger.log(LogLevels.VERBOSE, 'Config file loaded from path: {}'.format(self.PSICT_config_path))
         ## Set up flags
         self._iscopied_master = False
         ## Get file details for master script copying
@@ -270,6 +273,53 @@ class WorkerScriptManager:
         config_spec = importlib.util.spec_from_file_location('', self.PSICT_config_path)
         self._PSICT_config = importlib.util.module_from_spec(config_spec)
         config_spec.loader.exec_module(self._PSICT_config)
+
+    #############################################################################
+    ## Logging
+
+    def init_logging(self):
+        '''
+        Initialize logging for the WorkerScriptManager.
+        '''
+        ## Add extra logging levels
+        logging.addLevelName(LogLevels.ALL, 'ALL')
+        logging.addLevelName(LogLevels.TRACE, 'TRACE')
+        logging.addLevelName(LogLevels.VERBOSE, 'VERBOSE')
+        logging.addLevelName(LogLevels.SPECIAL, 'SPECIAL')
+        ## Init logger
+        logger_name = 'WSMgr'
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(LogLevels.ALL) # Log all possible events
+        ## Add handlers if there are none already added - code copied from psictUIFInterface module
+        if len(self.logger.handlers) == 0:
+            ## Console stream handler
+            if self._PSICT_config.logging_config['console_log_enabled']:
+                console_handler = logging.StreamHandler(sys.stdout)
+                console_handler.setLevel(self._PSICT_config.logging_config['console_log_level'])
+                console_fmt = logging.Formatter(self._PSICT_config.logging_config['console_fmt'], \
+                                                datefmt = self._PSICT_config.logging_config['console_datefmt'])
+                console_handler.setFormatter(console_fmt)
+                ## Add handler to logger
+                self.logger.addHandler(console_handler)
+            ## File handler
+            if self._PSICT_config.logging_config['file_log_enabled']:
+                log_dir = self._PSICT_config.logging_config['log_dir']
+                if not os.path.exists(log_dir):
+                    os.makedirs(log_dir)
+                log_file = self._PSICT_config.logging_config['log_file'].format(datetime.now())+'.log'
+                log_path = os.path.join(log_dir, log_file)
+                file_handler = logging.FileHandler(log_path)
+                file_handler.setLevel(self._PSICT_config.logging_config['file_log_level'])
+                file_fmt = logging.Formatter(self._PSICT_config.logging_config['file_fmt'], \
+                                                datefmt = self._PSICT_config.logging_config['file_datefmt'])
+                file_handler.setFormatter(file_fmt)
+                ## Add handler to logger
+                self.logger.addHandler(file_handler)
+        ## Add NullHandler if no other handlers are configured
+        if len(self.logger.handlers) == 0:
+            self.logger.addHandler(logging.NullHandler())
+        ## Status message
+        self.logger.debug('Logging initialization complete.')
 
     #############################################################################
     ## Working with parameter dicts and text blocks
@@ -493,7 +543,7 @@ class WorkerScriptManager:
 
         ## Update parent logger name for worker script
         PSICT_options = self.PSICT_options
-        PSICT_options['parent_logger_name'] = 'WorkerScriptManager'
+        PSICT_options['parent_logger_name'] = self.logger.name
         self.PSICT_options = PSICT_options
 
         ## Update parameters: stored -> script -> stored
@@ -550,70 +600,8 @@ class WorkerScriptManager:
     #############################################################################
     ## Logging
 
-    # #### Output log - output files, experiments, and their full paths
-    #
-    # def init_output_logger(self, output_log_dir = 'logs'):
-    #
-    # 	## Create logging path
-    # 	log_dir = output_log_dir
-    # 	if not os.path.exists(log_dir):
-    # 		os.makedirs(log_dir)
-    # 	log_file = 'output_{:%y%m%d_%H%M%S}'.format(datetime.now())+'.log'
-    # 	log_path = os.path.join(log_dir, log_file)
-    #
-    # 	## Custom OutputLogger object init
-    # 	# self._output_logger = OutputLogger(log_path, 'a')
-    #
-    # 	## Status message
-    # 	self.print('Output log created at: {:s}'.format(log_path))
-    #
-    # def dump_output_log(self, log_path = None, write_mode = 'a'):
-    # 	'''
-    # 	Dump the output log to the specified file.
-    # 	'''
-    # 	self._output_logger.flush_log(log_path, write_mode)
-    # 	if log_path is not None:
-    # 		self.print('Output log flushed to {:s}'.format(log_path))
-
-    #### Console log - all console output, redirected to logger objects
-
-    # def init_console_logger(self, console_log_dir = 'logs'):
-    # 	pass
-        # ## Save original stdout stream for use
-        # self._console = sys.stdout
-        # ## Create logging path
-        # log_dir = console_log_dir
-        # if not os.path.exists(log_dir):
-        # 	os.makedirs(log_dir)
-        # log_file = 'console_{:%y%m%d_%H%M%S}'.format(datetime.now())+'.log'
-        # log_path = os.path.join(log_dir, log_file)
-        #
-        # ## logger object config and init
-        # logging.basicConfig(filename = log_path, filemode = 'a', \
-        # 					level = logging.INFO,\
-        # 					format = '%(asctime)s %(name)-8s: %(message)s', \
-        # 					datefmt = '%y-%m-%d %H:%M:%S')
-        #
-        # self._master_logger = logging.getLogger('master')
-        # self._worker_logger = logging.getLogger('worker')
-        # self._master_log_stream = StreamToLogger(self._master_logger, self._console, logging.INFO, linebuf = '')
-        # self._worker_log_stream = StreamToLogger(self._worker_logger, self._console, logging.INFO, linebuf = '')
-        #
-        # ## Status message
-        # self.print('Console log created at: {:s}'.format(log_path))
-        #
-        # ## Redirect sys.stdout to worker log stream
-        # sys.stdout = self._worker_log_stream
-
     def print(*args,**kwargs):
         print(*args, **kwargs)
-    # 	'''
-    # 	Write the contents of msg to the console log (and console).
-    # 	'''
-    # 	if args[0]._logging:
-    # 		args[0]._master_log_stream.write(' '.join([arg for arg in args[1:]])+'\n')
-    # 		# args[0]._master_log_stream.flush()
-    # 	else:
-    # 		print(*args[1:], **kwargs)
+
 
 ##

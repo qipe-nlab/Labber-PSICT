@@ -14,7 +14,7 @@ pulse_sequence = 'Qubit_echo'
 worker_PSICT_options = {
 	## Master/worker settings - do not change directly
 	'running_as_worker': True,
-	'parent_logger_name': 'WorkerScriptManager',
+	'parent_logger_name': 'WSMgr',
 	## Global PSICT settings
 	'config_path': 'PSICT_config.py',
 	## Set template file directory and name

@@ -20,8 +20,7 @@ from Qubit_Ramsey_lmfit import qubit_Ramsey_analysis_lmfit
 ##############################################################################
 
 ## Initialise WorkerScriptManager object
-workerMgr = WorkerScriptManager('test_script.py')
-workerMgr.set_PSICT_config('PSICT_config.py')
+workerMgr = WorkerScriptManager('test_script.py', 'PSICT_config.py')
 
 ## Get options dicts from workerMgr object
 PSICT_options = workerMgr.PSICT_options

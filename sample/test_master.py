@@ -60,13 +60,14 @@ shutil.copy(os.path.join(PSICT_options['output_dir'], 'labber_test_0000.hdf5'), 
 			os.path.join(PSICT_options['output_dir'], old_filename+'.hdf5'))
 
 ## Analysis
+workerMgr.log('Qubit_Ramsey analysis for: {}'.format(workerMgr.output_filename))
 Ramsey_analysis_options = {'save_figures': True, 'show_figures': False}
 Ramsey_analysis_parameters = {} #{'intentional_detuning': intentional_detuning}
 Ramsey_results = qubit_Ramsey_analysis_lmfit(workerMgr.output_dir, analysis_dir, workerMgr.output_filename, **Ramsey_analysis_options, **Ramsey_analysis_parameters)
 
 ## Status messages
-print(u'+++ T_2_star       = {:.1f} +/- {:.1f} ns'.format(Ramsey_results['T_2_star'][0], Ramsey_results['T_2_star'][1]))
-print(u'+++ Delta_s/2pi    = {:.3f} +/- {:.3f} MHz'.format(Ramsey_results['Delta_s'][0] * 1E3 / (2 * pi), Ramsey_results['Delta_s'][1] * 1E3 / (2 * pi)))
+workerMgr.log(u'+++ T_2_star       = {:.1f} +/- {:.1f} ns'.format(Ramsey_results['T_2_star'][0], Ramsey_results['T_2_star'][1]))
+workerMgr.log(u'+++ Delta_s/2pi    = {:.3f} +/- {:.3f} MHz'.format(Ramsey_results['Delta_s'][0] * 1E3 / (2 * pi), Ramsey_results['Delta_s'][1] * 1E3 / (2 * pi)))
 
 #############################################################################
 ## Qubit_T1

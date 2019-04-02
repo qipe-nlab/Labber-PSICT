@@ -126,6 +126,43 @@ class psictUIFInterface:
         ## Status message
         self.logger.debug('Logging initialization complete.')
 
+    def log(self, msg, loglevel = 'special', *args, **kwargs):
+        '''
+        Log a message to the logger at the specified level.
+
+        This method should be used instead of bare `print` functions in scripts (both worker-level and master-level). This method should NOT be used internally within PSICT.
+
+        Log levels can be specified as an integer (the usual way), but can also be string corresponding to the name of the level. Available options are: TRACE, DEBUG, VERBOSE, INFO, SPECIAL, WARNING, ERROR, CRITICAL. Specifying an unsupported string will result in a logged ERROR-level message, but no execution error.
+        '''
+        if isinstance(loglevel, str):
+            ## Convert to lowercase
+            loglevel = loglevel.lower()
+            ## Convert string to appropriate level
+            if loglevel == 'trace':
+                lvl = LogLevels.TRACE
+            elif loglevel == 'debug':
+                lvl = LogLevels.DEBUG
+            elif loglevel == 'verbose':
+                lvl = LogLevels.VERBOSE
+            elif loglevel == 'info':
+                lvl = LogLevels.INFO
+            elif loglevel == 'special':
+                lvl = LogLevels.SPECIAL
+            elif loglevel == 'warning':
+                lvl = LogLevels.WARNING
+            elif loglevel == 'error':
+                lvl = LogLevels.ERROR
+            elif LogLevel == 'critical':
+                lvl = LogLevels.CRITICAL
+            else:
+                self.logger.error('Invalid loglevel string specified in call to log(): {}'.format(loglevel))
+                return
+        else: # loglevel is assumed to be numeric
+            lvl = loglevel
+        ## Log message
+        self.logger.log(lvl, msg, *args, **kwargs)
+
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## File and path management
 

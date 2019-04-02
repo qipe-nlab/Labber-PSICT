@@ -191,13 +191,13 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 	#############################################################################
 	## PSICT and directory setup
 
-	print('-------------------------------------------')
-	print('==>', pulse_sequence)
-	print('PSICT_UIF version is', PSICT_UIF.__version__)
-
 	## Initialise PSICT-UIF interface object
 	psictInterface = PSICT_UIF.psictUIFInterface(PSICT_options['config_path'], parent_logger_name = PSICT_options['parent_logger_name'])
 	psictInterface.set_worker_status(PSICT_options['running_as_worker'])
+
+	psictInterface.log('-------------------------------------------')
+	psictInterface.log('==> {}'.format(pulse_sequence))
+	psictInterface.log('PSICT_UIF version is {}'.format(PSICT_UIF.__version__))
 
 	## Set file paths
 	config_path = PSICT_options['config_path']
@@ -1026,7 +1026,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		pulse_def_key_order = ['a', 'w', 'v', 's', 'f', 'p', 'o', 'DRAG', 'fix_phase']
 		pulse_def_path = os.path.abspath(pulse_sequence_options['pulse_def_file'])
 		writePulseDefs(pulse_def_path, pulse_defs, pulse_def_key_order)
-		print('Pulse definitions written to file: {}'.format(pulse_def_path))
+		psictInterface.log('Pulse definitions written to file: {}'.format(pulse_def_path))
 
 		## Generate pulse sequences
 		pulse_seq_list = []
@@ -1042,7 +1042,7 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		## Write pulse sequences to file
 		pulse_seq_path = os.path.abspath(pulse_sequence_options['pulse_seq_file'])
 		writePulseSeqs(pulse_seq_path, pulse_seq_list)
-		print('Pulse sequences written to file: {}'.format(pulse_seq_path))
+		psictInterface.log('Pulse sequences written to file: {}'.format(pulse_seq_path))
 
 		point_values = {
 			'MultiPulse': {
@@ -1159,11 +1159,11 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		## Copy pulse definitions file
 		pulse_def_target_path = os.path.join(PSICT_options['script_copy_target_dir'], file_ID+'_MultiPulse_definitions.txt')
 		shutil.copy(pulse_def_path, pulse_def_target_path)
-		print('RB pulse definitions file copied to {}'.format(pulse_def_target_path))
+		psictInterface.log('RB pulse definitions file copied to {}'.format(pulse_def_target_path))
 		## Copy pulse sequences file
 		pulse_seq_target_path = os.path.join(PSICT_options['script_copy_target_dir'], file_ID+'_MultiPulse_sequences.txt')
 		shutil.copy(pulse_seq_path, pulse_seq_target_path)
-		print('RB pulse sequences file copied to {}'.format(pulse_seq_target_path))
+		psictInterface.log('RB pulse sequences file copied to {}'.format(pulse_seq_target_path))
 
 	return psictInterface.fileManager.output_path
 

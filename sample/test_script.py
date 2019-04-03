@@ -9,7 +9,7 @@ from PSICT_extras.PSICT_MultiPulse.PSICT_MultiPulse_tools import writePulseDefs,
 ## Do not change script structure beyond this point!
 ##############################################################################
 
-pulse_sequence = 'Qubit_echo'
+pulse_sequence = 'Qubit_Ramsey'
 
 worker_PSICT_options = {
 	## Master/worker settings - do not change directly
@@ -134,6 +134,8 @@ worker_pulse_sequence_options = {
 			'tau_list': [0e-9, 4000e-9, 201],
 			## Initial delay
 			'delay': 0.0,
+			## Use DRAG parameter for qubit pulse
+			'use_DRAG': True,
 			## Overall repetitions
 			'N_repetitions': 1e00,
 		},##
@@ -556,6 +558,12 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 		tau_list = pulse_sequence_options['tau_list']
 		max_tau = tau_list[1]
 
+		## DRAG coefficient
+		if pulse_sequence_options['use_DRAG']:
+			DRAG_coefficient = general_options['DRAG_coefficient'][qubit_width]
+		else:
+			DRAG_coefficient = 0.0
+
 		## Repetitions
 		N_repetitions = pulse_sequence_options['N_repetitions']
 		repetitions_list = [0, N_repetitions - 1, N_repetitions]
@@ -576,12 +584,12 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 					'time_reference': 'absolute',
 					'time_offset': 0.0, 'pulse_number': 1,
 					'a': qubit_amplitude, 'w': qubit_width, 'v': 0.0, 'f': qubit_IF_frequency,
-					'o': 2
+					'o': 2, 'DRAG': DRAG_coefficient,
 					},
 				'qubit2': {'relative_to': 'qubit1',
 					'time_offset': 0.0, 'time_reference': 'relative', 'relative_marker': 'end',
 					'a': qubit_amplitude, 'w': qubit_width, 'v': 0.0, 'f': qubit_IF_frequency,
-					'o': 2
+					'o': 2, 'DRAG': DRAG_coefficient,
 					},
 				'trigger': {'relative_to': 'qubit2',
 					'time_offset': 0.0, 'time_reference': 'relative', 'relative_marker': 'end',

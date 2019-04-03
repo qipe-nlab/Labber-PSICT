@@ -328,7 +328,7 @@ class LabberExporter:
         with h5py.File(self.MeasurementObject.sCfgFileIn, 'r+') as config_file:
             for index_counter, channel_name in enumerate(self._iteration_order):
                 ## Generate list of channels in the order they currently appear
-                current_iter_order = [step_item[0] for step_item in config_file['Step list'].value]
+                current_iter_order = [step_item[0] for step_item in config_file['Step list'][()]]
                 ## Get index of desired channel name in current order
                 channel_index = current_iter_order.index(channel_name)
                 ## Swap desired channel with that at index_counter
@@ -494,7 +494,7 @@ class LabberExporter:
         self.logger.debug("Fetching step list index for {}...".format(label_string))
         ## Open file and extract existing step list
         with h5py.File(self.MeasurementObject.sCfgFileIn, 'r') as config_file:
-            step_list = config_file['Step list'].value
+            step_list = config_file['Step list'][()]
         self.logger.debug("Step list extracted.")
         ## Get index of element with matching label string
         step_list_labels = [labels['channel_name'] for labels in step_list]

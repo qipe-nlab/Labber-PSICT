@@ -1,4 +1,11 @@
-## 1.2rc1 [ongoing] (2019/05/01)
+## 1.2rc1 [ongoing] (2019/06/13)
+
+Bugfixes:
+
+* Modify MultiPulse pulse generation algorithm to remove rounding errors for generating sequences with timing parameters
+  with values below the sample rate.
+
+## 1.2rc0 (2019/04/05)
 
 Features:
 
@@ -9,8 +16,6 @@ Features:
 * Add WorkerScriptManager as a higher-level automation module for the PSICT_UIF.
 * Implement logging framework for PSICT_UIF and WorkerScriptManager. [#3]
 * Add this file (changelog).
-* Modify MultiPulse pulse generation algorithm to remove rounding errors for generating sequences with timing parameters
-  with values below the sample rate.
 
 Bugfixes:
 

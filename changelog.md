@@ -1,5 +1,9 @@
 ## 1.2rc1 [ongoing] (2019/06/13)
 
+Features:
+
+* Added MIT license under `LICENSE.md`
+
 Bugfixes:
 
 * Modify MultiPulse pulse generation algorithm to remove rounding errors for generating sequences with timing parameters

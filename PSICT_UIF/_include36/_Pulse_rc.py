@@ -8,6 +8,7 @@ PHYS_PARAMS = [
                 "v",     # plateau
                 "s",     # spacing
                 'DRAG',  # DRAG coefficient
+                'b',     # characteristic amplitude
                 "p",     # phase
                 "f",     # Mod. frequency
                 "o",     # output
@@ -36,6 +37,7 @@ FULL_NAMES_PULSES = {
         "Plateau": "v",
         "Spacing": "s",
         'DRAG': 'DRAG',
+        'Characteristic amplitude': 'b',
         "Phase": "p",
         "Mod. frequency": "f",
         "Output": "o",
@@ -61,6 +63,7 @@ PULSE_PARAM_DEFAULTS = {
             "v": 0.0,   # 0 plateau
             "s": 0.0,   # 0 spacing (not currently used)
             'DRAG': 0.0,# 0 DRAG coefficient
+            'b': 0.0,   # 0 characteristic amplitude
             ##
             "is_inverted": False,
             "is_measurement": False,

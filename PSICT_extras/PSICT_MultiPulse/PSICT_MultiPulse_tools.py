@@ -13,6 +13,7 @@ DEFAULT_PULSE_VALUES = {
         ##
         'DRAG': 0.0,
         'fix_phase': 0,
+        'b': 0.0,
     }
 
 def writePulseDefs(pPulseDefsPath, lPulseDefsIn, lPulseDefKeyOrder):

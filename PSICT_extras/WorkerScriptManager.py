@@ -28,7 +28,7 @@ format_groups['.2'] = ['magnon_amplitude_alpha', 'magnon_amplitude_beta', 'magno
 format_groups['.3'] = ['magnon_amplitude', 'pump_amplitude', 'qubit_amplitude', 'readout_amplitude']
 format_groups['.4'] = ['readout_amplitude_opt']
 format_groups['e rm0'] = ['N_shots', 'SQPG_sampling_rate', 'MultiPulse_sampling_rate', 'digitizer_sampling_rate', 'N_single_shots', 'N_repetitions', 'N_repetitions_2', 'N_pts']
-format_groups['e-3 .3'] = ['current']
+format_groups['e-3 .6'] = ['current']
 format_groups['ns'] = ['SQPG_sequence_duration', 'MultiPulse_sequence_duration', 'readout_plateau_opt', 'qubit_width_pi', 'qubit_plateau_pi', 'demodulation_skip_start', 'demodulation_length', 'qubit_width', 'qubit_plateau', 'magnon_width', 'magnon_plateau', 'tau_s', 'tau', 'tau_delay', 'digitizer_length']
 format_groups['us'] = ['wait_time']
 
@@ -37,7 +37,7 @@ format_groups['list MHz int'] = ['qubit_drive_detuning_list', 'intentional_detun
 format_groups['list .3'] = ['readout_amplitude_list', 'qubit_amplitude_list', 'n_m_list', 'magnon_amplitude_alpha_list', 'magnon_real_alpha_list', 'magnon_imag_alpha_list']
 format_groups['list ns'] = ['qubit_width_list', 'qubit_plateau_list', 'tau_list']
 
-format_groups['dict ns:.6'] = ['qubit_amplitude_pi_dict']
+format_groups['dict ns:.6'] = ['qubit_amplitude_pi_dict', 'qubit_amplitude_pi_2_dict']
 format_groups['dict ns:1.2'] = ['lambda_dict']
 
 ## Function to convert values to correct formatting style
@@ -62,8 +62,8 @@ def get_formatted_rep(key, value):
     elif key in format_groups['e rm0']:
         mantissa, exponent = '{:e}'.format(value).split('e')
         value_rep = mantissa.rstrip('0').rstrip('.')+'e'+exponent.lstrip('+')
-    elif key in format_groups['e-3 .3']:
-        value_rep = '{:.3f}e-3'.format(value*1e3)
+    elif key in format_groups['e-3 .6']:
+        value_rep = '{:.6f}e-3'.format(value*1e3)
     elif key in format_groups['ns']:
         value_rep = '{:.0f}e-9'.format(value*1e9)
     elif key in format_groups['us']:

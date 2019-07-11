@@ -211,6 +211,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
             dDragScaling = self.getValue('Global DRAG coefficient')
         else:
             dDragScaling = oPulseDef['DRAG']
+        dAmp0 = oPulseDef['b']
         dStd = dWidth / np.sqrt(2 * np.pi)
         ## Get other params
         truncRange = self.getValue('Truncation range')
@@ -245,6 +246,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
             vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
         else:
             vDrag = np.zeros_like(vPulse)
+
+        if self.getValue('Correct nonlinearity'):
+            if dAmp0 > 0:
+                alpha = 0.1
+                correction = alpha + (1 - alpha) * (((vPulse / dAmp0)**2) / ((vPulse / dAmp0)**2 + 1))
+                vPulse = vPulse / correction
+
         ## Get modulation parameters
         freq = 2 * np.pi * oPulseDef['f']
         phase = oPulseDef['p'] * np.pi/180

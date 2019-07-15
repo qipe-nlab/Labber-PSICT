@@ -39,7 +39,10 @@ class FileManager:
 
     def __del__(self):
         ## Delete reference file (temporary copy of template file)
-        self.clean_reference_file()
+        if _rc.DEL_REF_COPY:
+            self.clean_reference_file()
+        else:
+            self.logger.log(LogLevels.VERBOSE, 'Deletion of reference file copy disallowed by DEL_REF_COPY parameter.')
         ## Status message
         self.logger.log(LogLevels.TRACE, 'Instance deleted.')
 

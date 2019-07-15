@@ -1,3 +1,9 @@
+## 1.3.0.1 [dev, ongoing] (2019/07/15)
+
+Features:
+
+* Add ability to add/modify logfile comments through PSICT.
+
 ## 1.2rc1 [ongoing] (2019/06/13)
 
 Features:

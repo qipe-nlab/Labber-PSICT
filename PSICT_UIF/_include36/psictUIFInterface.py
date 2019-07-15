@@ -369,6 +369,17 @@ class psictUIFInterface:
         self.logger.debug("Channel relations added.")
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Additional data setting methods
+
+    def set_logfile_comment(self, comment_text):
+        '''
+        Set the comment text to be saved in the logfile comment box.
+
+        Wraps the LabberExporter `set_logfile_comment` method.
+        '''
+        self.labberExporter.set_logfile_comment(comment_text)
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Measurement
 
     def perform_measurement(self, *, dry_run = False):

@@ -25,6 +25,8 @@ worker_PSICT_options = {
 	'output_file': 'labber_test_0019',
 	## Script copy options
 	'script_copy_target_dir': '../../test_output_files/scripts',
+	## Logfile comment
+	'logfile_comment': 'This is an example of a logfile comment stored in the running script. \n\nThis text will show up in the comment box of the output file in the Log Browser.'
 }
 
 worker_general_options = {
@@ -1156,6 +1158,9 @@ def run_pulse_sequence(pulse_sequence_name, PSICT_options, general_options, puls
 	psictInterface.set_point_values(point_values)
 	psictInterface.set_iteration_values(iteration_values, iteration_order)
 	psictInterface.set_channel_relations(channel_defs, channel_relations)
+
+	## Set additional data values
+	psictInterface.set_logfile_comment(PSICT_options.get('logfile_comment', None))
 
 	## Run measurement
 	psictInterface.perform_measurement(dry_run = True)

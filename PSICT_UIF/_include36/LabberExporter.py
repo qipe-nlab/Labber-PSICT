@@ -44,6 +44,8 @@ class LabberExporter:
         self._raw_channel_defs = {} # Raw channel definitions for relations
         self._channel_defs = {}      # Processed (final-format) channel definitions for relations
         self._channel_relations = {} # Actual channel relations
+        ## Additional data containers
+        self._logfile_comment = None # Log file comment
         ## Other attributes
         self._hdf5_sl_entry_dtype = None # Stores the dtype of the hdf5 step list entries (this can't be auto-generated for some reason...)
         ## Status message
@@ -265,6 +267,17 @@ class LabberExporter:
         ## status message
         self.logger.debug("Pulse definitions and relations received.")
 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Set additional data specifications
+
+    def set_logfile_comment(self, comment_text):
+        '''
+        Set the comment text in the reference copy logfile (and therefore the output file).
+        '''
+        ## Set comment text
+        self._logfile_comment = str(comment_text)
+        ## Status message
+        self.logger.debug('Set logfile comment to: {}'.format(self._logfile_comment))
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ## Labber MeasurementObject methods
@@ -307,6 +320,8 @@ class LabberExporter:
         self.apply_client_values()
         self.apply_instr_config_values()
         self.apply_relations()
+        ## Apply additional data
+        self.apply_logfile_comment()
         ## debug message
         self.logger.log(LogLevels.VERBOSE, "Instrument parameters applied.")
 
@@ -570,6 +585,25 @@ class LabberExporter:
         for channel_name, channel_relation in self._channel_relations.items():
             self.apply_relation(channel_name, channel_relation)
 
-
-
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ## Additional parameters and data
+
+    def apply_logfile_comment(self):
+        '''
+        Apply the logfile comment to the reference file copy.
+        '''
+        ## Status message
+        self.logger.log(LogLevels.VERBOSE, 'Applying logfile comment to reference copy...')
+        ## Check if stored logfile comment exists
+        if self._logfile_comment is not None:
+            ## Open reference file as Labber LogFile
+            logfile = Labber.LogFile(self.MeasurementObject.sCfgFileIn)
+            ## Apply stored comment
+            logfile.setComment(self._logfile_comment)
+            ## Status message
+            self.logger.log(LogLevels.VERBOSE, 'Comment applied to reference copy.')
+        else:
+            ## Status message
+            self.logger.log(LogLevels.VERBOSE, 'No comment specified; skipping.')
+
+        ## 

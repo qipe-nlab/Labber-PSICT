@@ -1,4 +1,10 @@
-## 1.2rc1 [ongoing] (2019/06/13)
+## 1.2 (2019/09/04)
+
+Features:
+
+* Added README under `README.rst`, with a pdf version in `docs`. 
+
+## 1.2rc1 (2019/06/13)
 
 Features:
 

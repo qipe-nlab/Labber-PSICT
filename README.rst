@@ -29,7 +29,7 @@ thus not guaranteed. If backwards compatibility is required, please `create an
 issue`_.
 
 * Python 3.6.8+ (not tested with 3.7)
-* Labber, as well as the ``Labber`` python API (``1.6.3``)
+* Labber, as well as the ``Labber`` python API (``1.6.3`` or later)
 * ``numpy`` (``1.16.2``)
 * ``h5py`` (``2.9.0``)
 
@@ -150,7 +150,7 @@ Two primary branches are available on the repository:
   degree, currently ``1.3dev0.1``. 
 
 For a specific release version, please find the
-appropriate tag in the repository history.
+appropriate `tag`_ in the repository history.
 
 Features in development
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,7 +174,7 @@ Features in development
 License
 -------
 
-This module is licensed under the Expat (MIT) license.
+This module is licensed under the `Expat (MIT) license`_.
 
 
 Authors
@@ -195,5 +195,7 @@ The University of Tokyo
 
 
 .. _Labber: http://labber.org
-.. _repository: https://bitbucket.org/samwolski/labber-psict
-.. _create an issue: https://bitbucket.org/samwolski/labber-psict/issues
+.. _repository: https://github.com/qipe-nlab/Labber-PSICT
+.. _create an issue: https://github.com/qipe-nlab/Labber-PSICT/issues
+.. _tag: https://github.com/qipe-nlab/Labber-PSICT/releases
+.. _Expat (MIT) license: https://github.com/qipe-nlab/Labber-PSICT/blob/master/LICENSE.md

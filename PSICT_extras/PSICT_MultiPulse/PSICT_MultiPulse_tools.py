@@ -13,7 +13,8 @@ DEFAULT_PULSE_VALUES = {
         ##
         'DRAG': 0.0,
         'fix_phase': 0,
-        'b': 0.0,
+        'r': 1,
+        'd': 0
     }
 
 def writePulseDefs(pPulseDefsPath, lPulseDefsIn, lPulseDefKeyOrder):
@@ -73,6 +74,7 @@ def listifyPulseDefs(lPulseDefsIn, lKeyOrder):
         lPulseDef = []
         ## Populate an inner list in the specified order
         for sDefKey in lKeyOrder:
+            #value = oPulseDef.get(sDefKey, DEFAULT_PULSE_VALUES[sDefKey])
             try:
                 value = oPulseDef[sDefKey]
             except KeyError:

@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 
 from PSICT_MultiPulse_tools import delistifyPulseDefs
+from waveforms_handling import generatePulse, calculateWaveform, gen_pulse_sequence
+
 
 class Driver(InstrumentDriver.InstrumentWorker):
     """ This class implements the PSICT-MultiPulse pulse generator"""
@@ -20,6 +22,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
         self.nTrace = 4
         ## Waveform and time containers
         self.lWaveforms = [np.array([], dtype=float)] * self.nTrace
+        self.lQuadratures = [np.array([], dtype=float)] * self.nTrace
         self.vTime = np.array([], dtype=float)
         ## Pulse definition and sequence containers
         self.lDefKeyOrder = []
@@ -88,6 +91,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
             vData = self.getWaveformFromMemory(quant)
             dt = 1/self.getValue('Sample rate')
             value = quant.getTraceDict(vData, dt=dt)
+        elif quant.name[:10] == 'Quadrature':
+            ## Recalculate waveform if necessary
+            if self.isConfigUpdated():
+                self.calculateWaveform()
+            vData = self.getWaveformFromMemory(quant)
+            dt = 1/self.getValue('Sample rate')
+            value = quant.getTraceDict(vData, dt=dt)
         else:
             ## All other values can be returned as-is
             value = quant.getValue()
@@ -101,83 +111,13 @@ class Driver(InstrumentDriver.InstrumentWorker):
             iDataIndex = int(quant.name[-1]) - 1
             self._logger.debug('Fetching waveform for output {}'.format(iDataIndex))
             vData = self.lWaveforms[iDataIndex]
+        elif quant.name[:10] == 'Quadrature':
+            iDataIndex = int(quant.name[-1]) - 1
+            self._logger.debug('Fetching waveform for output {}'.format(iDataIndex))
+            vData = self.lQuadratures[iDataIndex]
         else:
             raise RuntimeError('Invalid specification for getting waveform: {}'.format(quant.name))
         return vData
-
-    def calculateWaveform(self):
-        '''
-        Generate waveform, selecting sequence based on 'Pulse sequence counter' value
-        '''
-        ## Skip generation if no waveforms present (eg when starting instrument)
-        if self.lPulseSequences == []:
-            self._logger.info('No sequences specified; skipping waveform generation...')
-            return
-        self._logger.info('Generating waveform...')
-        ## Get config values
-        sampleRate = self.getValue('Sample rate')
-        truncRange = self.getValue('Truncation range')
-        dFirstPulseDelay = self.getValue('First pulse delay')
-        seqCounter = int(self.getValue('Pulse sequence counter'))
-        bReversed = self.getValue('Generate from final pulse')
-        dFinalPulseTime = self.getValue('Final pulse time')
-        if bReversed:
-            self._logger.debug('Generating sequence in reverse, with final pulse at {}'.format(dFinalPulseTime))
-        ## Fetch pulse sequence list based on counter
-        pulseSeq = self.lPulseSequences[seqCounter]
-        self._logger.debug('Fetched pulse sequence at index {}: {}'.format(pulseSeq, seqCounter))
-        ## Calculate or use existing number of points
-        if self.getValue('Use fixed number of points'):
-            pass
-        else:
-            ## Get total time for pulse sequence
-            totalTime = self.calculateTotalSeqTime(pulseSeq, truncRange)
-            self._logger.debug('Total time calculated: {}'.format(totalTime))
-            ## Get total number of points
-            totalNPoints = int(np.round(totalTime * sampleRate))
-            self._logger.debug('Total number of points: {}'.format(totalNPoints))
-            self.setValue('Number of points', totalNPoints)
-        ## Allocate master time vector
-        self.vTime = np.arange(self.getValue('Number of points'), dtype=float)/sampleRate
-        ## Re-create waveforms with correct size
-        self.lWaveforms = [np.zeros((self.getValue('Number of points')), dtype=float)] \
-                                * self.nTrace
-        ## Get first head time
-        if bReversed:
-            dHeadTime = dFinalPulseTime
-            # iHeadIndex = int(np.round(dFinalPulseTime * sampleRate))
-        else:
-            dHeadTime = dFirstPulseDelay
-            # iHeadIndex = int(np.round(dFirstPulseDelay * sampleRate))
-        ## Reverse pulse sequence if generating from the back
-        if bReversed:
-            pulseSeq = pulseSeq[::-1]
-        ## Generate pulse sequence
-        for iPulse, iPulseIndex in enumerate(pulseSeq):
-            ## Head time already set
-            # ## Get time corresponding to head index from master time vector
-            # dHeadTime = self.vTime[iHeadIndex]
-            ## Get master times relative to head time
-            vRelTimeMaster = self.vTime - dHeadTime
-            ## Generate pulse
-            vNewPulse = self.generatePulse(vRelTimeMaster, dHeadTime, \
-                                           self.lPulseDefinitions[iPulseIndex])
-            ## Add new pulse to waveform at index
-            iOutputIndex = int(self.lPulseDefinitions[iPulseIndex]['o']) - 1
-            self.lWaveforms[iOutputIndex] = self.lWaveforms[iOutputIndex] + vNewPulse
-            ## Update head time
-            if bReversed:
-                ## Don't attempt to fetch 'previous' pulse for 'first' pulse in sequence
-                if iPulse < len(pulseSeq) - 1:
-                    dHeadTime = self.updateHeadTime(dHeadTime, \
-                                  self.lPulseDefinitions[pulseSeq[iPulse+1]], bReversed=True)
-                else:
-                    pass
-            else:
-                dHeadTime = self.updateHeadTime(dHeadTime, \
-                                                self.lPulseDefinitions[iPulseIndex])
-        ##
-        self._logger.info('Waveform generation completed.')
 
     def calculateTotalSeqTime(self, pulseSeq, truncRange):
         '''
@@ -195,77 +135,6 @@ class Driver(InstrumentDriver.InstrumentWorker):
         ## Return final value
         return totalTime
 
-    def generatePulse(self, vRelTimes, dAbsTime, oPulseDef):
-        '''
-        Generate a pulse with the given definition
-
-        NB times are specified relative to the start point (ie the leading-edge FWHM point), and so can be negative!
-        '''
-        ## Get definition params
-        dWidth = oPulseDef['w']
-        dPlateau = oPulseDef['v']
-        dAmp = oPulseDef['a']
-        ## Use global DRAG if required, otherwise take from pulse definition
-        bUseGlobalDrag = self.getValue('Use global DRAG')
-        if bUseGlobalDrag:
-            dDragScaling = self.getValue('Global DRAG coefficient')
-        else:
-            dDragScaling = oPulseDef['DRAG']
-        dAmp0 = oPulseDef['b']
-        dStd = dWidth / np.sqrt(2 * np.pi)
-        ## Get other params
-        truncRange = self.getValue('Truncation range')
-        ## Shift times such that 0 is in the middle of the pulse
-        vShiftedTimes = vRelTimes - (dWidth + dPlateau) / 2
-        ## Generate envelope; algorithm copied from SQPG driver
-        if dPlateau > 0:
-            ## Start with plateau
-            vPulse = (vShiftedTimes >= -dPlateau/2) & (vShiftedTimes < dPlateau/2)
-            ## Add rise and fall before and after plateau if applicable
-            if dStd > 0:
-                ## Leading edge
-                vPulse = vPulse + (vShiftedTimes < -dPlateau/2) * \
-                    (np.exp(-(vShiftedTimes + dPlateau/2)**2/(2*dStd**2)))
-                ## Trailing edge
-                vPulse = vPulse + (vShiftedTimes >= dPlateau/2) * \
-                    (np.exp(-(vShiftedTimes - dPlateau/2)**2/(2*dStd**2)))
-        else:
-            ## No plateau - only gaussian
-            if dStd > 0:
-                vPulse = np.exp(-vShiftedTimes**2 / (2*dStd**2))
-            else:
-                vPulse = np.zeros_like(vShiftedTimes)
-        ## Apply truncation range
-        vPulse[vShiftedTimes < -(dPlateau/2)-(truncRange/2)*dWidth] = 0.0
-        vPulse[vShiftedTimes > (dPlateau/2)+(truncRange/2)*dWidth] = 0.0
-        ## Scale by amplitude
-        vPulse = vPulse * dAmp
-        ## Apply DRAG if not square pulse
-        bApplyDragToSquare = self.getValue('Apply DRAG to square pulses')
-        if dStd > 0 or bApplyDragToSquare:
-            vDrag = dDragScaling * np.gradient(vPulse) * self.getValue('Sample rate')
-        else:
-            vDrag = np.zeros_like(vPulse)
-
-        if self.getValue('Correct nonlinearity'):
-            if dAmp0 > 0:
-                alpha = 0.1
-                correction = alpha + (1 - alpha) * (((vPulse / dAmp0)**2) / ((vPulse / dAmp0)**2 + 1))
-                vPulse = vPulse / correction
-
-        ## Get modulation parameters
-        freq = 2 * np.pi * oPulseDef['f']
-        phase = oPulseDef['p'] * np.pi/180
-        ## Apply modulation - check for fixed phase
-        if oPulseDef['fix_phase']:
-            vPulseMod = vPulse * (np.cos(freq*vRelTimes - phase)) \
-                        -vDrag * (np.cos(freq*vRelTimes - phase + np.pi/2))
-        else:
-            vPulseMod = vPulse * (np.cos(freq*(vRelTimes+dAbsTime) - phase)) \
-                        -vDrag * (np.cos(freq*(vRelTimes+dAbsTime) - phase + np.pi/2))
-        ## Return value
-        return vPulseMod
-
     def updateHeadTime(self, dOldHeadTime, oPulseDef, bReversed = False):
         ## Get edge-to-edge length of pulse (including spacing)
         dPulseLength = oPulseDef['w'] + oPulseDef['v'] + oPulseDef['s']
@@ -275,6 +144,10 @@ class Driver(InstrumentDriver.InstrumentWorker):
         else:
             dNewHeadTime = dOldHeadTime + dPulseLength
         return dNewHeadTime
+
+    calculateWaveform = calculateWaveform
+    generatePulse = generatePulse
+    gen_pulse_sequence = gen_pulse_sequence
 
 if __name__ == '__main__':
     pass

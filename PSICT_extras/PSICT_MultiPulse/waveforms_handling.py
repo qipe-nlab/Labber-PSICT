@@ -71,8 +71,6 @@ def gen_pulse_sequence(self, nTrace, num_points, pulseSeq, vTime, dHeadTime, pul
     lWaveforms   = np.zeros((nTrace, int(num_points)), dtype=float)
     lQuadratures = np.zeros((nTrace, int(num_points)), dtype=float)
     for iPulse, iPulseIndex in enumerate(pulseSeq):
-        ## Get master times relative to head time
-        #vRelTimeMaster = vTime - dHeadTime
         ## Generate pulse
         vNewPulse = self.generatePulse(vTime, dHeadTime, pulseDef[iPulseIndex], params_dict)
         vNewPulseQuad = self.generatePulse(vTime, dHeadTime, pulseDef[iPulseIndex], params_dict, genQuadrature=True)
@@ -150,7 +148,6 @@ def generatePulse(self, vTimes, dAbsTime, oPulseDef, params_dict, genQuadrature=
         imin -= bleed_idx
         imax += bleed_idx
 
-    #vShiftedTimes = vTimes - dAbsTime
     vShiftedTimes = vShiftedTimes[imin:imax+1] - (dWidth + dPlateau) / 2 - dAbsTime
     vRelTimes = vShiftedTimes + (dWidth + dPlateau) / 2
 
@@ -392,8 +389,6 @@ class test_self():
         self._logger = dummy_logger()
         self.nTrace = kwargs.get('nTrace', 4)
         
-        #self.generatePulse = generatePulse
-
         with open('waveforms_sequences.txt', 'r') as psfile:
             self.lPulseSequences = [[int(yy) for yy in xx.strip().split(',')] for xx in psfile.readlines()]
         with open('waveforms_definitions.txt', 'r') as pdfile:
@@ -422,8 +417,6 @@ class test_self():
     def setValue(self, key, val):
         self.values_dict[key] = val
 
-        
-
     # Methods from above
     calculateWaveform = calculateWaveform
     calculateTotalSeqTime = calculateTotalSeqTime
@@ -434,7 +427,6 @@ class test_self():
 class legacy_self(test_self):
     def __init__(self, *args, **kwargs):
         test_self.__init__(self, *args, **kwargs)
-        #del self.generatePulse  # Ensures we use the legacy one
     generatePulse = generatePulse_legacy
     calculateWaveform = calculateWaveform_legacy
 
@@ -447,7 +439,6 @@ def test():
     legacy = legacy_self()
 
     from timeit import timeit
-    print("\n  ***  FIRST PASS  ***\n")
     print("\nTEST: Calculating Waveforms on test\n")
     test_time = timeit(test.calculateWaveform, number=1)
     print("\nTEST: Calculating Waveforms on legacy\n")
@@ -456,7 +447,7 @@ def test():
     failed = (test.lWaveforms-legacy.lWaveforms).any() and (test.lQuadratures-legacy.lQuadratures).any()
 
     
-    print("\nFirst pass results:")
+    print("\nTest results:")
     print("  test object time:     {:11.6f} s".format(test_time))
     print("  legacy object time:   {:11.6f} s".format(legacy_time))
     print("  Speed increase:       {:11.6f} x".format(legacy_time/test_time - 1))
@@ -481,13 +472,3 @@ def run_from_ipython():
 if __name__ == "__main__":
     if not run_from_ipython():
         test()
-
-
-    # Test pertinent: Cas limite 's'=0 dans les pulses
-    #
-    # Optimisations possibles, en ordre de pertinence:
-    #   - Flag pour calculer ou non la quadrature de chaque pulse (quadrature à 0 sinon)
-    #   - C++ & pybind11 + OpenMP
-    #
-    # ^ Ces optimisations sont caduques si on génère souvent les mêmes pulses (à cause du cache).
-    #   Elles sont pertinentes si on générait des séquences aléatoires à la volée, auquel cas le cache n'aide pas.

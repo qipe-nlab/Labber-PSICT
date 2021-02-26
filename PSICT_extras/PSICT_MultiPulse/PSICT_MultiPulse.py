@@ -113,7 +113,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
             vData = self.lWaveforms[iDataIndex]
         elif quant.name[:10] == 'Quadrature':
             iDataIndex = int(quant.name[-1]) - 1
-            self._logger.debug('Fetching waveform for output {}'.format(iDataIndex))
+            self._logger.debug('Fetching quadrature for output {}'.format(iDataIndex))
             vData = self.lQuadratures[iDataIndex]
         else:
             raise RuntimeError('Invalid specification for getting waveform: {}'.format(quant.name))

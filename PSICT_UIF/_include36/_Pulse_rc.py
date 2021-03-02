@@ -12,6 +12,8 @@ PHYS_PARAMS = [
                 "p",     # phase
                 "f",     # Mod. frequency
                 "o",     # output
+                "r",     # ratio I/Q
+                "d",     # phase difference
                 ## etc
               ]
 ORD_PARAMS = [
@@ -41,6 +43,8 @@ FULL_NAMES_PULSES = {
         "Phase": "p",
         "Mod. frequency": "f",
         "Output": "o",
+        "Ratio I/Q": "r",
+        "Phase diff.": "d",
     }
 
 ## all single-pulse parameter names (for checking validity etc)
@@ -64,6 +68,8 @@ PULSE_PARAM_DEFAULTS = {
             "s": 0.0,   # 0 spacing (not currently used)
             'DRAG': 0.0,# 0 DRAG coefficient
             'b': 0.0,   # 0 characteristic amplitude
+            "r": 1.0,
+            "d": 0.0,
             ##
             "is_inverted": False,
             "is_measurement": False,

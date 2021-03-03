@@ -159,7 +159,8 @@ def generatePulse(self, vTimes, dAbsTime, oPulseDef, params_dict, genQuadrature=
     if dPlateau > 0:
         ## Start with plateau
         vPulse = np.zeros(vShiftedTimes.shape)
-        vPulse[int(np.round((-vShiftedTimes[0]-dPlateau/2)/deltaT)):int(np.round((-vShiftedTimes[0]+dPlateau/2)/deltaT))] = 1
+        if len(vPulse) or len(vShiftedTimes):
+            vPulse[int(np.round((-vShiftedTimes[0]-dPlateau/2)/deltaT)):int(np.round((-vShiftedTimes[0]+dPlateau/2)/deltaT))] = 1
         ## Add rise and fall before and after plateau if applicable
         if dStd > 0:
             ## Leading edge
